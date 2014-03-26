@@ -35,22 +35,22 @@
 /***********************************************
  * SBA stuff -- start
 ***********************************************/
-#define DEBUGF50  0
-#define DEBUGF51  0
+#define DEBUGF50  1
+#define DEBUGF51  1
 
-#ifdef DEBUGF5
-#undef DEBUGF5
-//#define DEBUGF5 1
-#endif
+//#ifdef DEBUGF5
+//#undef DEBUGF5
+#define DEBUGF5 1
+//#endif
 
 #define F5C       1
 #if F5C
   #define F5CTAILRED 1
 #endif
 
-#define SBA_INTERRED_START                  0
+#define SBA_INTERRED_START                  1
 #define SBA_TAIL_RED                        1
-#define SBA_PRODUCT_CRITERION               0
+#define SBA_PRODUCT_CRITERION               1
 #define SBA_PRINT_ZERO_REDUCTIONS           0
 #define SBA_PRINT_REDUCTION_STEPS           0
 #define SBA_PRINT_OPERATIONS                0
@@ -621,6 +621,10 @@ int redSig (LObject* h,kStrategy strat)
          &&
           p_LmShortDivisibleBy(strat->T[i].GetLmTailRing(), strat->sevT[i],
                                h_p, not_sev, strat->tailRing))
+      #ifdef HAVE_RINGS
+    if(rField_is_Ring(currRing))
+      if(n_DivBy(pGetCoeff(strat->T[i].GetLmTailRing()), pGetCoeff(h_p), currRing))
+    #endif
       {
         /*
          * the polynomial to reduce with is now;
@@ -1667,6 +1671,8 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
 
   return (strat->Shdl);
 }
+
+
 ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
 {
   // ring order stuff:
@@ -1896,7 +1902,7 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
       }
       else
       {
-        //#if 1
+//#if 1
 #ifdef DEBUGF5
         Print("Poly before red: ");
         pWrite(pHead(strat->P.p));
@@ -2054,7 +2060,7 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
       */
 #ifdef HAVE_RINGS
       if (rField_is_Ring(currRing))
-        superenterpairs(strat->P.p,strat->sl,strat->P.ecart,pos,strat, strat->tl);
+        superenterpairsSig(strat->P.p, strat->P.sig, strat->sl+1, strat->sl,strat->P.ecart,pos,strat, strat->tl);
       else
 #endif
         enterpairsSig(strat->P.p,strat->P.sig,strat->sl+1,strat->sl,strat->P.ecart,pos,strat, strat->tl);
