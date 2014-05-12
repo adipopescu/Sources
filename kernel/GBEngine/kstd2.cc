@@ -35,22 +35,22 @@
 /***********************************************
  * SBA stuff -- start
 ***********************************************/
-#define DEBUGF50  1
-#define DEBUGF51  1
+#define DEBUGF50  0
+#define DEBUGF51  0
 
-//#ifdef DEBUGF5
-//#undef DEBUGF5
-#define DEBUGF5 1
-//#endif
+#ifdef DEBUGF5
+#undef DEBUGF5
+//#define DEBUGF5 1
+#endif
 
 #define F5C       1
 #if F5C
   #define F5CTAILRED 1
 #endif
 
-#define SBA_INTERRED_START                  1
-#define SBA_TAIL_RED                        1
-#define SBA_PRODUCT_CRITERION               1
+#define SBA_INTERRED_START                  0
+#define SBA_TAIL_RED                        0
+#define SBA_PRODUCT_CRITERION               0
 #define SBA_PRINT_ZERO_REDUCTIONS           0
 #define SBA_PRINT_REDUCTION_STEPS           0
 #define SBA_PRINT_OPERATIONS                0
@@ -623,7 +623,7 @@ int redSig (LObject* h,kStrategy strat)
                                h_p, not_sev, strat->tailRing))
       #ifdef HAVE_RINGS
     if(rField_is_Ring(currRing))
-      if(n_DivBy(pGetCoeff(strat->T[i].GetLmTailRing()), pGetCoeff(h_p), currRing))
+      if(n_DivBy(pGetCoeff(h_p), pGetCoeff(strat->T[i].GetLmTailRing()),  currRing))
     #endif
       {
         /*
@@ -1796,6 +1796,27 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
   /* compute------------------------------------------------------- */
   while (strat->Ll >= 0)
   {
+    printf("\n      ------------------------NEW LOOP\n");
+    printf("\nShdl = \n");
+    idPrint(strat->Shdl);
+    printf("\n   list   L\n");
+    int iii;
+    for(iii = 0; iii<= strat->Ll; iii++)
+    {
+        printf("\nL[%i]\n", iii);
+        pWrite(strat->L[iii].p);
+        pWrite(strat->L[iii].p1);
+        pWrite(strat->L[iii].p2);
+        pWrite(strat->L[iii].sig);
+                                
+    }
+    printf("\n         syz\n");
+    for(iii = 0; iii<= strat->syzl; iii++)
+    {
+        printf("\nsyz[%i]\n", iii);
+        pWrite(strat->syz[iii]);
+    }
+    getchar();
     if (strat->Ll > lrmax) lrmax =strat->Ll;/*stat.*/
     #ifdef KDEBUG
       loop_count++;
