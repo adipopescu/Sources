@@ -1,7 +1,7 @@
 /****************************************
 *  Computer Algebra System SINGULAR     *
 ****************************************/
-//#include <kernel/mod2.h>
+#include <kernel/mod2.h>
 
 
 
@@ -13,7 +13,7 @@
 //#include <kernel/pShallowCopyDelete.h>
 #include <coeffs/coeffs.h>
 #include <polys/monomials/ring.h>
-//#include <kernel/p_Procs.h>
+//#include <libpolys/polys/templates/p_Procs.h>
 //#include <kernel/GBEngine/kutil.h>
 #include <polys/kbuckets.h>
 
@@ -198,7 +198,9 @@ BOOLEAN kbTest(kBucket_pt bucket)
 kBucket_pt kBucketCreate(ring bucket_ring)
 {
   assume(bucket_ring != NULL);
+  omCheckAddr(bucket_ring->p_Procs);
   kBucket_pt bucket = (kBucket_pt) omAlloc0Bin(kBucket_bin);
+  omCheckAddr(bucket_ring->p_Procs);
   bucket->bucket_ring = bucket_ring;
   return bucket;
 }

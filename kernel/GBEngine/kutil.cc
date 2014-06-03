@@ -1880,12 +1880,12 @@ void enterOnePairSig (int i, poly p, poly pSig, int, int ecart, int isFromQ, kSt
         strat->rewCrit1(sSigMult,sSigMultNegSev,Lp.lcm,strat,i+1)
       )
   {
-    printf("!!!!   CRITERIA DELETE:    !!!!\n");pWrite(Lp.p);pWrite(Lp.p1);pWrite(Lp.p2);pWrite(Lp.sig);
-    printf("\nsyz:\n");
-    for(int iii = 0; iii<=strat->syzl; iii++)
+    //printf("!!!!   CRITERIA DELETE:    !!!!\n");pWrite(Lp.p);pWrite(Lp.p1);pWrite(Lp.p2);pWrite(Lp.sig);
+    //printf("\nsyz:\n");
+    /*for(int iii = 0; iii<=strat->syzl; iii++)
     {
       pWrite(strat->syz[iii]);
-    }
+    }*/
     pDelete(&pSigMult);
     pDelete(&sSigMult);
     pLmFree(Lp.lcm);
@@ -3173,12 +3173,12 @@ void initenterpairs (poly h,int k,int ecart,int isFromQ,kStrategy strat, int atR
 void initenterpairsSig (poly h,poly hSig,int hFrom,int k,int ecart,int isFromQ,kStrategy strat, int atR = -1)
 {
 
-  printf("\nAt the beg of initenterpairsSig, L is\n");
+  /*printf("\nAt the beg of initenterpairsSig, L is\n");
   for(int ii = 0; ii<=strat->Ll; ii++)
   {
     pWrite(strat->L[ii].p);
     pWrite(strat->L[ii].sig);
-  }
+  }*/
   if ((strat->syzComp==0)
   || (pGetComp(h)<=strat->syzComp))
   {
@@ -3196,7 +3196,7 @@ void initenterpairsSig (poly h,poly hSig,int hFrom,int k,int ecart,int isFromQ,k
           {
             new_pair=TRUE;
             enterOnePairSig(j,h,hSig,hFrom,ecart,isFromQ,strat, atR);
-          Print("\n         initenterpairsSig added S(*, %i)\n",j);
+          //Print("\n         initenterpairsSig added S(*, %i)\n",j);
           }
         }
       }
@@ -3206,14 +3206,14 @@ void initenterpairsSig (poly h,poly hSig,int hFrom,int k,int ecart,int isFromQ,k
         for (j=0; j<=k; j++)
         {
           enterOnePairSig(j,h,hSig,hFrom,ecart,isFromQ,strat, atR);
-          Print("\n         initenterpairsSig added S(*, %i)\n",j);
+          /*Print("\n         initenterpairsSig added S(*, %i)\n",j);
           printf("\nL before has size %i\n", strat->Ll);
         for(int ii=0; ii<=strat->Ll; ii++)
         {
           printf("\n");
           pWrite(strat->L[ii].p);
           pWrite(strat->L[ii].sig);
-        }
+        }*/
         
         }
       }
@@ -3239,13 +3239,13 @@ void initenterpairsSig (poly h,poly hSig,int hFrom,int k,int ecart,int isFromQ,k
       else
 #endif
         strat->chainCrit(h,ecart,strat);
-        printf("\nL after has size %i\n", strat->Ll);
+        /*printf("\nL after has size %i\n", strat->Ll);
         for(int ii=0; ii<=strat->Ll; ii++)
         {
           printf("\n");
           pWrite(strat->L[ii].p);
           pWrite(strat->L[ii].sig);
-        }
+        }*/
     }
   }
 }
@@ -3878,7 +3878,7 @@ void initenterstrongPairsSig (poly h,poly hSig,int hFrom,int k,int ecart,int isF
         for (j=0; j<=k; j++)
         {
           enterOneStrongPolySig(j,h,hSig,hFrom,ecart,isFromQ,strat, atR);
-          Print("\n         initenterSTRONGpairsSig added G(*, %i)\n",j);
+          //Print("\n         initenterSTRONGpairsSig added G(*, %i)\n",j);
         }
       }
     }
@@ -3891,7 +3891,7 @@ void initenterstrongPairsSig (poly h,poly hSig,int hFrom,int k,int ecart,int isF
         {
           new_pair=TRUE;
           enterOnePairSig(j,h,hSig,hFrom,ecart,isFromQ,strat, atR);
-        Print("\n         initenterSTRONGpairsSig added G(*, %i)\n",j);
+        //Print("\n         initenterSTRONGpairsSig added G(*, %i)\n",j);
         }
       }
     }
@@ -4052,7 +4052,7 @@ void superenterpairsSig (poly h,poly hSig,int hFrom,int k,int ecart,int pos,kStr
   int i;
   i = strat->Ll;
   initenterpairsSig(h, hSig, hFrom, k, ecart, pos, strat, atR);
-  if(i != strat->Ll)
+  /*if(i != strat->Ll)
     printf("\ninitenterpairsSig changed L :)\n");
   else
     printf("\ninitenterpairsSig did not changed L :(\n");
@@ -4063,12 +4063,12 @@ void superenterpairsSig (poly h,poly hSig,int hFrom,int k,int ecart,int pos,kStr
     pWrite(strat->L[i].p1);
     pWrite(strat->L[i].p2);
     pWrite(strat->L[i].sig);
-  }
+  }*/
   i = strat->Ll;
   
   initenterstrongPairsSig(h, hSig, hFrom, k, ecart, 0, strat, atR);
   
-  if(i != strat->Ll)
+  /*if(i != strat->Ll)
     printf("\ninitenterstrongPairsSig changed L :)\n");
   else
     printf("\ninitenterstrongPairsSig did not changed L :(\n");
@@ -4079,7 +4079,7 @@ void superenterpairsSig (poly h,poly hSig,int hFrom,int k,int ecart,int pos,kStr
     pWrite(strat->L[i].p1);
     pWrite(strat->L[i].p2);
     pWrite(strat->L[i].sig);
-  }
+  }*/
   
   clearSbatch(h, k, pos, strat);
 }
@@ -5641,7 +5641,7 @@ BOOLEAN syzCriterionInc(poly sig, unsigned long not_sevSig, kStrategy strat)
       if(n_DivBy(pGetCoeff(sig), pGetCoeff(strat->syz[k]), currRing))
     #endif
         {
-          printf("\nSyzCrit will delete ");pWrite(sig);
+          //printf("\nSyzCrit will delete ");pWrite(sig);
           return TRUE;
         }
     }

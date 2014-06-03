@@ -1796,7 +1796,7 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
   /* compute------------------------------------------------------- */
   while (strat->Ll >= 0)
   {
-    printf("\n      ------------------------NEW LOOP\n");
+    /*printf("\n      ------------------------NEW LOOP\n");
     printf("\nShdl = \n");
     idPrint(strat->Shdl);
     printf("\n   list   L\n");
@@ -1816,7 +1816,7 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
         printf("\nsyz[%i]\n", iii);
         pWrite(strat->syz[iii]);
     }
-    getchar();
+    getchar();*/
     if (strat->Ll > lrmax) lrmax =strat->Ll;/*stat.*/
     #ifdef KDEBUG
       loop_count++;
