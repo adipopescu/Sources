@@ -500,6 +500,9 @@ void enterpairs (poly h, int k, int ec, int pos,kStrategy strat, int atR = -1);
 void entersets (LObject h);
 void pairs ();
 void message (int i,int* reduc,int* olddeg,kStrategy strat,int red_result);
+#if ADIDEBUG_COUNT
+void messageADI (int red_result);
+#endif
 void messageStat (int hilbcount,kStrategy strat);
 #ifdef KDEBUG
 void messageSets (kStrategy strat);

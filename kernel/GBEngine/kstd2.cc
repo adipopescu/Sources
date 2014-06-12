@@ -51,7 +51,7 @@
 #define SBA_INTERRED_START                  0
 #define SBA_TAIL_RED                        0
 #define SBA_PRODUCT_CRITERION               0
-#define SBA_PRINT_ZERO_REDUCTIONS           0
+#define SBA_PRINT_ZERO_REDUCTIONS           1
 #define SBA_PRINT_REDUCTION_STEPS           0
 #define SBA_PRINT_OPERATIONS                0
 #define SBA_PRINT_SIZE_G                    0
@@ -71,6 +71,8 @@ long sba_interreduction_operations;
 /***********************************************
  * SBA stuff -- done
 ***********************************************/
+#define ADIDEBUG 1
+#define ADIDEBUG_COUNT 1
 
 #include <kernel/GBEngine/kutil.h>
 #include <misc/options.h>
@@ -117,11 +119,23 @@ int kFindDivisibleByInT(const TSet &T, const unsigned long* sevT,
 #if defined(PDEBUG) || defined(PDIV_DEBUG)
       if (p_LmShortDivisibleBy(T[j].p, sevT[j],
                                p, not_sev, r))
-        return j;
+        {
+#ifdef HAVE_RINGS
+            if(rField_is_Ring(currRing))
+                if(n_DivBy(pGetCoeff(p), pGetCoeff(T[j].p), r))
+#endif
+            return j;
+        }
 #else
       if (!(sevT[j] & not_sev) &&
           p_LmDivisibleBy(T[j].p, p, r))
-        return j;
+        {
+#ifdef HAVE_RINGS
+            if(rField_is_Ring(currRing))
+                if(n_DivBy(pGetCoeff(p), pGetCoeff(T[j].p), r))
+#endif
+            return j;
+        }
 #endif
       j++;
     }
@@ -134,11 +148,23 @@ int kFindDivisibleByInT(const TSet &T, const unsigned long* sevT,
 #if defined(PDEBUG) || defined(PDIV_DEBUG)
       if (p_LmShortDivisibleBy(T[j].t_p, sevT[j],
                                p, not_sev, r))
-        return j;
+        {
+#ifdef HAVE_RINGS
+            if(rField_is_Ring(currRing))
+                if(n_DivBy(pGetCoeff(p), pGetCoeff(T[j].p), r))
+#endif
+            return j;
+        }
 #else
       if (!(sevT[j] & not_sev) &&
           p_LmDivisibleBy(T[j].t_p, p, r))
-        return j;
+        {
+#ifdef HAVE_RINGS
+            if(rField_is_Ring(currRing))
+                if(n_DivBy(pGetCoeff(p), pGetCoeff(T[j].t_p), r))
+#endif
+            return j;
+        }
 #endif
       j++;
     }
@@ -168,11 +194,23 @@ int kFindDivisibleByInS(const kStrategy strat, int* max_ind, LObject* L)
 #if defined(PDEBUG) || defined(PDIV_DEBUG)
     if (p_LmShortDivisibleBy(strat->S[j], strat->sevS[j],
                              p, not_sev, currRing))
-        return j;
+        {
+#ifdef HAVE_RINGS
+            if(rField_is_Ring(currRing))
+                if(n_DivBy(pGetCoeff(p), pGetCoeff(strat->S[j]), currRing))
+#endif
+            return j;
+        }
 #else
     if ( !(strat->sevS[j] & not_sev) &&
          p_LmDivisibleBy(strat->S[j], p, currRing))
-      return j;
+        {
+#ifdef HAVE_RINGS
+            if(rField_is_Ring(currRing))
+                if(n_DivBy(pGetCoeff(p), pGetCoeff(strat->S[j]), currRing))
+#endif
+            return j;
+        }
 #endif
     j++;
   }
@@ -196,11 +234,23 @@ int kFindNextDivisibleByInS(const kStrategy strat, int start,int max_ind, LObjec
 #if defined(PDEBUG) || defined(PDIV_DEBUG)
     if (p_LmShortDivisibleBy(strat->S[j], strat->sevS[j],
                              p, not_sev, currRing))
-        return j;
+        {
+#ifdef HAVE_RINGS
+            if(rField_is_Ring(currRing))
+                if(n_DivBy(pGetCoeff(p), pGetCoeff(strat->S[j]), currRing))
+#endif
+            return j;
+        }
 #else
     if ( !(strat->sevS[j] & not_sev) &&
          p_LmDivisibleBy(strat->S[j], p, currRing))
-      return j;
+        {
+#ifdef HAVE_RINGS
+            if(rField_is_Ring(currRing))
+                if(n_DivBy(pGetCoeff(p), pGetCoeff(strat->S[j]), currRing))
+#endif
+            return j;
+        }
 #endif
     j++;
   }
@@ -617,20 +667,19 @@ int redSig (LObject* h,kStrategy strat)
         break;
       if (li<=1)
         break;
-      if ((strat->T[i].pLength < li)
-         &&
-          p_LmShortDivisibleBy(strat->T[i].GetLmTailRing(), strat->sevT[i],
-                               h_p, not_sev, strat->tailRing))
-      #ifdef HAVE_RINGS
-    if(rField_is_Ring(currRing))
-      if(n_DivBy(pGetCoeff(h_p), pGetCoeff(strat->T[i].GetLmTailRing()),  currRing))
-    #endif
+      if ((strat->T[i].pLength < li) && p_LmShortDivisibleBy(strat->T[i].GetLmTailRing(), strat->sevT[i],h_p, not_sev, strat->tailRing))
       {
+#ifdef HAVE_RINGS
+            if(rField_is_Ring(currRing))
+                if(n_DivBy(pGetCoeff(h_p), pGetCoeff(strat->T[i].GetLmTailRing()),  currRing))
+#endif
+        {
         /*
          * the polynomial to reduce with is now;
          */
         li = strat->T[i].pLength;
         ii = i;
+        }
       }
     }
     start = ii+1;
@@ -1475,7 +1524,9 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
       if (TEST_OPT_PROT)
         message((strat->honey ? strat->P.ecart : 0) + strat->P.pFDeg(),
                 &olddeg,&reduc,strat, red_result);
-
+#if ADIDEBUG_COUNT
+messageADI(red_result);
+#endif
       /* reduction of the element choosen from L */
       red_result = strat->red(&strat->P,strat);
       if (errorreported)  break;
@@ -1565,6 +1616,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
 #endif
           enterpairs(strat->P.p,strat->sl,strat->P.ecart,pos,strat, strat->tl);
         // posInS only depends on the leading term
+        
         strat->enterS(strat->P, pos, strat, strat->tl);
 #if 0
         int pl=pLength(strat->P.p);
@@ -1593,7 +1645,6 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     {
       p_Delete(&strat->P.p2, currRing, strat->tailRing);
     }
-
 #ifdef KDEBUG
     memset(&(strat->P), 0, sizeof(strat->P));
 #endif /* KDEBUG */
@@ -1667,6 +1718,10 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
   PrintS("bba_end: currRing: "); rWrite(currRing);
 #endif /* MYTEST */
 #endif /* KDEBUG */
+
+#if ADIDEBUG_COUNT
+messageADI(413);
+#endif
   idTest(strat->Shdl);
 
   return (strat->Shdl);
@@ -1796,7 +1851,8 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
   /* compute------------------------------------------------------- */
   while (strat->Ll >= 0)
   {
-    /*printf("\n      ------------------------NEW LOOP\n");
+    #if ADIDEBUG
+    printf("\n      ------------------------NEW LOOP\n");
     printf("\nShdl = \n");
     idPrint(strat->Shdl);
     printf("\n   list   L\n");
@@ -1808,15 +1864,17 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
         pWrite(strat->L[iii].p1);
         pWrite(strat->L[iii].p2);
         pWrite(strat->L[iii].sig);
+        //printf("\n %i\n",(strat->L[iii].checked));
                                 
     }
     printf("\n         syz\n");
-    for(iii = 0; iii<= strat->syzl; iii++)
+    for(iii = 0; iii<= strat->syzl-1; iii++)
     {
         printf("\nsyz[%i]\n", iii);
         pWrite(strat->syz[iii]);
     }
-    getchar();*/
+    getchar();
+    #endif
     if (strat->Ll > lrmax) lrmax =strat->Ll;/*stat.*/
     #ifdef KDEBUG
       loop_count++;
@@ -1954,7 +2012,6 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
       red_result = 2;
     }
     if (errorreported)  break;
-
 //#if 1
 #ifdef DEBUGF5
     if (red_result != 0) {
@@ -2074,17 +2131,19 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
       //if ((!TEST_OPT_IDLIFT) || (pGetComp(strat->P.p) <= strat->syzComp))
       enterT(strat->P, strat);
       strat->T[strat->tl].is_sigsafe = FALSE;
-      /*
+      
       printf("hier\n");
       pWrite(strat->P.GetLmCurrRing());
       pWrite(strat->P.sig);
-      */
+      
+    
 #ifdef HAVE_RINGS
       if (rField_is_Ring(currRing))
         superenterpairsSig(strat->P.p, strat->P.sig, strat->sl+1, strat->sl,strat->P.ecart,pos,strat, strat->tl);
       else
 #endif
         enterpairsSig(strat->P.p,strat->P.sig,strat->sl+1,strat->sl,strat->P.ecart,pos,strat, strat->tl);
+    
       // posInS only depends on the leading term
       strat->enterS(strat->P, pos, strat, strat->tl);
       if(strat->sbaOrder != 1)
@@ -2352,7 +2411,14 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     rChangeCurrRing (currRingOld);
     F0          = idrMoveR (F1, sRing, currRing);
     strat->Shdl = idrMoveR_NoSort (strat->Shdl, sRing, currRing);
-    rDelete (sRing);
+    //rDelete (sRing); 
+    //-> The following example couldn't print after sba computation: 
+    /*
+    ring r = (integer),(x,y,z),dp;
+    ideal i = x2-y2,xyz-z3,yz2-xy;
+    ideal g = sba(i,1,0);
+    g;
+    */
   }
   id_DelDiv(strat->Shdl, currRing);
   idSkipZeroes(strat->Shdl);
@@ -2698,7 +2764,6 @@ void f5c (kStrategy strat, int& olddeg, int& minimcnt, int& hilbeledeg,
       if (TEST_OPT_PROT)
         message((strat->honey ? strat->P.ecart : 0) + strat->P.pFDeg(),
             &olddeg,&reduc,strat, red_result);
-
 #ifdef DEBUGF5
       Print("Poly before red: ");
       pWrite(strat->P.p);

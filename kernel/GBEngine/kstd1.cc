@@ -1365,7 +1365,7 @@ void initSba(ideal F,kStrategy strat)
   if (rField_is_Ring(currRing))
   {
     if(currRing->OrdSgn == -1)
-      {strat->red = redRiloc;}
+      {strat->red2 = redRiloc;}
     else
       {strat->red2 = redRing;}
   }

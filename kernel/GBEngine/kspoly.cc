@@ -241,6 +241,17 @@ int ksReducePolySig(LObject* PR,
     printf("--------------\n");
 #endif
     int sigSafe = p_LmCmp(PR->sig,sigMult,currRing);
+#ifdef HAVE_RINGS
+    if(rField_is_Ring(currRing))
+      {
+        if (sigSafe == 0) 
+        {
+            number h = nSub(pGetCoeff(PR->sig), pGetCoeff(sigMult));
+            sigSafe = -1 + nIsZero(h) + 2*nGreaterZero(h);   /* -1: <, 0:==, 1: > */
+            nDelete(&h);
+        }
+      }
+#endif
     // now we can delete the copied polynomial data used for checking for
     // sig-safeness of the reduction step
 //#if 1
