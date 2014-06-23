@@ -128,6 +128,7 @@ void id_Delete (ideal * h, ring r)
     {
       j--;
       poly pp=((*h)->m[j]);
+      rTest(r);
       if (pp!=NULL) p_Delete(&pp, r);
     }
     while (j>0);

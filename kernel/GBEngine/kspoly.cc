@@ -639,9 +639,8 @@ x2:
           nDelete(&t2);
           pSetCoeff0(m2, t1);
       }
-      else
 #endif
-        nNew(&(pGetCoeff(m2)));
+      nNew(&(pGetCoeff(m2)));
       return m2;
     }
     else
@@ -691,7 +690,6 @@ x1:
       nDelete(&lc2);
       nDelete(&t1);
     }
-    else
 #endif
       nNew(&(pGetCoeff(m1)));
     return m1;
@@ -748,9 +746,8 @@ x1:
           nDelete(&lc2);
           nDelete(&t1);
         }
-        else
 #endif
-          nNew(&(pGetCoeff(m1)));
+        nNew(&(pGetCoeff(m1)));
         return m1;
       }
       else
@@ -764,9 +761,8 @@ x1:
           nDelete(&lc2);
           nDelete(&t2);
         }
-        else
 #endif
-          nNew(&(pGetCoeff(m2)));
+        nNew(&(pGetCoeff(m2)));
         return m2;
       }
     }
@@ -796,9 +792,8 @@ x1:
           nDelete(&t1);
           nDelete(&t2);
       }
-      else
 #endif
-        nNew(&(pGetCoeff(m1)));
+      nNew(&(pGetCoeff(m1)));
       return m1;
     }
     pIter(a1);

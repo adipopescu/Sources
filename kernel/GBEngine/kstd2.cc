@@ -71,7 +71,7 @@ long sba_interreduction_operations;
 /***********************************************
  * SBA stuff -- done
 ***********************************************/
-#define ADIDEBUG 1
+#define ADIDEBUG 0
 #define ADIDEBUG_COUNT 1
 
 #include <kernel/GBEngine/kutil.h>
@@ -117,12 +117,13 @@ int kFindDivisibleByInT(const TSet &T, const unsigned long* sevT,
     {
       if (j > tl) return -1;
 #if defined(PDEBUG) || defined(PDIV_DEBUG)
-      if (p_LmShortDivisibleBy(T[j].p, sevT[j],
-                               p, not_sev, r))
+      if (p_LmShortDivisibleBy(T[j].p, sevT[j],p, not_sev, r))
         {
 #ifdef HAVE_RINGS
-            if(rField_is_Ring(currRing))
-                if(n_DivBy(pGetCoeff(p), pGetCoeff(T[j].p), r))
+            if(rField_is_Ring(r))
+                {if(n_DivBy(pGetCoeff(p), pGetCoeff(T[j].p), r))
+                    return j;}
+            else
 #endif
             return j;
         }
@@ -131,8 +132,10 @@ int kFindDivisibleByInT(const TSet &T, const unsigned long* sevT,
           p_LmDivisibleBy(T[j].p, p, r))
         {
 #ifdef HAVE_RINGS
-            if(rField_is_Ring(currRing))
-                if(n_DivBy(pGetCoeff(p), pGetCoeff(T[j].p), r))
+            if(rField_is_Ring(r))
+                {if(n_DivBy(pGetCoeff(p), pGetCoeff(T[j].p), r))
+                    return j;}
+            else
 #endif
             return j;
         }
@@ -150,8 +153,10 @@ int kFindDivisibleByInT(const TSet &T, const unsigned long* sevT,
                                p, not_sev, r))
         {
 #ifdef HAVE_RINGS
-            if(rField_is_Ring(currRing))
-                if(n_DivBy(pGetCoeff(p), pGetCoeff(T[j].p), r))
+            if(rField_is_Ring(r))
+                {if(n_DivBy(pGetCoeff(p), pGetCoeff(T[j].t_p), r))
+                    return j;}
+            else
 #endif
             return j;
         }
@@ -160,8 +165,10 @@ int kFindDivisibleByInT(const TSet &T, const unsigned long* sevT,
           p_LmDivisibleBy(T[j].t_p, p, r))
         {
 #ifdef HAVE_RINGS
-            if(rField_is_Ring(currRing))
-                if(n_DivBy(pGetCoeff(p), pGetCoeff(T[j].t_p), r))
+            if(rField_is_Ring(r))
+                {if(n_DivBy(pGetCoeff(p), pGetCoeff(T[j].t_p), r))
+                    return j;}
+            else
 #endif
             return j;
         }
@@ -670,8 +677,8 @@ int redSig (LObject* h,kStrategy strat)
       if ((strat->T[i].pLength < li) && p_LmShortDivisibleBy(strat->T[i].GetLmTailRing(), strat->sevT[i],h_p, not_sev, strat->tailRing))
       {
 #ifdef HAVE_RINGS
-            if(rField_is_Ring(currRing))
-                if(n_DivBy(pGetCoeff(h_p), pGetCoeff(strat->T[i].GetLmTailRing()),  currRing))
+            if(rField_is_Ring(strat->tailRing))
+                if(n_DivBy(pGetCoeff(h_p), pGetCoeff(strat->T[i].GetLmTailRing()),  strat->tailRing))
 #endif
         {
         /*
@@ -1451,6 +1458,24 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
   /* compute------------------------------------------------------- */
   while (strat->Ll >= 0)
   {
+    #if ADIDEBUG
+    printf("\n      ------------------------NEW LOOP\n");
+    printf("\nShdl = \n");
+    idPrint(strat->Shdl);
+    printf("\n   list   L\n");
+    int iii;
+    for(iii = 0; iii<= strat->Ll; iii++)
+    {
+        printf("\nL[%i]\n", iii);
+        p_Write(strat->L[iii].p, strat->tailRing);
+        p_Write(strat->L[iii].p1, strat->tailRing);
+        p_Write(strat->L[iii].p2, strat->tailRing);
+        p_Write(strat->L[iii].sig, currRing);
+        //printf("\n %i\n",(strat->L[iii].checked));
+                                
+    }
+    getchar();
+    #endif
     #ifdef KDEBUG
       loop_count++;
       if (TEST_OPT_DEBUG) messageSets(strat);
@@ -1477,7 +1502,6 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     /* picks the last element from the lazyset L */
     strat->P = strat->L[strat->Ll];
     strat->Ll--;
-
     if (pNext(strat->P.p) == strat->tail)
     {
       // deletes the short spoly
@@ -1514,7 +1538,6 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
       // for input polys, prepare reduction
       strat->P.PrepareRed(strat->use_buckets);
     }
-
     if (strat->P.p == NULL && strat->P.t_p == NULL)
     {
       red_result = 0;
@@ -1536,7 +1559,6 @@ messageADI(red_result);
     {
         if (!kStratChangeTailRing(strat)) { Werror("OVERFLOW.."); break;}
     }
-
     // reduction to non-zero new poly
     if (red_result == 1)
     {
@@ -1549,15 +1571,12 @@ messageADI(red_result);
 
       /* statistic */
       if (TEST_OPT_PROT) PrintS("s");
-
       int pos=posInS(strat,strat->sl,strat->P.p,strat->P.ecart);
-
 #ifdef KDEBUG
 #if MYTEST
       PrintS("New S: "); p_DebugPrint(strat->P.p, currRing); PrintLn();
 #endif /* MYTEST */
 #endif /* KDEBUG */
-
       // reduce the tail and normalize poly
       // in the ring case we cannot expect LC(f) = 1,
       // therefore we call pContent instead of pNorm
@@ -1576,14 +1595,12 @@ messageADI(red_result);
         if ((TEST_OPT_REDSB)||(TEST_OPT_REDTAIL))
           strat->P.p = redtailBba(&(strat->P),pos-1,strat, withT);
       }
-
 #ifdef KDEBUG
       if (TEST_OPT_DEBUG){PrintS("new s:");strat->P.wrp();PrintLn();}
 #if MYTEST
       PrintS("New (reduced) S: "); p_DebugPrint(strat->P.p, currRing); PrintLn();
 #endif /* MYTEST */
 #endif /* KDEBUG */
-
       // min_std stuff
       if ((strat->P.p1==NULL) && (strat->minim>0))
       {
@@ -1604,7 +1621,6 @@ messageADI(red_result);
                                            currRing->PolyBin);
         minimcnt++;
       }
-
       // enter into S, L, and T
       if ((!TEST_OPT_IDLIFT) || (pGetComp(strat->P.p) <= strat->syzComp))
       {
@@ -1616,7 +1632,10 @@ messageADI(red_result);
 #endif
           enterpairs(strat->P.p,strat->sl,strat->P.ecart,pos,strat, strat->tl);
         // posInS only depends on the leading term
-        
+        #if ADIDEBUG
+        printf("\nThis element is added to S:\n");
+        pWrite(strat->P.p);pWrite(strat->P.p1);pWrite(strat->P.p2);
+        #endif
         strat->enterS(strat->P, pos, strat, strat->tl);
 #if 0
         int pl=pLength(strat->P.p);
@@ -1808,7 +1827,6 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
   if (strat->minim>0) strat->M=idInit(IDELEMS(F),F->rank);
   srmax = strat->sl;
   reduc = olddeg = lrmax = 0;
-
 #ifndef NO_BUCKETS
   if (!TEST_OPT_NOT_BUCKETS)
     strat->use_buckets = 1;
@@ -1832,7 +1850,6 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
   }
 #endif /* MYTEST */
 #endif /* KDEBUG */
-
 #ifdef HAVE_TAIL_RING
   if(!idIs0(F) &&(!rField_is_Ring(currRing)))  // create strong gcd poly computes with tailring and S[i] ->to be fixed
     kStratInitChangeTailRing(strat);
@@ -1843,7 +1860,6 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     if (test_PosInL!=NULL) strat->posInL=test_PosInL;
     kDebugPrint(strat);
   }
-
 
 #ifdef KDEBUG
   //kDebugPrint(strat);
@@ -1860,10 +1876,10 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     for(iii = 0; iii<= strat->Ll; iii++)
     {
         printf("\nL[%i]\n", iii);
-        pWrite(strat->L[iii].p);
-        pWrite(strat->L[iii].p1);
-        pWrite(strat->L[iii].p2);
-        pWrite(strat->L[iii].sig);
+        p_Write(strat->L[iii].p, strat->tailRing);
+        p_Write(strat->L[iii].p1, strat->tailRing);
+        p_Write(strat->L[iii].p2, strat->tailRing);
+        p_Write(strat->L[iii].sig, currRing);
         //printf("\n %i\n",(strat->L[iii].checked));
                                 
     }
@@ -2049,6 +2065,8 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
       // in F5E we know that the last reduced element is already the
       // the one with highest signature
       int pos = strat->sl+1;
+      // ADIDEBUG added this !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      //strat->P.pLength = pLength(strat->P.p);
 
 #ifdef KDEBUG
 #if MYTEST
@@ -2132,11 +2150,6 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
       enterT(strat->P, strat);
       strat->T[strat->tl].is_sigsafe = FALSE;
       
-      printf("hier\n");
-      pWrite(strat->P.GetLmCurrRing());
-      pWrite(strat->P.sig);
-      
-    
 #ifdef HAVE_RINGS
       if (rField_is_Ring(currRing))
         superenterpairsSig(strat->P.p, strat->P.sig, strat->sl+1, strat->sl,strat->P.ecart,pos,strat, strat->tl);
