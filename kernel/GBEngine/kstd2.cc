@@ -123,9 +123,13 @@ int kFindDivisibleByInT(const TSet &T, const unsigned long* sevT,
             if(rField_is_Ring(r))
                 {if(n_DivBy(pGetCoeff(p), pGetCoeff(T[j].p), r))
                     return j;}
-            else
-#endif
+            else {
+                return j;
+                }
+#else
             return j;
+#endif
+
         }
 #else
       if (!(sevT[j] & not_sev) &&
@@ -135,9 +139,13 @@ int kFindDivisibleByInT(const TSet &T, const unsigned long* sevT,
             if(rField_is_Ring(r))
                 {if(n_DivBy(pGetCoeff(p), pGetCoeff(T[j].p), r))
                     return j;}
-            else
-#endif
+            else {
+                return j;
+                }
+#else
             return j;
+#endif
+            
         }
 #endif
       j++;
@@ -156,9 +164,13 @@ int kFindDivisibleByInT(const TSet &T, const unsigned long* sevT,
             if(rField_is_Ring(r))
                 {if(n_DivBy(pGetCoeff(p), pGetCoeff(T[j].t_p), r))
                     return j;}
-            else
-#endif
+            else {
+                return j;
+            }
+#else
             return j;
+#endif
+
         }
 #else
       if (!(sevT[j] & not_sev) &&
@@ -168,9 +180,13 @@ int kFindDivisibleByInT(const TSet &T, const unsigned long* sevT,
             if(rField_is_Ring(r))
                 {if(n_DivBy(pGetCoeff(p), pGetCoeff(T[j].t_p), r))
                     return j;}
-            else
-#endif
+            else {
+                return j;
+            }
+#else
             return j;
+#endif
+
         }
 #endif
       j++;
