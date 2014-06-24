@@ -220,7 +220,9 @@ int kFindDivisibleByInS(const kStrategy strat, int* max_ind, LObject* L)
         {
 #ifdef HAVE_RINGS
             if(rField_is_Ring(currRing))
-                if(n_DivBy(pGetCoeff(p), pGetCoeff(strat->S[j]), currRing))
+                {if(n_DivBy(pGetCoeff(p), pGetCoeff(strat->S[j]), currRing))
+                    return j;}
+            else
 #endif
             return j;
         }
@@ -230,7 +232,9 @@ int kFindDivisibleByInS(const kStrategy strat, int* max_ind, LObject* L)
         {
 #ifdef HAVE_RINGS
             if(rField_is_Ring(currRing))
-                if(n_DivBy(pGetCoeff(p), pGetCoeff(strat->S[j]), currRing))
+                {if(n_DivBy(pGetCoeff(p), pGetCoeff(strat->S[j]), currRing))
+                    return j;}
+            else
 #endif
             return j;
         }
@@ -260,7 +264,9 @@ int kFindNextDivisibleByInS(const kStrategy strat, int start,int max_ind, LObjec
         {
 #ifdef HAVE_RINGS
             if(rField_is_Ring(currRing))
-                if(n_DivBy(pGetCoeff(p), pGetCoeff(strat->S[j]), currRing))
+                {if(n_DivBy(pGetCoeff(p), pGetCoeff(strat->S[j]), currRing))
+                    return j;}
+            else
 #endif
             return j;
         }
@@ -270,7 +276,9 @@ int kFindNextDivisibleByInS(const kStrategy strat, int start,int max_ind, LObjec
         {
 #ifdef HAVE_RINGS
             if(rField_is_Ring(currRing))
-                if(n_DivBy(pGetCoeff(p), pGetCoeff(strat->S[j]), currRing))
+                {if(n_DivBy(pGetCoeff(p), pGetCoeff(strat->S[j]), currRing))
+                    return j;}
+            else
 #endif
             return j;
         }
