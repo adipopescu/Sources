@@ -2350,7 +2350,12 @@ ideal kSba(ideal F, ideal Q, tHomog h,intvec ** w, int sbaOrder, int arri, intve
 #endif
 #ifdef HAVE_RINGS
   if (rField_is_Ring(currRing))
-    r=sba(F,Q,NULL,hilb,strat);
+  {
+    if(currRing->OrdSgn == 1)
+        r=sba(F,Q,NULL,hilb,strat);
+    else
+        r=mora(F,Q,NULL,hilb,strat);
+  }
   else
 #endif
   {

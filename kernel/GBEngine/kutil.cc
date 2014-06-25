@@ -1398,7 +1398,6 @@ BOOLEAN enterOneStrongPoly (int i,poly p,int /*ecart*/, int /*isFromQ*/,kStrateg
   poly m1, m2, gcd;
 
   d = n_ExtGcd(pGetCoeff(p), pGetCoeff(strat->S[i]), &s, &t, currRing->cf);
-
   if (nIsZero(s) || nIsZero(t))  // evtl. durch divBy tests ersetzen
   {
     nDelete(&d);
@@ -1406,7 +1405,7 @@ BOOLEAN enterOneStrongPoly (int i,poly p,int /*ecart*/, int /*isFromQ*/,kStrateg
     nDelete(&t);
     return FALSE;
   }
-
+  
   k_GetStrongLeadTerms(p, strat->S[i], currRing, m1, m2, gcd, strat->tailRing);
   //p_Test(m1,strat->tailRing);
   //p_Test(m2,strat->tailRing);
@@ -1444,7 +1443,6 @@ BOOLEAN enterOneStrongPoly (int i,poly p,int /*ecart*/, int /*isFromQ*/,kStrateg
     PrintS(" ---> ");
   }
 #endif
-
   pNext(gcd) = p_Add_q(pp_Mult_mm(pNext(p), m1, strat->tailRing), pp_Mult_mm(pNext(strat->S[i]), m2, strat->tailRing), strat->tailRing);
   p_LmDelete(m1, strat->tailRing);
   p_LmDelete(m2, strat->tailRing);
@@ -1470,6 +1468,9 @@ BOOLEAN enterOneStrongPoly (int i,poly p,int /*ecart*/, int /*isFromQ*/,kStrateg
   h.sev = pGetShortExpVector(h.p);
   if (currRing!=strat->tailRing)
     h.t_p = k_LmInit_currRing_2_tailRing(h.p, strat->tailRing);
+  #if 0
+  h.p1 = p;h.p2 = strat->S[i];
+  #endif
   enterL(&strat->L,&strat->Ll,&strat->Lmax,h,posx);
   return TRUE;
 }
@@ -1904,7 +1905,7 @@ void enterOnePairSig (int i, poly p, poly pSig, int, int ecart, int isFromQ, kSt
   // testing by rewCrit1 = Rewritten Criterion
   // NOTE: Arri's Rewritten Criterion is tested below, we need Lp.p for it!
   if  ( strat->syzCrit(pSigMult,pSigMultNegSev,strat) ||
-        strat->syzCrit(sSigMult,sSigMultNegSev,strat) ||
+        //strat->syzCrit(sSigMult,sSigMultNegSev,strat) ||
         strat->rewCrit1(sSigMult,sSigMultNegSev,Lp.lcm,strat,i+1)
       )
   {
@@ -2160,8 +2161,8 @@ void enterOneStrongPolySig (int i, poly p, poly pSig, int, int ecart, int isFrom
     pSetCoeff0(m1, nInit(1));
     pSetCoeff0(m2, nInit(1));
   }
-  //printf("\n        --------------------\nEnterOneStrongPolySig: \n");
-  /*pWrite(p);
+  /*printf("\n        --------------------\nEnterOneStrongPolySig: \n");
+  pWrite(p);
   pWrite(strat->S[i]);
   pWrite(m1);
   pWrite(m2);*/
@@ -2219,7 +2220,7 @@ void enterOneStrongPolySig (int i, poly p, poly pSig, int, int ecart, int isFrom
 #endif
   if(sigCmp==0)
   {
-      // printf("!!!!   EQUAL SIGS   !!!!\n");
+      //printf("!!!!   EQUAL SIGS   !!!!\n");
       // pSig = sSig, delete element due to Rewritten Criterion
       pDelete(&pSigMult);
       pDelete(&sSigMult);
@@ -2233,10 +2234,11 @@ void enterOneStrongPolySig (int i, poly p, poly pSig, int, int ecart, int isFrom
   // testing by rewCrit1 = Rewritten Criterion
   // NOTE: Arri's Rewritten Criterion is tested below, we need Lp.p for it!
   if  ( strat->syzCrit(pSigMult,pSigMultNegSev,strat) ||
-        strat->syzCrit(sSigMult,sSigMultNegSev,strat)
-        || strat->rewCrit1(sSigMult,sSigMultNegSev,Lp.lcm,strat,i+1)
+        //strat->syzCrit(sSigMult,sSigMultNegSev,strat) ||
+        strat->rewCrit1(sSigMult,sSigMultNegSev,Lp.lcm,strat,i+1)
       )
   {
+    //printf("\nCriteria Delete\n");
     pDelete(&pSigMult);
     pDelete(&sSigMult);
     pLmFree(Lp.lcm);
@@ -4138,10 +4140,41 @@ void superenterpairs (poly h,int k,int ecart,int pos,kStrategy strat, int atR)
   assume (rField_is_Ring(currRing));
   // enter also zero divisor * poly, if this is non zero and of smaller degree
   if (!(rField_is_Domain(currRing))) enterExtendedSpoly(h, strat);
-  
+  #if 0
+  int i = strat->Ll;
+  #endif
   initenterpairs(h, k, ecart, 0, strat, atR);
+  #if 0
+  //#if ADIDEBUG
+  if(i != strat->Ll)
+    printf("\ninitenterpairsSig changed L :)\n");
+  else
+    printf("\ninitenterpairsSig did not changed L :(\n");
+  for(i=0; i<=strat->Ll; i++)
+  {
+    printf("\n    L[%i]\n",i);
+    pWrite(strat->L[i].p);
+    pWrite(strat->L[i].p1);
+    pWrite(strat->L[i].p2);
+  }
+  #endif
   
   initenterstrongPairs(h, k, ecart, 0, strat, atR);
+  #if 0
+  //#if ADIDEBUG
+  if(i != strat->Ll)
+    printf("\ninitenterstrongPairsSig changed L :)\n");
+  else
+    printf("\ninitenterstrongPairsSig did not changed L :(\n");
+  for(i=0; i<=strat->Ll; i++)
+  {
+    printf("\n    L[%i]\n",i);
+    pWrite(strat->L[i].p);
+    pWrite(strat->L[i].p1);
+    pWrite(strat->L[i].p2);
+  }
+  getchar();
+  #endif
  
   clearSbatch(h, k, pos, strat);
 }
@@ -5156,15 +5189,15 @@ loop
 int posInLRingSig (const LSet set, const int length,
                LObject* p,const kStrategy /*strat*/)
 {
-#if 0
+#if 1
 #ifdef HAVE_RINGS
 if(rField_is_Ring(currRing))
 {
   if (length < 0) return 0;
-  if (pLmCmp(p->sig, set[length].sig) == 1) //1, since this will only be used in global  orderings
+  if (pLmCmp(set[length].sig, p->sig) == 1) //1, since this will only be used in global  orderings
         return length+1;
-  if (pLmCmp(p->sig, set[length].sig)== 0)
-    if(nGreater(pGetCoeff(p->sig), pGetCoeff(set[length].sig))) 
+  if (pLmCmp(set[length].sig, p->sig)== 0)
+    if(nGreater(pGetCoeff(set[length].sig), pGetCoeff(p->sig))) 
           return length+1;
   
   int i;
@@ -5175,33 +5208,33 @@ if(rField_is_Ring(currRing))
     if (an >= en-1)
     {
       if(an == en)
-        return an;
+        return en;
       if (pLmCmp(set[an].sig,p->sig) == 1) 
-        return an;
+        return en;
       if(pLmCmp(set[an].sig,p->sig) == 0)
       {
         if(nGreater(pGetCoeff(set[an].sig), pGetCoeff(p->sig))) 
-          {return an;}
-        else
           {return en;}
+        else
+          {return an;}
       }
       else
-        {return en;}
+        {return an;}
     }
     i=(an+en) / 2;
     if (pLmCmp(set[i].sig,p->sig) == 1) 
-      en=i;
+      an=i;
     else
     {
         if(pLmCmp(set[i].sig,p->sig) == 0)
         {
             if(nGreater(pGetCoeff(set[i].sig), pGetCoeff(p->sig)))
-                en=i;
-            else
                 an=i;
+            else
+                en=i;
         }
         else
-            an=i;
+            en=i;
     }                                      
   }
 }
@@ -5218,7 +5251,7 @@ else
     
     int i;
     int an = 0;
-    int en= length;
+    int en= length+1;
     loop
     {
       if (an >= en-1)
@@ -5817,11 +5850,11 @@ BOOLEAN syzCriterionInc(poly sig, unsigned long not_sevSig, kStrategy strat)
       if (p_LmShortDivisibleBy(strat->syz[k], strat->sevSyz[k], sig, not_sevSig, currRing))
 #ifdef HAVE_RINGS
         if(rField_is_Ring(currRing))
-            if(n_DivBy(pGetCoeff(sig), pGetCoeff(strat->syz[k]), currRing))
+            {if(n_DivBy(pGetCoeff(sig), pGetCoeff(strat->syz[k]), currRing))
+                return TRUE;}
+        else
 #endif
-        {
           return TRUE;
-        }
     }
     return FALSE;
   }

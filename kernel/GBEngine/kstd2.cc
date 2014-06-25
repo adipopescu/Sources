@@ -1482,7 +1482,8 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
   /* compute------------------------------------------------------- */
   while (strat->Ll >= 0)
   {
-    #if ADIDEBUG
+    #if 0
+    //#if ADIDEBUG
     printf("\n      ------------------------NEW LOOP\n");
     printf("\nShdl = \n");
     idPrint(strat->Shdl);
@@ -1656,6 +1657,7 @@ messageADI(red_result);
 #endif
           enterpairs(strat->P.p,strat->sl,strat->P.ecart,pos,strat, strat->tl);
         // posInS only depends on the leading term
+        //#if 1
         #if ADIDEBUG
         printf("\nThis element is added to S:\n");
         pWrite(strat->P.p);pWrite(strat->P.p1);pWrite(strat->P.p2);
@@ -1915,6 +1917,14 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     }
     getchar();
     #endif
+    for(int iii = 0; iii < strat->Ll; iii++)
+    {
+        if(pLmCmp(strat->L[iii].sig, strat->L[iii+1].sig) == -1)
+            {printf("\n         Your sorting sucks\n");getchar();}
+        if(pLmCmp(strat->L[iii].sig, strat->L[iii+1].sig) == 0)
+            if(nGreater(pGetCoeff(strat->L[iii].sig), pGetCoeff(strat->L[iii+1].sig)) == -1)
+                {printf("\n         Your sorting sucks\n");getchar();}
+    }
     if (strat->Ll > lrmax) lrmax =strat->Ll;/*stat.*/
     #ifdef KDEBUG
       loop_count++;
@@ -2183,6 +2193,11 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     
       // posInS only depends on the leading term
       strat->enterS(strat->P, pos, strat, strat->tl);
+      printf("%i\n",strat->sl);
+      #if ADIDEBUG
+      printf("\nThis element is added to S:\n");
+      pWrite(strat->P.p);pWrite(strat->P.p1);pWrite(strat->P.p2);pWrite(strat->P.sig);
+      #endif
       if(strat->sbaOrder != 1)
       {
         BOOLEAN overwrite = FALSE;
