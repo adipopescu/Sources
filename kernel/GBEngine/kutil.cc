@@ -1172,10 +1172,6 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
   Lp.lcm = pInit();
   pSetCoeff0(Lp.lcm, n_Lcm(pGetCoeff(p), pGetCoeff(strat->S[i]), currRing->cf));
 
-  #if ADIDEBUG
-  PrintS("\nLp.lcm (lc) = ");pWrite(Lp.lcm);
-  #endif
-
   // Lp.lcm == 0
   if (nIsZero(pGetCoeff(Lp.lcm)))
   {
@@ -1196,10 +1192,6 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
   }
   // basic product criterion
   pLcm(p,strat->S[i],Lp.lcm);
-
-  #if ADIDEBUG
-  PrintS("\nLp.lcm (lcm) = ");pWrite(Lp.lcm);
-  #endif
 
   pSetm(Lp.lcm);
   assume(!strat->sugarCrit);
@@ -2198,8 +2190,8 @@ void enterOneStrongPolySig (int i, poly p, poly pSig, int, int ecart, int isFrom
   pWrite(pSigMult);
   pWrite(sSigMult);
   Print("----------------\n");
-  Lp.checked  = 0;
 #endif
+  Lp.checked  = 0;
   int sigCmp = p_LmCmp(pSigMult,sSigMult,currRing);
   #ifdef HAVE_RINGS
   if(rField_is_Ring(currRing))
@@ -3152,12 +3144,7 @@ void initenterpairs (poly h,int k,int ecart,int isFromQ,kStrategy strat, int atR
         new_pair=TRUE;
         for (j=0; j<=k; j++)
         {
-        #if ADIDEBUG
-        PrintS("\n initenterpairs: \n");
-        PrintS("                ");p_Write(h, strat->tailRing);
-        PrintS("                ");p_Write(strat->S[j],strat->tailRing);
-        #endif
-          strat->enterOnePair(j,h,ecart,isFromQ,strat, atR);
+            strat->enterOnePair(j,h,ecart,isFromQ,strat, atR);
           //Print("j:%d, Ll:%d\n",j,strat->Ll);
         }
       }
@@ -4225,7 +4212,6 @@ void superenterpairsSig (poly h,poly hSig,int hFrom,int k,int ecart,int pos,kStr
     pWrite(strat->L[i].sig);
   }
   #endif
-  
   clearSbatch(h, k, pos, strat);
 }
 #endif
@@ -5796,7 +5782,9 @@ BOOLEAN syzCriterion(poly sig, unsigned long not_sevSig, kStrategy strat)
     if (p_LmShortDivisibleBy(strat->syz[k], strat->sevSyz[k], sig, not_sevSig, currRing))
     #ifdef HAVE_RINGS
     if(rField_is_Ring(currRing))
-      if(n_DivBy(pGetCoeff(sig), pGetCoeff(strat->syz[k]), currRing))
+      {if(n_DivBy(pGetCoeff(sig), pGetCoeff(strat->syz[k]), currRing))
+        return TRUE;}
+    else
     #endif
     {
 //#if 1
@@ -5851,6 +5839,9 @@ BOOLEAN syzCriterionInc(poly sig, unsigned long not_sevSig, kStrategy strat)
 #ifdef HAVE_RINGS
         if(rField_is_Ring(currRing))
             {if(n_DivBy(pGetCoeff(sig), pGetCoeff(strat->syz[k]), currRing))
+                #if ADIDEBUG
+                printf("\nsyzCriterionInc:\n");pWrite(sig);pWrite(strat->syz[k]);
+                #endif
                 return TRUE;}
         else
 #endif
@@ -5882,7 +5873,12 @@ BOOLEAN faugereRewCriterion(poly sig, unsigned long not_sevSig, poly /*lm*/, kSt
     if (p_LmShortDivisibleBy(strat->sig[k], strat->sevSig[k], sig, not_sevSig, currRing))
     #ifdef HAVE_RINGS
     if(rField_is_Ring(currRing))
-      if(n_DivBy(pGetCoeff(sig), pGetCoeff(strat->sig[k]), currRing))
+      {if(n_DivBy(pGetCoeff(sig), pGetCoeff(strat->sig[k]), currRing))
+                #if ADIDEBUG
+                printf("\nfaugereRewCriterion:\n");pWrite(sig);pWrite(strat->sig[k]);
+                #endif
+        return TRUE;}
+    else
     #endif
     {
 //#if 1
@@ -5936,7 +5932,18 @@ BOOLEAN arriRewCriterion(poly /*sig*/, unsigned long /*not_sevSig*/, poly /*lm*/
     if (p_LmShortDivisibleBy(strat->sig[ii], strat->sevSig[ii], strat->P.sig, ~strat->P.sevSig, currRing))
     #ifdef HAVE_RINGS
     if(rField_is_Ring(currRing))
-      if(n_DivBy(pGetCoeff(strat->P.sig), pGetCoeff(strat->sig[ii]), currRing))
+      {if(n_DivBy(pGetCoeff(strat->P.sig), pGetCoeff(strat->sig[ii]), currRing))
+        {
+            p_ExpVectorSum(p1,strat->P.sig,strat->S[ii],currRing);
+            p_ExpVectorSum(p2,strat->sig[ii],strat->P.p,currRing);
+            if (!(pLmCmp(p1,p2) == 1))
+            {
+                pDelete(&p1);
+                pDelete(&p2);
+                return TRUE;
+            }
+        }}
+    else
     #endif
     {
       p_ExpVectorSum(p1,strat->P.sig,strat->S[ii],currRing);
@@ -5977,7 +5984,18 @@ BOOLEAN arriRewCriterionPre(poly sig, unsigned long not_sevSig, poly lm, kStrate
     if (p_LmShortDivisibleBy(strat->sig[ii], strat->sevSig[ii], sig, not_sevSig, currRing))
     #ifdef HAVE_RINGS
     if(rField_is_Ring(currRing))
-      if(n_DivBy(pGetCoeff(sig), pGetCoeff(strat->sig[ii]), currRing))
+      {if(n_DivBy(pGetCoeff(sig), pGetCoeff(strat->sig[ii]), currRing))
+          {
+              p_ExpVectorSum(p1,sig,strat->S[ii],currRing);
+              p_ExpVectorSum(p2,strat->sig[ii],lm,currRing);
+              if (!(pLmCmp(p1,p2) == 1))
+              {
+                pDelete(&p1);
+                pDelete(&p2);
+                return TRUE;
+              }
+          }}
+    else
     #endif
     {
       p_ExpVectorSum(p1,sig,strat->S[ii],currRing);
@@ -8088,6 +8106,9 @@ void enterSyz(LObject p, kStrategy strat, int atT)
     #ifdef HAVE_RINGS
     if(rField_is_Ring(currRing))
       {if(n_DivBy(pGetCoeff(strat->L[cc].sig), pGetCoeff(strat->syz[atT]), currRing))
+        #if ADIDEBUG
+        printf("\nenterSyz delete!!!!\n");pWrite(strat->L[cc].sig);pWrite(strat->syz[atT]);
+        #endif
         deleteInL(strat->L,&strat->Ll,cc,strat);}
     else
     #endif
@@ -9419,7 +9440,7 @@ skStrategy::~skStrategy()
 {
   if (lmBin != NULL)
     omMergeStickyBinIntoBin(lmBin, currRing->PolyBin);
-  #if 0 //ADICHANGES
+  #if 1 //ADICHANGES
   if (tailBin != NULL)
     omMergeStickyBinIntoBin(tailBin,
                             (tailRing != NULL ? tailRing->PolyBin:

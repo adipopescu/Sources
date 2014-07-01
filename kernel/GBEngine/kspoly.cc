@@ -641,8 +641,8 @@ x2:
       }
       else
 #endif
-      {nNew(&(pGetCoeff(m2)));
-      return m2;}
+      nNew(&(pGetCoeff(m2)));
+      return m2;
     }
     else
     {
@@ -654,7 +654,6 @@ x2:
         nDelete(&t1);
         nDelete(&t2);
       }
-      else
 #endif
       return NULL;
     }
@@ -694,8 +693,8 @@ x1:
     }
     else
 #endif
-      {nNew(&(pGetCoeff(m1)));
-    return m1;}
+      nNew(&(pGetCoeff(m1)));
+    return m1;
   }
   m1 = p_Init(currRing);
   m2 = p_Init(currRing);
@@ -751,8 +750,8 @@ x1:
         }
         else
 #endif
-        {nNew(&(pGetCoeff(m1)));
-        return m1;}
+        nNew(&(pGetCoeff(m1)));
+        return m1;
       }
       else
       {
@@ -767,8 +766,8 @@ x1:
         }
         else
 #endif
-        {nNew(&(pGetCoeff(m2)));
-        return m2;}
+        nNew(&(pGetCoeff(m2)));
+        return m2;
       }
     }
 #ifdef HAVE_RINGS
@@ -799,8 +798,8 @@ x1:
       }
       else
 #endif
-      {nNew(&(pGetCoeff(m1)));
-      return m1;}
+      nNew(&(pGetCoeff(m1)));
+      return m1;
     }
     pIter(a1);
     pIter(a2);
@@ -852,8 +851,8 @@ x1:
         }
         else
 #endif
-        {p_LmFree(m1,currRing);
-        return NULL;}
+        p_LmFree(m1,currRing);
+        return NULL;
       }
       goto x1;
     }

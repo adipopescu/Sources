@@ -423,8 +423,14 @@ int redRing (LObject* h,kStrategy strat)
   {
     j = kFindDivisibleByInT(strat->T, strat->sevT, strat->tl, h);
     if (j < 0) return 1;
+    #if ADIDEBUG
+    pWrite(h->p);
+    printf("\nFound j = %i\n",j);pWrite(strat->T[j].p);
+    #endif
     ksReducePoly(h, &(strat->T[j]), NULL, NULL, strat); // with debug output
-
+    #if ADIDEBUG
+    printf("\nand after reduce: \n");pWrite(h->p);
+    #endif
     if (h->GetLmTailRing() == NULL)
     {
       if (h->lcm!=NULL) pLmDelete(h->lcm);
@@ -680,7 +686,9 @@ int redSig (LObject* h,kStrategy strat)
     {
       return 1;
     }
-
+    #if ADIDEBUG
+    printf("\nFound j = %i\n",j);pWrite(strat->T[j].p);
+    #endif
     li = strat->T[j].pLength;
     ii = j;
     /*
@@ -702,7 +710,12 @@ int redSig (LObject* h,kStrategy strat)
       {
 #ifdef HAVE_RINGS
             if(rField_is_Ring(strat->tailRing))
-                if(n_DivBy(pGetCoeff(h_p), pGetCoeff(strat->T[i].GetLmTailRing()),  strat->tailRing))
+                {if(n_DivBy(pGetCoeff(h_p), pGetCoeff(strat->T[i].GetLmTailRing()),  strat->tailRing))
+                    {
+                        li = strat->T[i].pLength;
+                        ii = i;
+                    }}
+            else
 #endif
         {
         /*
@@ -1495,11 +1508,9 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
         p_Write(strat->L[iii].p, strat->tailRing);
         p_Write(strat->L[iii].p1, strat->tailRing);
         p_Write(strat->L[iii].p2, strat->tailRing);
-        p_Write(strat->L[iii].sig, currRing);
-        //printf("\n %i\n",(strat->L[iii].checked));
                                 
     }
-    getchar();
+    //getchar();
     #endif
     #ifdef KDEBUG
       loop_count++;
@@ -1576,7 +1587,13 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
 messageADI(red_result);
 #endif
       /* reduction of the element choosen from L */
+      #if ADIDEBUG
+      printf("\nBefore \n");pWrite(strat->P.p);
+      #endif
       red_result = strat->red(&strat->P,strat);
+      #if ADIDEBUG
+      printf("\nAfter \n");pWrite(strat->P.p);
+      #endif
       if (errorreported)  break;
     }
 
@@ -1646,6 +1663,7 @@ messageADI(red_result);
                                            currRing->PolyBin);
         minimcnt++;
       }
+      
       // enter into S, L, and T
       if ((!TEST_OPT_IDLIFT) || (pGetComp(strat->P.p) <= strat->syzComp))
       {
@@ -1661,6 +1679,7 @@ messageADI(red_result);
         #if ADIDEBUG
         printf("\nThis element is added to S:\n");
         pWrite(strat->P.p);pWrite(strat->P.p1);pWrite(strat->P.p2);
+        idPrint(strat->Shdl);
         #endif
         strat->enterS(strat->P, pos, strat, strat->tl);
 #if 0
@@ -1768,7 +1787,6 @@ messageADI(red_result);
 messageADI(413);
 #endif
   idTest(strat->Shdl);
-
   return (strat->Shdl);
 }
 
@@ -1915,7 +1933,7 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
         printf("\nsyz[%i]\n", iii);
         pWrite(strat->syz[iii]);
     }
-    getchar();
+    //getchar();
     #endif
     for(int iii = 0; iii < strat->Ll; iii++)
     {
@@ -2051,7 +2069,13 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
           red_result = strat->red(&strat->P,strat);
         }
 #else
+        #if ADIDEBUG
+        printf("\nBefore: \n");pWrite(strat->P.p);
+        #endif
         red_result = strat->red(&strat->P,strat);
+        #if ADIDEBUG
+        printf("\nAfter: \n");pWrite(strat->P.p);
+        #endif
 #endif
       }
     } else {
@@ -2069,7 +2093,6 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
         pWrite(pHead(strat->P.p));
         pWrite(strat->P.GetLmCurrRing());
         pWrite(strat->P.sig);
-        printf("%d\n",red_result);
     }
 #endif
 
@@ -2193,7 +2216,6 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     
       // posInS only depends on the leading term
       strat->enterS(strat->P, pos, strat, strat->tl);
-      printf("%i\n",strat->sl);
       #if ADIDEBUG
       printf("\nThis element is added to S:\n");
       pWrite(strat->P.p);pWrite(strat->P.p1);pWrite(strat->P.p2);pWrite(strat->P.sig);
@@ -2475,7 +2497,6 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
   id_DelDiv(strat->Shdl, currRing);
   idSkipZeroes(strat->Shdl);
   idTest(strat->Shdl);
-
 #if SBA_PRINT_SIZE_G
   size_g   = IDELEMS(strat->Shdl);
 #endif
