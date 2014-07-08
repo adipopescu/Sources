@@ -359,6 +359,9 @@ public:
   int lastAxis;
   int newIdeal;
   int minim;
+  #ifdef HAVE_RINGS
+  number coefred;//This will be used to reduce the coefficients over Z
+  #endif
   #ifdef HAVE_SHIFTBBA
   int lV;
   #endif
@@ -737,6 +740,11 @@ BOOLEAN kCheckSpolyCreation(LObject* L, kStrategy strat, poly &m1, poly &m2);
 //             exponent bound of strat->tailRing
 //      FALSE, otherwise
 BOOLEAN kCheckStrongCreation(int atR, poly m1, int atS, poly m2, kStrategy strat);
+//if in the partial std we get an element of degree 0, we will use it 
+//to reduce the coefficients in S and L
+void ReduceCoefInitial(kStrategy strat);
+void ReduceCoef(poly &p, kStrategy strat);
+void ReduceCoefL(LObject *h, kStrategy strat);
 #endif
 // change strat->tailRing and adjust all data in strat, L, and T:
 // new tailRing has larger exponent bound

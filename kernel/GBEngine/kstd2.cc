@@ -422,12 +422,31 @@ int redRing (LObject* h,kStrategy strat)
   loop
   {
     j = kFindDivisibleByInT(strat->T, strat->sevT, strat->tl, h);
+    printf("\nBefore: \n");
+    pWrite(h->p);
+    printf("");
+    printf("\nj = %i\n", j);
+    for(int ii = 0; ii<=strat->tl; ii++)
+    {pWrite(strat->T[ii].p);}
+    
     if (j < 0) return 1;
     #if ADIDEBUG
     pWrite(h->p);
     printf("\nFound j = %i\n",j);pWrite(strat->T[j].p);
     #endif
+    
     ksReducePoly(h, &(strat->T[j]), NULL, NULL, strat); // with debug output
+    printf("\nFinal\n");
+    pWrite(h->p);
+    //getchar();
+    #if HAVE_RINGS
+    //printf("\nBefore\n");pWrite(h->p);
+    if((h->p != NULL) &&(!nIsZero(pGetCoeff(h->p))))
+        ReduceCoefL(h, strat);
+    //printf("\nAfter\n");pWrite(h->p);
+    //getchar();
+    #endif
+    
     #if ADIDEBUG
     printf("\nand after reduce: \n");pWrite(h->p);
     #endif
@@ -1453,6 +1472,10 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
   /*Shdl=*/initBuchMora(F, Q,strat);
   if (strat->minim>0) strat->M=idInit(IDELEMS(F),F->rank);
   reduc = olddeg = 0;
+  
+  #if HAVE_RINGS
+  strat->coefred = NULL;
+  #endif
 
 #ifndef NO_BUCKETS
   if (!TEST_OPT_NOT_BUCKETS)
@@ -1510,7 +1533,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
         p_Write(strat->L[iii].p2, strat->tailRing);
                                 
     }
-    //getchar();
+    getchar();
     #endif
     #ifdef KDEBUG
       loop_count++;
@@ -1681,7 +1704,18 @@ messageADI(red_result);
         pWrite(strat->P.p);pWrite(strat->P.p1);pWrite(strat->P.p2);
         idPrint(strat->Shdl);
         #endif
+        
         strat->enterS(strat->P, pos, strat, strat->tl);
+
+        ReduceCoef(strat->P.p, strat);
+        
+        #if HAVE_RINGS
+        if((strat->coefred == NULL) && (p_Deg(strat->S[strat->sl], currRing) == 0))
+        {
+            strat->coefred = pGetCoeff(strat->S[strat->sl]);
+            ReduceCoefInitial(strat);
+        }
+        #endif
 #if 0
         int pl=pLength(strat->P.p);
         if (pl==1)
@@ -1935,6 +1969,7 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     }
     //getchar();
     #endif
+    #if 0
     for(int iii = 0; iii < strat->Ll; iii++)
     {
         if(pLmCmp(strat->L[iii].sig, strat->L[iii+1].sig) == -1)
@@ -1943,6 +1978,7 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
             if(nGreater(pGetCoeff(strat->L[iii].sig), pGetCoeff(strat->L[iii+1].sig)) == -1)
                 {printf("\n         Your sorting sucks\n");getchar();}
     }
+    #endif
     if (strat->Ll > lrmax) lrmax =strat->Ll;/*stat.*/
     #ifdef KDEBUG
       loop_count++;
@@ -2216,6 +2252,7 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     
       // posInS only depends on the leading term
       strat->enterS(strat->P, pos, strat, strat->tl);
+      
       #if ADIDEBUG
       printf("\nThis element is added to S:\n");
       pWrite(strat->P.p);pWrite(strat->P.p1);pWrite(strat->P.p2);pWrite(strat->P.sig);
