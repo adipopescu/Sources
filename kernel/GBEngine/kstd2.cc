@@ -422,12 +422,12 @@ int redRing (LObject* h,kStrategy strat)
   loop
   {
     j = kFindDivisibleByInT(strat->T, strat->sevT, strat->tl, h);
-    printf("\nBefore: \n");
-    pWrite(h->p);
-    printf("");
-    printf("\nj = %i\n", j);
-    for(int ii = 0; ii<=strat->tl; ii++)
-    {pWrite(strat->T[ii].p);}
+    //printf("\nBefore: \n");
+    //pWrite(h->p);
+    //printf(" ");
+    //printf("\nj = %i\n", j);
+    //for(int ii = 0; ii<=strat->tl; ii++)
+    //    {pWrite(strat->T[ii].p);}
     
     if (j < 0) return 1;
     #if ADIDEBUG
@@ -436,14 +436,14 @@ int redRing (LObject* h,kStrategy strat)
     #endif
     
     ksReducePoly(h, &(strat->T[j]), NULL, NULL, strat); // with debug output
-    printf("\nFinal\n");
-    pWrite(h->p);
+    //printf("\nFinal after ksReducePoly\n");
+    //pWrite(h->p);
     //getchar();
     #if HAVE_RINGS
     //printf("\nBefore\n");pWrite(h->p);
-    if((h->p != NULL) &&(!nIsZero(pGetCoeff(h->p))))
+    if((h->p != NULL) && (h->tailRing != currRing))
         ReduceCoefL(h, strat);
-    //printf("\nAfter\n");pWrite(h->p);
+    //printf("\nAfter ReduceCoefL\n");pWrite(h->p);
     //getchar();
     #endif
     
@@ -1533,7 +1533,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
         p_Write(strat->L[iii].p2, strat->tailRing);
                                 
     }
-    getchar();
+    //getchar();
     #endif
     #ifdef KDEBUG
       loop_count++;
@@ -1691,6 +1691,41 @@ messageADI(red_result);
       if ((!TEST_OPT_IDLIFT) || (pGetComp(strat->P.p) <= strat->syzComp))
       {
         enterT(strat->P, strat);
+        
+        /*while(strat->Ll>=0)
+        {
+            strat->P = strat->L[strat->Ll];
+            strat->Ll--;
+            pos = posInS(strat,strat->sl,strat->P.p,strat->P.ecart);
+            strat->enterS(strat->P, pos, strat, strat->tl);
+            //deleteInL(strat->L,&strat->Ll,0,strat);
+        }*/
+        /*for(int ii = 0; ii<=strat->Ll; ii++)
+        {
+            printf("\nL[%i] \n",ii);
+            pWrite(strat->L[ii].p);//printf("\n");
+            pWrite(strat->L[ii].p1);//printf("\n");
+            pWrite(strat->L[ii].p2);//printf("\n");
+            printf("\n");
+        }
+        */
+        /*idPrint(strat->Shdl);
+        for(int ii = 0; ii<strat->sl; ii++)
+        {
+            //pWrite(strat->L[ii].p);
+            enterFirstSpoly(ii,strat->sl,strat->P.ecart,pos,strat, strat->tl);
+        }
+        printf("\nFirst Spolys:\n");
+    for(int ii = 0; ii<=strat->Ll; ii++)
+    {
+        printf("\nL[%i] \n",ii);
+        pWrite(strat->L[ii].p);//printf("\n");
+        pWrite(strat->L[ii].p1);//printf("\n");
+        pWrite(strat->L[ii].p2);//printf("\n");
+        printf("\n\n");
+    }
+    printf("\nEnd of first Spolys:\n");
+    getchar();*/
 #ifdef HAVE_RINGS
         if (rField_is_Ring(currRing))
           superenterpairs(strat->P.p,strat->sl,strat->P.ecart,pos,strat, strat->tl);
@@ -1698,8 +1733,8 @@ messageADI(red_result);
 #endif
           enterpairs(strat->P.p,strat->sl,strat->P.ecart,pos,strat, strat->tl);
         // posInS only depends on the leading term
-        //#if 1
-        #if ADIDEBUG
+        #if 1
+        //#if ADIDEBUG
         printf("\nThis element is added to S:\n");
         pWrite(strat->P.p);pWrite(strat->P.p1);pWrite(strat->P.p2);
         idPrint(strat->Shdl);

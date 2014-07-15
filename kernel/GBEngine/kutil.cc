@@ -1372,7 +1372,7 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
       Lp.i_r1 = strat->S_2_R[i];
     }
     #if HAVE_RINGS
-    ReduceCoef(Lp.p, strat);
+    ReduceCoefL(&Lp, strat);
     #endif
     strat->initEcartPair(&Lp,strat->S[i],p,strat->ecartS[i],ecart);
     l = strat->posInL(strat->L,strat->Ll,&Lp,strat);
@@ -1463,11 +1463,11 @@ BOOLEAN enterOneStrongPoly (int i,poly p,int /*ecart*/, int /*isFromQ*/,kStrateg
   h.sev = pGetShortExpVector(h.p);
   if (currRing!=strat->tailRing)
     h.t_p = k_LmInit_currRing_2_tailRing(h.p, strat->tailRing);
-  #if 0
+  #if 1
   h.p1 = p;h.p2 = strat->S[i];
   #endif
   #if HAVE_RINGS
-  ReduceCoef(h.p, strat);
+  ReduceCoefL(&h, strat);
   #endif
   enterL(&strat->L,&strat->Ll,&strat->Lmax,h,posx);
   return TRUE;
@@ -3179,6 +3179,57 @@ void initenterpairs (poly h,int k,int ecart,int isFromQ,kStrategy strat, int atR
       strat->chainCrit(h,ecart,strat);
     }
   }
+}
+
+void enterFirstSpoly (int f,int k,int ecart,int isFromQ,kStrategy strat, int atR = -1)
+{
+
+  int j;
+  int many = 0;
+    BOOLEAN new_pair=FALSE;
+    poly h = strat->S[f];
+    if (pGetComp(h)==0)
+    {
+      /* for Q!=NULL: build pairs (f,q),(f1,f2), but not (q1,q2)*/
+      if ((isFromQ)&&(strat->fromQ!=NULL))
+      {
+        for (j=f+1; j<=k; j++)
+        {
+          if (!strat->fromQ[j])
+          {
+            new_pair=TRUE;
+            strat->enterOnePair(j,h,ecart,isFromQ,strat, atR);
+            many++;
+          //Print("j:%d, Ll:%d\n",j,strat->Ll);
+          }
+        }
+      }
+      else
+      {
+        new_pair=TRUE;
+        for (j=f+1; j<=k; j++)
+        {
+            strat->enterOnePair(j,h,ecart,isFromQ,strat, atR);
+            many++;
+          //Print("j:%d, Ll:%d\n",j,strat->Ll);
+        }
+      }
+    }
+    else
+    {
+      for (j=f+1; j<=k; j++)
+      {
+        if ((pGetComp(h)==pGetComp(strat->S[j]))
+        || (pGetComp(strat->S[j])==0))
+        {
+          new_pair=TRUE;
+          strat->enterOnePair(j,h,ecart,isFromQ,strat, atR);many++;
+        //Print("j:%d, Ll:%d\n",j,strat->Ll);
+        }
+      }
+    }
+    printf("\nFor the following element %i pairs were added:\n",many);pWrite(h);
+
 }
 
 /*2
@@ -9101,11 +9152,6 @@ void ReduceCoefInitial(kStrategy strat)
             while((pp != NULL) && (pp!= strat->tail))
             {
                 pp->coef = currRing->cf->cfIntMod(pGetCoeff(pp), coef, currRing->cf);
-                /*if(nIsZero(pGetCoeff(pp)))
-                    {
-                      //p_LmDelete(&pNext(pp),currRing);
-                      pp->coef = coef;
-                    }*/
                 pp = pNext(pp);
             }
             while((strat->S[ii]!=NULL)&&(nIsZero(pGetCoeff(strat->S[ii]))))
@@ -9118,7 +9164,6 @@ void ReduceCoefInitial(kStrategy strat)
                 if(nIsZero(pGetCoeff(pNext(pp))))
                     {
                       p_LmDelete(&pNext(pp),currRing);
-                      //pp->coef = coef;
                     }
                 else 
                     pIter(pp);
@@ -9129,19 +9174,11 @@ void ReduceCoefInitial(kStrategy strat)
             {
                 deleteInS(ii, strat);
             }
-            //p_Delete(pp, currRing->cf);
         }
     }
     for(ii = 0; ii<=strat->Ll;ii++)
     {
         ReduceCoefL(&strat->L[ii], strat);        
-           /*if(strat->L[ii].p != NULL)
-               pSetm(strat->L[ii].p);
-           else
-           {
-               deleteInL(strat->L, &strat->Ll, ii, strat);
-           }*/
-           //p_Delete(pp, currRing->cf);
     }
     
     #if 0
@@ -9172,15 +9209,6 @@ void ReduceCoef(poly &p, kStrategy strat)
     {
         if(pNext(p) == strat->tail)
         {
-            #if 0
-            pWrite(p);
-            p->coef = strat->tailRing->cf->cfIntMod(pGetCoeff(p), strat->coefred, strat->tailRing->cf);
-            if(nIsZero(pGetCoeff(p)))
-            {
-                  p->coef = strat->coefred;
-            }
-            #endif
-            //pWrite(p);
             return;
         }
         if((strat->coefred == pGetCoeff(p)) && (p_Deg(p, currRing) == 0))
@@ -9191,11 +9219,6 @@ void ReduceCoef(poly &p, kStrategy strat)
         while((pp != NULL) && (pp!= strat->tail))
         {
             pp->coef = currRing->cf->cfIntMod(pGetCoeff(pp), strat->coefred, currRing->cf);
-            /*if(nIsZero(pGetCoeff(pp)))
-                {
-                  //p_LmDelete(&pNext(pp),currRing);
-                  pp->coef = strat->coefred;
-                }*/
             pp = pNext(pp);
         }
         while((p!=NULL)&&(nIsZero(pGetCoeff(p))))
@@ -9212,31 +9235,20 @@ void ReduceCoef(poly &p, kStrategy strat)
             else 
                 pIter(pp);
         }
-        //else
-            //p = pNew();
-            //pWrite(p);
     }
 }
 
 
 void ReduceCoefL(LObject* h, kStrategy strat)
 {
-    printf("\nBefore\n");pWrite(h->p);
+    //printf("\nBefore\n");pWrite(h->p);
     if(h->p == NULL)
         return;
     if(strat->coefred != NULL)
     {
+        int deleted = 0;
         if(pNext(h->p) == strat->tail)
         {
-            #if 0
-            pWrite(p);
-            p->coef = strat->tailRing->cf->cfIntMod(pGetCoeff(p), strat->coefred, strat->tailRing->cf);
-            if(nIsZero(pGetCoeff(p)))
-            {
-                  p->coef = strat->coefred;
-            }
-            #endif
-            //pWrite(p);
             return;
         }
         if((strat->coefred == pGetCoeff(h->p)) && (p_Deg(h->p, currRing) == 0))
@@ -9244,7 +9256,6 @@ void ReduceCoefL(LObject* h, kStrategy strat)
             return;
         }
         
-        int deleted = 0;
         while(h->p != NULL)
         {
             //printf("\nBefore\n");pWrite(h->p);
@@ -9285,14 +9296,24 @@ void ReduceCoefL(LObject* h, kStrategy strat)
                 }
             //printf("\nAfter: full h->p\n");pWrite(h->p);
         }
+        if((p2 == NULL) && (p1 != NULL))
+        {
+            pSetCoeff(p1, currRing->cf->cfIntMod(pGetCoeff(p1), strat->coefred, currRing->cf));
+            if(nIsZero(pGetCoeff(p1)))
+                {
+                  p_LmDelete(&pNext(p1),currRing);
+                  //p2 = pNext(p1);
+                  deleted = 1;
+                }
+        }
         if(deleted == 1)
         {
             strat->initEcart(h);
         }
         
-        printf("\n-------Finished: Final\n");
-        pWrite(h->p);
-        getchar();
+        //printf("\n-------Finished: Final\n");
+        //pWrite(h->p);
+        //getchar();
     }
 }
 #endif

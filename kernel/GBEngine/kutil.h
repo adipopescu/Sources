@@ -793,6 +793,8 @@ void enterpairsShift (poly h,int k,int ecart,int pos,kStrategy strat, int atR,in
 
 void initenterpairsShift (poly h,int k,int ecart,int isFromQ,kStrategy strat, int atR,int uptodeg, int lV);
 
+void enterFirstSpoly (int f,int k,int ecart,int isFromQ,kStrategy strat, int atR);
+
 void updateSShift(kStrategy strat,int uptodeg,int lV);
 
 void initBbaShift(ideal F,kStrategy strat);
