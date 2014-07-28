@@ -1209,12 +1209,15 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
 
   LObject h;
   h.p = gcd;
+  if(h.p == NULL)
+    return;
   h.tailRing = strat->tailRing;
   int posx;
   h.pCleardenom();
   //printf("\nThis is our new achieved polynomial:\n");pWrite(gcd);
   if(h.p == NULL)
     return;
+  h.i_r1 = -1;h.i_r2 = -1;
   strat->initEcart(&h);
   #if 1
   h.p1 = p;h.p2 = strat->S[i];
@@ -1226,7 +1229,8 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
   h.sev = pGetShortExpVector(h.p);
   if (currRing!=strat->tailRing)
     h.t_p = k_LmInit_currRing_2_tailRing(h.p, strat->tailRing);
-  #if HAVE_RINGS
+  #if 0
+  //#if HAVE_RINGS
   ReduceCoefL(&h, FALSE, strat);
   if((h.p!=NULL) && (!nIsZero(h.p->coef)))
   #endif
@@ -1315,12 +1319,14 @@ BOOLEAN enterOneStrongPoly (int i,poly p,int /*ecart*/, int /*isFromQ*/,kStrateg
   else
     posx = strat->posInL(strat->L,strat->Ll,&h,strat);
   h.sev = pGetShortExpVector(h.p);
+  h.i_r1 = -1;h.i_r2 = -1;
   if (currRing!=strat->tailRing)
     h.t_p = k_LmInit_currRing_2_tailRing(h.p, strat->tailRing);
   #if 1
   h.p1 = p;h.p2 = strat->S[i];
   #endif
-  #if HAVE_RINGS
+  #if 0
+  //#if HAVE_RINGS
   ReduceCoefL(&h, FALSE, strat);
   if((h.p!=NULL) && (!nIsZero(h.p->coef)))
   #endif
@@ -9155,6 +9161,8 @@ BOOLEAN kCheckStrongCreation(int atR, poly m1, int atS, poly m2, kStrategy strat
 
 void ReduceCoefInitial(kStrategy &strat)
 {
+  if(strat->coefred == NULL)
+    return;
   if(getCoeffType(currRing->cf) == n_Z)
   {
     #if 0
@@ -9204,7 +9212,7 @@ void ReduceCoefInitial(kStrategy &strat)
           */
             if(strat->S[ii] != NULL)
                 pSetm(strat->S[ii]);
-            if((strat->S[ii]==NULL) || (nIsZero(strat->S[ii]->coef)))
+            if((strat->S[ii]==NULL) || (strat->S[ii]->coef == NULL) ||(nIsZero(strat->S[ii]->coef)))
             {
                 deleteInS(ii, strat);
             }
@@ -9214,7 +9222,7 @@ void ReduceCoefInitial(kStrategy &strat)
     {
         if(!nEqual(strat->coefred, pGetCoeff(strat->L[ii].p)) || (p_Deg(strat->L[ii].p, currRing) != 0))
           ReduceCoefL(&strat->L[ii], TRUE, strat); 
-        if((strat->L[ii].p == NULL) || (nIsZero(strat->L[ii].p->coef)))
+        if((strat->L[ii].p == NULL) || (strat->L[ii].p->coef == NULL)|| (nIsZero(strat->L[ii].p->coef)))
         {
           deleteInL(strat->L, &strat->Ll, ii, strat);
         }       

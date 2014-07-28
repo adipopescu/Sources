@@ -1467,7 +1467,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
   BITSET save;
   SI_SAVE_OPT1(save);
   
-  #if 0 // ADIDEBUG
+  #if 1 // ADIDEBUG
   if(idPosConstant(F) == -1)
     preIntegerCheck(F, Q);
   #endif
@@ -1702,40 +1702,6 @@ messageADI(red_result);
       {
         enterT(strat->P, strat);
         
-        /*while(strat->Ll>=0)
-        {
-            strat->P = strat->L[strat->Ll];
-            strat->Ll--;
-            pos = posInS(strat,strat->sl,strat->P.p,strat->P.ecart);
-            strat->enterS(strat->P, pos, strat, strat->tl);
-            //deleteInL(strat->L,&strat->Ll,0,strat);
-        }*/
-        /*for(int ii = 0; ii<=strat->Ll; ii++)
-        {
-            printf("\nL[%i] \n",ii);
-            pWrite(strat->L[ii].p);//printf("\n");
-            pWrite(strat->L[ii].p1);//printf("\n");
-            pWrite(strat->L[ii].p2);//printf("\n");
-            printf("\n");
-        }
-        */
-        /*idPrint(strat->Shdl);
-        for(int ii = 0; ii<strat->sl; ii++)
-        {
-            //pWrite(strat->L[ii].p);
-            enterFirstSpoly(ii,strat->sl,strat->P.ecart,pos,strat, strat->tl);
-        }
-        printf("\nFirst Spolys:\n");
-    for(int ii = 0; ii<=strat->Ll; ii++)
-    {
-        printf("\nL[%i] \n",ii);
-        pWrite(strat->L[ii].p);//printf("\n");
-        pWrite(strat->L[ii].p1);//printf("\n");
-        pWrite(strat->L[ii].p2);//printf("\n");
-        printf("\n\n");
-    }
-    printf("\nEnd of first Spolys:\n");
-    getchar();*/
 #ifdef HAVE_RINGS
         if (rField_is_Ring(currRing))
           superenterpairs(strat->P.p,strat->sl,strat->P.ecart,pos,strat, strat->tl);
@@ -1747,34 +1713,59 @@ messageADI(red_result);
         //#if ADIDEBUG
         printf("\nThis element is added to S\n");
         pWrite(strat->P.p);pWrite(strat->P.p1);pWrite(strat->P.p2);
-        idPrint(strat->Shdl);
+        //idPrint(strat->Shdl);
         //getchar();
         #endif
         
         strat->enterS(strat->P, pos, strat, strat->tl);
         
-        #if HAVE_RINGS
-        if(rField_is_Ring(currRing))
-            ReduceCoef(strat->P.p, FALSE, strat);
-        if((strat->coefred == NULL) && (p_Deg(strat->S[pos], currRing) == 0))
+        #if 0
+        if(getCoeffType(currRing->cf) == n_Z)
+        {poly dummy;
+        if((strat->coefred == NULL) && (strat->S[pos]!= NULL) && (p_Deg(strat->S[pos], currRing) == 0))
         {
             strat->coefred = pGetCoeff(strat->S[pos]);
-            ReduceCoefInitial(strat);
         }
-        #endif
-#if 0
-        int pl=pLength(strat->P.p);
-        if (pl==1)
+        if(strat->coefred != NULL)
         {
-          //if (TEST_OPT_PROT)
-          //PrintS("<1>");
-        }
-        else if (pl==2)
-        {
-          //if (TEST_OPT_PROT)
-          //PrintS("<2>");
-        }
-#endif
+            for(int iii = 0; iii<=strat->sl;iii++)
+            {
+                if((strat->S[iii]!=NULL) && (p_Deg(strat->S[iii], currRing) != 0))
+                {
+                    dummy = pCopy(strat->S[iii]);
+                    while(dummy != NULL)
+                    {
+                        if(n_DivBy(dummy->coef, strat->coefred, currRing))
+                        {
+                            printf("\nDivisible coefficient in S!!!!\n");pWrite(dummy);
+                            n_Print(strat->coefred, currRing->cf);
+                            getchar();
+                        }
+                        pIter(dummy);
+                    }
+                }
+            }
+            for(int iii = 0; iii<=strat->Ll;iii++)
+            {
+                if((strat->L[iii].p!=NULL) && (p_Deg(strat->L[iii].p, currRing) != 0))
+                {
+                    dummy = pCopy(strat->L[iii].p);
+                    while(dummy != NULL)
+                    {
+                        if(n_DivBy(dummy->coef, strat->coefred, currRing))
+                        {
+                            printf("\nDivisible coefficient in L!!!!\n");pWrite(dummy);
+                            n_Print(strat->coefred, currRing->cf);
+                            printf("\n\nThis is the element from L[%i]\n", iii);
+                            pWrite(strat->L[iii].p);pWrite(strat->L[iii].p1);pWrite(strat->L[iii].p2);
+                            getchar();
+                        }
+                        pIter(dummy);
+                    }
+                }
+            }
+        }}
+        #endif 
       }
       if (hilb!=NULL) khCheck(Q,w,hilb,hilbeledeg,hilbcount,strat);
 //      Print("[%d]",hilbeledeg);
