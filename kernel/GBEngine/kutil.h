@@ -457,6 +457,8 @@ int posInL0 (const LSet set, const int length,
              LObject* L,const kStrategy strat);
 int posInL11 (const LSet set, const int length,
              LObject* L,const kStrategy strat);
+int posInL11Ring (const LSet set, const int length,
+             LObject* L,const kStrategy strat);
 int posInL13 (const LSet set, const int length,
              LObject* L,const kStrategy strat);
 int posInL15 (const LSet set, const int length,
@@ -744,7 +746,7 @@ BOOLEAN kCheckSpolyCreation(LObject* L, kStrategy strat, poly &m1, poly &m2);
 BOOLEAN kCheckStrongCreation(int atR, poly m1, int atS, poly m2, kStrategy strat);
 //if in the partial std we get an element of degree 0, we will use it 
 //to reduce the coefficients in S and L
-void ReduceCoefInitial(kStrategy strat);
+void ReduceCoefInitial(kStrategy &strat);
 void ReduceCoef(poly &p, bool FromInitial, kStrategy &strat);
 void preIntegerCheck(ideal F, ideal Q);
 void ReduceCoefL(LObject *h, bool FromInitial, kStrategy &strat);

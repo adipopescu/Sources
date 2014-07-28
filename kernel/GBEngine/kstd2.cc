@@ -1467,7 +1467,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
   BITSET save;
   SI_SAVE_OPT1(save);
   
-  #if 1 // ADIDEBUG
+  #if 0 // ADIDEBUG
   if(idPosConstant(F) == -1)
     preIntegerCheck(F, Q);
   #endif
@@ -1536,7 +1536,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     int iii;
     for(iii = 0; iii<= strat->Ll; iii++)
     {
-        printf("\nL[%i]: grad  = %i, length = %i, get it = %i\n", iii,strat->L[iii].FDeg,strat->L[iii].length, strat->L[iii].GetpLength());
+        printf("\nL[%i]: grad  = %i, length = %i\n", iii,strat->L[iii].FDeg,strat->L[iii].length);
         p_Write(strat->L[iii].p, strat->tailRing);
         p_Write(strat->L[iii].p1, strat->tailRing);
         p_Write(strat->L[iii].p2, strat->tailRing);
@@ -1745,7 +1745,7 @@ messageADI(red_result);
         // posInS only depends on the leading term
         #if 0
         //#if ADIDEBUG
-        printf("\nThis element is added to S[%i]:\nL has %i elements\n",strat->sl, strat->Ll);
+        printf("\nThis element is added to S\n");
         pWrite(strat->P.p);pWrite(strat->P.p1);pWrite(strat->P.p2);
         idPrint(strat->Shdl);
         //getchar();
@@ -1756,9 +1756,9 @@ messageADI(red_result);
         #if HAVE_RINGS
         if(rField_is_Ring(currRing))
             ReduceCoef(strat->P.p, FALSE, strat);
-        if((strat->coefred == NULL) && (p_Deg(strat->S[strat->sl], currRing) == 0))
+        if((strat->coefred == NULL) && (p_Deg(strat->S[pos], currRing) == 0))
         {
-            strat->coefred = pGetCoeff(strat->S[strat->sl]);
+            strat->coefred = pGetCoeff(strat->S[pos]);
             ReduceCoefInitial(strat);
         }
         #endif

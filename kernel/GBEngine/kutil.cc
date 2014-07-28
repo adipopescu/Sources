@@ -1160,226 +1160,6 @@ static inline BOOLEAN sugarDivisibleBy(int ecart1, int ecart2)
 */
 void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int atR = -1)
 {
-  #if 0
-  assume(i<=strat->sl);
-  int      l,j,compare,compareCoeff;
-  LObject  Lp;
-
-  if (strat->interred_flag) return;
-#ifdef KDEBUG
-  Lp.ecart=0; Lp.length=0;
-#endif
-  /*- computes the lcm(s[i],p) -*/
-  Lp.lcm = pInit();
-  pSetCoeff0(Lp.lcm, n_Lcm(pGetCoeff(p), pGetCoeff(strat->S[i]), currRing->cf));
-
-  // Lp.lcm == 0
-  if (nIsZero(pGetCoeff(Lp.lcm)))
-  {
-#ifdef KDEBUG
-      if (TEST_OPT_DEBUG)
-      {
-        PrintS("--- Lp.lcm == 0\n");
-        PrintS("p:");
-        wrp(p);
-        Print("  strat->S[%d]:", i);
-        wrp(strat->S[i]);
-        PrintLn();
-      }
-#endif
-      strat->cp++;
-      pLmDelete(Lp.lcm);
-      return;
-  }
-  // basic product criterion
-  pLcm(p,strat->S[i],Lp.lcm);
-
-  pSetm(Lp.lcm);
-  assume(!strat->sugarCrit);
-  if (pHasNotCF(p,strat->S[i]) && n_IsUnit(pGetCoeff(p),currRing->cf)
-      && n_IsUnit(pGetCoeff(strat->S[i]),currRing->cf))
-  {
-#ifdef KDEBUG
-      if (TEST_OPT_DEBUG)
-      {
-        PrintS("--- product criterion func enterOnePairRing type 1\n");
-        PrintS("p:");
-        wrp(p);
-        Print("  strat->S[%d]:", i);
-        wrp(strat->S[i]);
-        PrintLn();
-      }
-#endif
-      strat->cp++;
-      pLmDelete(Lp.lcm);
-      return;
-  }
-  assume(!strat->fromT);
-  /*
-  *the set B collects the pairs of type (S[j],p)
-  *suppose (r,p) is in B and (s,p) is the new pair and lcm(s,p) != lcm(r,p)
-  *if the leading term of s devides lcm(r,p) then (r,p) will be canceled
-  *if the leading term of r devides lcm(s,p) then (s,p) will not enter B
-  */
-  for(j = strat->Bl;j>=0;j--)
-  {
-    compare=pDivCompRing(strat->B[j].lcm,Lp.lcm);
-    compareCoeff = n_DivComp(pGetCoeff(strat->B[j].lcm), pGetCoeff(Lp.lcm), currRing->cf);
-    if ((compareCoeff == pDivComp_EQUAL) || (compare == compareCoeff))
-    {
-      if (compare == 1)
-      {
-        strat->c3++;
-#ifdef KDEBUG
-        if (TEST_OPT_DEBUG)
-        {
-          PrintS("--- chain criterion type 1\n");
-          PrintS("strat->B[j]:");
-          wrp(strat->B[j].lcm);
-          PrintS("  Lp.lcm:");
-          wrp(Lp.lcm);
-          PrintLn();
-        }
-#endif
-        if ((strat->fromQ==NULL) || (isFromQ==0) || (strat->fromQ[i]==0))
-        {
-          pLmDelete(Lp.lcm);
-          return;
-        }
-        break;
-      }
-      else
-      if (compare == -1)
-      {
-#ifdef KDEBUG
-        if (TEST_OPT_DEBUG)
-        {
-          PrintS("--- chain criterion type 2\n");
-          Print("strat->B[%d].lcm:",j);
-          wrp(strat->B[j].lcm);
-          PrintS("  Lp.lcm:");
-          wrp(Lp.lcm);
-          PrintLn();
-        }
-#endif
-        deleteInL(strat->B,&strat->Bl,j,strat);
-        strat->c3++;
-      }
-    }
-    if ((compare == pDivComp_EQUAL) && (compareCoeff != 2))
-    {
-      if (compareCoeff == pDivComp_LESS)
-      {
-#ifdef KDEBUG
-        if (TEST_OPT_DEBUG)
-        {
-          PrintS("--- chain criterion type 3\n");
-          Print("strat->B[%d].lcm:", j);
-          wrp(strat->B[j].lcm);
-          PrintS("  Lp.lcm:");
-          wrp(Lp.lcm);
-          PrintLn();
-        }
-#endif
-        strat->c3++;
-        if ((strat->fromQ==NULL) || (isFromQ==0) || (strat->fromQ[i]==0))
-        {
-          pLmDelete(Lp.lcm);
-          return;
-        }
-        break;
-      }
-      else
-      // Add hint for same LM and LC (later) (TODO Oliver)
-      // if (compareCoeff == pDivComp_GREATER)
-      {
-#ifdef KDEBUG
-        if (TEST_OPT_DEBUG)
-        {
-          PrintS("--- chain criterion type 4\n");
-          Print("strat->B[%d].lcm:", j);
-          wrp(strat->B[j].lcm);
-          PrintS("  Lp.lcm:");
-          wrp(Lp.lcm);
-          PrintLn();
-        }
-#endif
-        deleteInL(strat->B,&strat->Bl,j,strat);
-        strat->c3++;
-      }
-    }
-  }
-  /*
-  *the pair (S[i],p) enters B if the spoly != 0
-  */
-  /*-  compute the short s-polynomial -*/
-  if ((strat->S[i]==NULL) || (p==NULL))
-  {
-#ifdef KDEBUG
-    if (TEST_OPT_DEBUG)
-    {
-      PrintS("--- spoly = NULL\n");
-    }
-#endif
-    pLmDelete(Lp.lcm);
-    return;
-  }
-  if ((strat->fromQ!=NULL) && (isFromQ!=0) && (strat->fromQ[i]!=0))
-  {
-    // Is from a previous computed GB, therefore we know that spoly will
-    // reduce to zero. Oliver.
-    WarnS("Could we come here? 8738947389");
-    Lp.p=NULL;
-  }
-  else
-  {
-    Lp.p = ksCreateShortSpoly(strat->S[i], p, strat->tailRing);
-  }
-  if (Lp.p == NULL)
-  {
-#ifdef KDEBUG
-    if (TEST_OPT_DEBUG)
-    {
-      PrintS("--- spoly = NULL\n");
-    }
-#endif
-    /*- the case that the s-poly is 0 -*/
-    if (strat->pairtest==NULL) initPairtest(strat);
-    strat->pairtest[i] = TRUE;/*- hint for spoly(S^[i],p)=0 -*/
-    strat->pairtest[strat->sl+1] = TRUE;
-    /*hint for spoly(S[i],p) == 0 for some i,0 <= i <= sl*/
-    /*
-    *suppose we have (s,r),(r,p),(s,p) and spoly(s,p) == 0 and (r,p) is
-    *still in B (i.e. lcm(r,p) == lcm(s,p) or the leading term of s does not
-    *devide lcm(r,p)). In the last case (s,r) can be canceled if the leading
-    *term of p devides the lcm(s,r)
-    *(this canceling should be done here because
-    *the case lcm(s,p) == lcm(s,r) is not covered in chainCrit)
-    *the first case is handeled in chainCrit
-    */
-    pLmDelete(Lp.lcm);
-  }
-  else
-  {
-    /*- the pair (S[i],p) enters B -*/
-    Lp.p1 = strat->S[i];
-    Lp.p2 = p;
-
-    pNext(Lp.p) = strat->tail;
-
-    if (atR >= 0)
-    {
-      Lp.i_r2 = atR;
-      Lp.i_r1 = strat->S_2_R[i];
-    }
-    #if HAVE_RINGS
-    ReduceCoefL(&Lp, FALSE, strat);
-    #endif
-    strat->initEcartPair(&Lp,strat->S[i],p,strat->ecartS[i],ecart);
-    l = strat->posInL(strat->L,strat->Ll,&Lp,strat);
-    enterL(&strat->L,&strat->Ll,&strat->Lmax,Lp,l);
-  }
-  #else
   number s, t;
   assume(i<=strat->sl);
   assume(atR >= 0);
@@ -1401,7 +1181,6 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
 #ifdef KDEBUG
   if (TEST_OPT_DEBUG)
   {
-    //Print("t = %d; s = %d; d = %d\n", nInt(t), nInt(s), nInt(d));
     PrintS("m1 = ");
     p_wrp(m1, strat->tailRing);
     PrintS(" ; m2 = ");
@@ -1437,6 +1216,9 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
   if(h.p == NULL)
     return;
   strat->initEcart(&h);
+  #if 1
+  h.p1 = p;h.p2 = strat->S[i];
+  #endif
   if (strat->Ll==-1)
     posx =0;
   else
@@ -1444,16 +1226,12 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
   h.sev = pGetShortExpVector(h.p);
   if (currRing!=strat->tailRing)
     h.t_p = k_LmInit_currRing_2_tailRing(h.p, strat->tailRing);
-  #if 1
-  h.p1 = p;h.p2 = strat->S[i];
-  #endif
   #if HAVE_RINGS
   ReduceCoefL(&h, FALSE, strat);
   if((h.p!=NULL) && (!nIsZero(h.p->coef)))
   #endif
   enterL(&strat->L,&strat->Ll,&strat->Lmax,h,posx);
   //printf("\nFinished: \n");pWrite(h.p);
-  #endif
 }
 
 
@@ -5623,6 +5401,100 @@ int posInL11 (const LSet set, const int length,
   }
 }
 
+/*2
+* looks up the position of polynomial p in set
+* set[length] is the smallest element in set with respect
+* to the ordering-procedure pLmCmp,totaldegree,coefficient
+* For the same totaldegree, original pairs (from F) will 
+* be put at the end and smalles coefficents
+*/
+int posInL11Ring (const LSet set, const int length,
+              LObject* p,const kStrategy strat)
+{
+  if (length < 0) return 0;
+  if (set[length].FDeg > p->FDeg)
+        return length+1;
+  if (set[0].FDeg < p->FDeg)
+        return 0;
+  int i;
+  int an = 0;
+  int en = length+1;
+  bool isFromF = (p->p1 == NULL) && (p->p2 == NULL);
+  #if 0
+  printf("\nThis is L:\n");
+  for(int ii=0; ii<=strat->Ll; ii++)
+  {
+        printf("\nL[%i]: grad  = %i, length = %i\n", ii,set[ii].FDeg,set[ii].length);
+        pWrite(set[ii].p);
+        pWrite(set[ii].p1);
+        pWrite(set[ii].p2);
+  }
+  printf("\nThis is P:\n");pWrite(p->p);pWrite(p->p1);pWrite(p->p2);
+  #endif
+  if(isFromF)
+  {
+    //printf("\nisFromF\n");
+    i = 0;
+    while(set[i].FDeg > p->FDeg)
+      i++;
+    while(((set[i].p1 != NULL) || (set[i].p2 != NULL)) && (set[i].FDeg == p->FDeg))
+      i++;
+    an = i;
+    i = length;
+    while(set[i].FDeg < p->FDeg)
+      i--;
+    en = i+1;
+  }
+  else
+  {
+    //printf("\nis not FromF\n");
+    i = 0;
+    while(set[i].FDeg > p->FDeg)
+      i++;
+    an = i;
+    i = length;
+    while(set[i].FDeg < p->FDeg)
+      i--;
+    while(((set[i].p1 == NULL) && (set[i].p2 == NULL)) && (set[i].FDeg == p->FDeg))
+      i--;
+    en = i+1;
+  }
+  //printf("\nan = %i\n en = %i\n",an,en);
+  //getchar();
+  loop
+  {
+    if (an >= en-1)
+    {
+      if(an == en)
+        return en;
+      if (pLmCmp(set[an].p, p->p) == 1) 
+        return en;
+      if (pLmCmp(set[an].p, p->p) == -1) 
+        return an;
+      if (pLmCmp(set[i].p, p->p) == 0)
+      {
+        if(nGreater(set[an].p->coef, p->p->coef))
+          return en;
+        else
+          return an;
+      }
+    }
+    i=(an+en) / 2;
+    if (pLmCmp(set[i].p, p->p) == 1)
+      an=i;
+    if (pLmCmp(set[i].p, p->p) == -1)
+      en=i;
+    if (pLmCmp(set[i].p, p->p) == 0)
+    {
+      if(nGreater(set[i].p->coef, p->p->coef))
+        an = i;
+      else
+        en = i;
+    }                                  
+  }
+}
+
+
 /*2 Position for rings L: Here I am
 * looks up the position of polynomial p in set
 * e is the ecart of p
@@ -8595,7 +8467,7 @@ void initBuchMoraPos (kStrategy strat)
 #ifdef HAVE_RINGS
   if (rField_is_Ring(currRing))
   {
-    strat->posInL = posInLRing;
+    strat->posInL = posInL11Ring;
     strat->posInT = posInT11;
   }
 #endif
@@ -9281,7 +9153,7 @@ BOOLEAN kCheckStrongCreation(int atR, poly m1, int atS, poly m2, kStrategy strat
   return TRUE;
 }
 
-void ReduceCoefInitial(kStrategy strat)
+void ReduceCoefInitial(kStrategy &strat)
 {
   if(getCoeffType(currRing->cf) == n_Z)
   {
@@ -9332,7 +9204,7 @@ void ReduceCoefInitial(kStrategy strat)
           */
             if(strat->S[ii] != NULL)
                 pSetm(strat->S[ii]);
-            else
+            if((strat->S[ii]==NULL) || (nIsZero(strat->S[ii]->coef)))
             {
                 deleteInS(ii, strat);
             }
@@ -9342,7 +9214,7 @@ void ReduceCoefInitial(kStrategy strat)
     {
         if(!nEqual(strat->coefred, pGetCoeff(strat->L[ii].p)) || (p_Deg(strat->L[ii].p, currRing) != 0))
           ReduceCoefL(&strat->L[ii], TRUE, strat); 
-        if(strat->L[ii].p == NULL)
+        if((strat->L[ii].p == NULL) || (nIsZero(strat->L[ii].p->coef)))
         {
           deleteInL(strat->L, &strat->Ll, ii, strat);
         }       
@@ -9491,6 +9363,15 @@ void ReduceCoefL(LObject* h, bool FromInitial, kStrategy &strat)
             strat->coefred = nCopy(pGetCoeff(h->p));
             //ReduceCoefInitial(strat);
             return;
+        }
+        if(pNext(h->p) == NULL)
+        {
+          h->p->coef = currRing->cf->cfIntMod(pGetCoeff(h->p), strat->coefred, currRing->cf);
+          if(nIsZero(h->p->coef))
+          {  
+            h->p = NULL;
+          }
+          return;
         }
         while(h->p != NULL)
         {
