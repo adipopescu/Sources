@@ -1160,6 +1160,7 @@ static inline BOOLEAN sugarDivisibleBy(int ecart1, int ecart2)
 */
 void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int atR = -1)
 {
+  #if 0
   assume(i<=strat->sl);
   int      l,j,compare,compareCoeff;
   LObject  Lp;
@@ -1372,12 +1373,87 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
       Lp.i_r1 = strat->S_2_R[i];
     }
     #if HAVE_RINGS
-    ReduceCoefL(&Lp, strat);
+    ReduceCoefL(&Lp, FALSE, strat);
     #endif
     strat->initEcartPair(&Lp,strat->S[i],p,strat->ecartS[i],ecart);
     l = strat->posInL(strat->L,strat->Ll,&Lp,strat);
     enterL(&strat->L,&strat->Ll,&strat->Lmax,Lp,l);
   }
+  #else
+  number s, t;
+  assume(i<=strat->sl);
+  assume(atR >= 0);
+  poly m1, m2, gcd;
+  //printf("\nTrying to add spair S[%i] und p\n",i);pWrite(strat->S[i]);pWrite(p);
+  s = pGetCoeff(strat->S[i]);
+  t = pGetCoeff(p);
+  k_GetLeadTerms(p,strat->S[i],currRing,m1,m2,currRing);
+  ksCheckCoeff(&s, &t, currRing->cf);
+  //p_Test(m1,strat->tailRing);
+  //p_Test(m2,strat->tailRing);
+  pSetCoeff0(m1, s);
+  pSetCoeff0(m2, t);
+  pNeg(m2);
+  p_Test(m1,strat->tailRing);
+  p_Test(m2,strat->tailRing);
+  
+//#if 1
+#ifdef KDEBUG
+  if (TEST_OPT_DEBUG)
+  {
+    //Print("t = %d; s = %d; d = %d\n", nInt(t), nInt(s), nInt(d));
+    PrintS("m1 = ");
+    p_wrp(m1, strat->tailRing);
+    PrintS(" ; m2 = ");
+    p_wrp(m2, strat->tailRing);
+    PrintS(" ; gcd = ");
+    wrp(gcd);
+    PrintS("\n--- create s-poly: ");
+    Print("\n p: ", i);
+    wrp(p);
+    Print("\n strat->S[%d]: ", i);
+    wrp(strat->S[i]);
+    PrintS(" ---> ");
+  }
+#endif
+  gcd = p_Add_q(pp_Mult_mm(pNext(p), m1, strat->tailRing), pp_Mult_mm(pNext(strat->S[i]), m2, strat->tailRing), strat->tailRing);
+  p_LmDelete(m1, strat->tailRing);
+  p_LmDelete(m2, strat->tailRing);
+
+#ifdef KDEBUG
+  if (TEST_OPT_DEBUG)
+  {
+    wrp(gcd);
+    PrintLn();
+  }
+#endif
+
+  LObject h;
+  h.p = gcd;
+  h.tailRing = strat->tailRing;
+  int posx;
+  h.pCleardenom();
+  //printf("\nThis is our new achieved polynomial:\n");pWrite(gcd);
+  if(h.p == NULL)
+    return;
+  strat->initEcart(&h);
+  if (strat->Ll==-1)
+    posx =0;
+  else
+    posx = strat->posInL(strat->L,strat->Ll,&h,strat);
+  h.sev = pGetShortExpVector(h.p);
+  if (currRing!=strat->tailRing)
+    h.t_p = k_LmInit_currRing_2_tailRing(h.p, strat->tailRing);
+  #if 1
+  h.p1 = p;h.p2 = strat->S[i];
+  #endif
+  #if HAVE_RINGS
+  ReduceCoefL(&h, FALSE, strat);
+  if((h.p!=NULL) && (!nIsZero(h.p->coef)))
+  #endif
+  enterL(&strat->L,&strat->Ll,&strat->Lmax,h,posx);
+  //printf("\nFinished: \n");pWrite(h.p);
+  #endif
 }
 
 
@@ -1467,7 +1543,8 @@ BOOLEAN enterOneStrongPoly (int i,poly p,int /*ecart*/, int /*isFromQ*/,kStrateg
   h.p1 = p;h.p2 = strat->S[i];
   #endif
   #if HAVE_RINGS
-  ReduceCoefL(&h, strat);
+  ReduceCoefL(&h, FALSE, strat);
+  if((h.p!=NULL) && (!nIsZero(h.p->coef)))
   #endif
   enterL(&strat->L,&strat->Ll,&strat->Lmax,h,posx);
   return TRUE;
@@ -5321,6 +5398,87 @@ else
   }
 }
 
+int posInLRing (const LSet set, const int length,
+               LObject* p,const kStrategy /*strat*/)
+{
+  if (length < 0) return 0;
+  if (set[length].FDeg > p->FDeg)
+        return length+1;
+  if (set[length].FDeg == p->FDeg)
+    if(set[length].GetpLength() > p->GetpLength()) 
+          return length+1;
+  
+  int i;
+  int an = 0;
+  int en= length+1;
+  loop
+  {
+    if (an >= en-1)
+    {
+      if(an == en)
+        return en;
+      if (set[an].FDeg > p->FDeg) 
+        return en;
+      if(set[an].FDeg == p->FDeg)
+      {
+        if(set[an].GetpLength() > p->GetpLength()) 
+          {return en;}
+        else
+          {
+            if(set[an].GetpLength() == p->GetpLength())
+            {
+                if(nGreater(set[an].p->coef, p->p->coef))
+                {
+                    return en;
+                }
+                else
+                {
+                    return an;
+                }
+            }
+            else
+            {
+                return an;
+            }
+          }
+      }
+      else
+        {return an;}
+    }
+    i=(an+en) / 2;
+    if (set[i].FDeg > p->FDeg)
+      an=i;
+    else
+    {
+        if(set[i].FDeg == p->FDeg)
+        {
+            if(set[i].GetpLength() > p->GetpLength())
+                an=i;
+            else
+            {    
+                if(set[i].GetpLength() == p->GetpLength())
+                {
+                    if(nGreater(set[i].p->coef, p->p->coef))  
+                    {
+                        an = i;
+                    }
+                    else
+                    {
+                        en = i;
+                    }
+                }
+                else
+                {
+                    en=i;
+                }
+            }
+        }
+        else
+            en=i;
+    }                                      
+  }
+}
+
 // for sba, sorting syzygies
 int posInSyz (const kStrategy strat, poly sig)
 {
@@ -8345,7 +8503,8 @@ BOOLEAN kPosInLDependsOnLength(int (*pos_in_l)
                                 LObject* L,const kStrategy strat))
 {
   if (pos_in_l == posInL110 ||
-      pos_in_l == posInL10)
+      pos_in_l == posInL10  ||
+      pos_in_l == posInLRing)
     return TRUE;
 
   return FALSE;
@@ -8436,7 +8595,7 @@ void initBuchMoraPos (kStrategy strat)
 #ifdef HAVE_RINGS
   if (rField_is_Ring(currRing))
   {
-    strat->posInL = posInL11;
+    strat->posInL = posInLRing;
     strat->posInT = posInT11;
   }
 #endif
@@ -9124,6 +9283,8 @@ BOOLEAN kCheckStrongCreation(int atR, poly m1, int atS, poly m2, kStrategy strat
 
 void ReduceCoefInitial(kStrategy strat)
 {
+  if(getCoeffType(currRing->cf) == n_Z)
+  {
     #if 0
     //#if ADIDEBUG
     printf("\n      ------------------------BEFORe\n");
@@ -9145,9 +9306,9 @@ void ReduceCoefInitial(kStrategy strat)
     for(ii = 0; ii<strat->sl;ii++)
     {
         poly pp = strat->S[ii];
-        if((strat->coefred == pGetCoeff(pp)) && (p_Deg(pp, currRing) == 0))
-                return;
-        else
+        if(!nEqual(strat->coefred, pGetCoeff(pp)) || (p_Deg(pp, currRing) != 0))
+          ReduceCoef(pp, TRUE, strat);
+        /*if(!nEqual(strat->coefred, pGetCoeff(pp)) || (p_Deg(pp, currRing) != 0))
         {
             while((pp != NULL) && (pp!= strat->tail))
             {
@@ -9168,17 +9329,23 @@ void ReduceCoefInitial(kStrategy strat)
                 else 
                     pIter(pp);
             }
+          */
             if(strat->S[ii] != NULL)
                 pSetm(strat->S[ii]);
             else
             {
                 deleteInS(ii, strat);
             }
-        }
+        //}
     }
     for(ii = 0; ii<=strat->Ll;ii++)
     {
-        ReduceCoefL(&strat->L[ii], strat);        
+        if(!nEqual(strat->coefred, pGetCoeff(strat->L[ii].p)) || (p_Deg(strat->L[ii].p, currRing) != 0))
+          ReduceCoefL(&strat->L[ii], TRUE, strat); 
+        if(strat->L[ii].p == NULL)
+        {
+          deleteInL(strat->L, &strat->Ll, ii, strat);
+        }       
     }
     
     #if 0
@@ -9199,21 +9366,36 @@ void ReduceCoefInitial(kStrategy strat)
     #endif
     //printf("\nReduceCoefInitial finished...\n");
     //getchar();
+  }
 }
 
-void ReduceCoef(poly &p, kStrategy strat)
+void ReduceCoef(poly &p, bool FromInitial, kStrategy &strat)
 {
+    if(getCoeffType(currRing->cf) != n_Z)
+      return;
     if(p == NULL)
         return;
     if(strat->coefred != NULL)
     {
-        if(pNext(p) == strat->tail)
+        /*if(pNext(p) == strat->tail)
         {
+            return;
+        }*/
+        if((p_Deg(p, currRing) == 0) && !FromInitial)
+        {
+            p->coef = nGcd(strat->coefred,pGetCoeff(p));
+            strat->coefred = nCopy(pGetCoeff(p));
+            ReduceCoefInitial(strat);
             return;
         }
-        if((strat->coefred == pGetCoeff(p)) && (p_Deg(p, currRing) == 0))
+        if(pNext(p) == NULL)
         {
-            return;
+          p->coef = currRing->cf->cfIntMod(pGetCoeff(p), strat->coefred, currRing->cf);
+          if(nIsZero(p->coef))
+          {  
+            p = NULL;
+          }
+          return;
         }
         poly pp = p;
         while((pp != NULL) && (pp!= strat->tail))
@@ -9238,24 +9420,78 @@ void ReduceCoef(poly &p, kStrategy strat)
     }
 }
 
+void preIntegerCheck(ideal F, ideal Q)
+{
+if(getCoeffType(currRing->cf) == n_Z)
+  {
+    ring origR = currRing;
+    ring Q_ring = rCopy(currRing);
+    rUnComplete(Q_ring);
+    Q_ring->cf->ref--;
+    Q_ring->cf = nInitChar(n_Q, NULL);
+    rComplete(Q_ring);
+    Q_ring = rAssure_c_dp(Q_ring);
+    rChangeCurrRing(Q_ring);
+    nMapFunc nMap = n_SetMap(origR->cf, Q_ring->cf);
+    ideal II = idInit(IDELEMS(F)+1,1);
+    int *perm = (int *)omAlloc0((Q_ring->N+1)*sizeof(int));
+    for(int i=Q_ring->N;i>0;i--) 
+        perm[i]=i;
+    for(int i = 0, j = 0; i<=IDELEMS(F); i++)
+        II->m[j++] = p_PermPoly(F->m[i], perm, origR, Q_ring, nMap, NULL, 0);
+    ideal one = kStd(II, Q, isNotHomog, NULL);
+    if(idIsConstant(one))
+    {
+        //one should be <1>
+        for(int i = IDELEMS(II); i>=0; i--)
+            II->m[i+1] = II->m[i];
+        II->m[0] = pOne();
+        ideal syz = idSyzygies(II, isNotHomog, NULL);        
+        poly integer;
+        for(int i = IDELEMS(syz)-1;i>=0; i--)
+        {
+            if(pGetComp(syz->m[i]) == 1)
+            {
+                if(p_Deg(pHead(syz->m[i]), currRing) == 0)
+                {
+                    integer = pCopy(pHead(syz->m[i]));
+                    pSetComp(integer, 0);
+                }
+            }
+        }
+        rChangeCurrRing(origR);
+        nMapFunc nMap2 = n_SetMap(Q_ring->cf, origR->cf);
+        poly integer_in_origR = p_PermPoly(integer, perm, Q_ring, origR, nMap2, NULL, 0);
+        //pWrite(integer_in_origR);
+        idInsertPoly(F, integer_in_origR);
+        //idPrint(F);
+    }
+    else
+        rChangeCurrRing(origR);
+  }
+}
 
-void ReduceCoefL(LObject* h, kStrategy strat)
+void ReduceCoefL(LObject* h, bool FromInitial, kStrategy &strat)
 {
     //printf("\nBefore\n");pWrite(h->p);
+    if(getCoeffType(currRing->cf) != n_Z)
+      return;
     if(h->p == NULL)
         return;
     if(strat->coefred != NULL)
     {
         int deleted = 0;
-        if(pNext(h->p) == strat->tail)
+        /*if(pNext(h->p) == strat->tail)
         {
             return;
-        }
-        if((strat->coefred == pGetCoeff(h->p)) && (p_Deg(h->p, currRing) == 0))
+        }*/
+        if((p_Deg(h->p, currRing) == 0))
         {
+            h->p->coef = nGcd(strat->coefred,pGetCoeff(h->p));
+            strat->coefred = nCopy(pGetCoeff(h->p));
+            //ReduceCoefInitial(strat);
             return;
         }
-        
         while(h->p != NULL)
         {
             //printf("\nBefore\n");pWrite(h->p);

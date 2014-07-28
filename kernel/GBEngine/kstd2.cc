@@ -89,6 +89,9 @@ long sba_interreduction_operations;
 #ifdef HAVE_PLURAL
 #include <polys/nc/nc.h>
 #endif
+//#ifdef HAVE_RINGS
+//#include <libpolys/polys/monomials/ring.h>
+//#endif
 // #include "timer.h"
 
 /* shiftgb stuff */
@@ -441,8 +444,8 @@ int redRing (LObject* h,kStrategy strat)
     //getchar();
     #if HAVE_RINGS
     //printf("\nBefore\n");pWrite(h->p);
-    if((h->p != NULL) && (h->tailRing != currRing))
-        ReduceCoefL(h, strat);
+    //if(h->p != NULL)
+    //    ReduceCoefL(h, FALSE, strat);
     //printf("\nAfter ReduceCoefL\n");pWrite(h->p);
     //getchar();
     #endif
@@ -1463,7 +1466,12 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
   BOOLEAN withT = FALSE;
   BITSET save;
   SI_SAVE_OPT1(save);
-
+  
+  #if 1 // ADIDEBUG
+  if(idPosConstant(F) == -1)
+    preIntegerCheck(F, Q);
+  #endif
+  
   initBuchMoraCrit(strat); /*set Gebauer, honey, sugarCrit*/
   initBuchMoraPos(strat);
   initHilbCrit(F,Q,&hilb,strat);
@@ -1472,6 +1480,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
   /*Shdl=*/initBuchMora(F, Q,strat);
   if (strat->minim>0) strat->M=idInit(IDELEMS(F),F->rank);
   reduc = olddeg = 0;
+  
   
   #if HAVE_RINGS
   strat->coefred = NULL;
@@ -1527,10 +1536,11 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     int iii;
     for(iii = 0; iii<= strat->Ll; iii++)
     {
-        printf("\nL[%i]\n", iii);
+        printf("\nL[%i]: grad  = %i, length = %i, get it = %i\n", iii,strat->L[iii].FDeg,strat->L[iii].length, strat->L[iii].GetpLength());
         p_Write(strat->L[iii].p, strat->tailRing);
         p_Write(strat->L[iii].p1, strat->tailRing);
         p_Write(strat->L[iii].p2, strat->tailRing);
+        
                                 
     }
     //getchar();
@@ -1733,18 +1743,19 @@ messageADI(red_result);
 #endif
           enterpairs(strat->P.p,strat->sl,strat->P.ecart,pos,strat, strat->tl);
         // posInS only depends on the leading term
-        #if 1
+        #if 0
         //#if ADIDEBUG
-        printf("\nThis element is added to S:\n");
+        printf("\nThis element is added to S[%i]:\nL has %i elements\n",strat->sl, strat->Ll);
         pWrite(strat->P.p);pWrite(strat->P.p1);pWrite(strat->P.p2);
         idPrint(strat->Shdl);
+        //getchar();
         #endif
         
         strat->enterS(strat->P, pos, strat, strat->tl);
-
-        ReduceCoef(strat->P.p, strat);
         
         #if HAVE_RINGS
+        if(rField_is_Ring(currRing))
+            ReduceCoef(strat->P.p, FALSE, strat);
         if((strat->coefred == NULL) && (p_Deg(strat->S[strat->sl], currRing) == 0))
         {
             strat->coefred = pGetCoeff(strat->S[strat->sl]);

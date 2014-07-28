@@ -450,6 +450,8 @@ int posInLF5C (const LSet set, const int length,
                LObject* L,const kStrategy strat);
 int posInLSig (const LSet set, const int length,
                LObject* L,const kStrategy strat);
+int posInLRing (const LSet set, const int length,
+               LObject* L,const kStrategy strat);
 int posInSyz (const kStrategy strat, const poly sig);
 int posInL0 (const LSet set, const int length,
              LObject* L,const kStrategy strat);
@@ -743,8 +745,9 @@ BOOLEAN kCheckStrongCreation(int atR, poly m1, int atS, poly m2, kStrategy strat
 //if in the partial std we get an element of degree 0, we will use it 
 //to reduce the coefficients in S and L
 void ReduceCoefInitial(kStrategy strat);
-void ReduceCoef(poly &p, kStrategy strat);
-void ReduceCoefL(LObject *h, kStrategy strat);
+void ReduceCoef(poly &p, bool FromInitial, kStrategy &strat);
+void preIntegerCheck(ideal F, ideal Q);
+void ReduceCoefL(LObject *h, bool FromInitial, kStrategy &strat);
 #endif
 // change strat->tailRing and adjust all data in strat, L, and T:
 // new tailRing has larger exponent bound
