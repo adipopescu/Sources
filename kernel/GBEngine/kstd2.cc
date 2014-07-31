@@ -72,7 +72,7 @@ long sba_interreduction_operations;
  * SBA stuff -- done
 ***********************************************/
 #define ADIDEBUG 0
-#define ADIDEBUG_COUNT 1
+#define ADIDEBUG_COUNT 0
 
 #include <kernel/GBEngine/kutil.h>
 #include <misc/options.h>
@@ -432,11 +432,27 @@ int redRing (LObject* h,kStrategy strat)
     //for(int ii = 0; ii<=strat->tl; ii++)
     //    {pWrite(strat->T[ii].p);}
     
-    if (j < 0) return 1;
+    if (j < 0) 
+    {
+        // over ZZ: cleanup coefficients by complete reduction with monomials
+        postReduceByMon(h, strat);
+        if(strat->tl >= 0)
+            h->i_r1 = strat->tl;
+        else
+            h->i_r1 = -1;
+        if (h->GetLmTailRing() == NULL)
+        {
+          if (h->lcm!=NULL) pLmDelete(h->lcm);
+          h->Clear();
+          return 0;
+        }
+        return 1;
+    }
     #if ADIDEBUG
     pWrite(h->p);
     printf("\nFound j = %i\n",j);pWrite(strat->T[j].p);
     #endif
+    //printf("\nsdjksdjkhsdhasdkfhk\n");pWrite(h->p);pWrite(strat->T[j].p);
     
     ksReducePoly(h, &(strat->T[j]), NULL, NULL, strat); // with debug output
     //printf("\nFinal after ksReducePoly\n");
@@ -1467,10 +1483,11 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
   BITSET save;
   SI_SAVE_OPT1(save);
   
-  #if 1 // ADIDEBUG
-  if(idPosConstant(F) == -1)
-    preIntegerCheck(F, Q);
+  #if HAVE_RINGS
+  if(nCoeff_is_Ring_Z(currRing->cf))
+      F=preIntegerCheck(F, Q);
   #endif
+  //idPrint(F);getchar();
   
   initBuchMoraCrit(strat); /*set Gebauer, honey, sugarCrit*/
   initBuchMoraPos(strat);
@@ -1480,11 +1497,6 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
   /*Shdl=*/initBuchMora(F, Q,strat);
   if (strat->minim>0) strat->M=idInit(IDELEMS(F),F->rank);
   reduc = olddeg = 0;
-  
-  
-  #if HAVE_RINGS
-  strat->coefred = NULL;
-  #endif
 
 #ifndef NO_BUCKETS
   if (!TEST_OPT_NOT_BUCKETS)
@@ -1519,6 +1531,14 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     if (test_PosInL!=NULL) strat->posInL=test_PosInL;
     kDebugPrint(strat);
   }
+  // search for all one-term and constant polynomials in F and reduce F with them
+  /*for(int i=0; i<=IDELEMS(F); i++)
+  {
+    if(pNext(F->m[i]) == NULL)
+    {
+        
+    }
+  }*/
 
 
 #ifdef KDEBUG
@@ -1714,13 +1734,22 @@ messageADI(red_result);
         printf("\nThis element is added to S\n");
         pWrite(strat->P.p);pWrite(strat->P.p1);pWrite(strat->P.p2);
         //idPrint(strat->Shdl);
-        //getchar();
+        getchar();
         #endif
         
         strat->enterS(strat->P, pos, strat, strat->tl);
-        
         #if 0
-        if(getCoeffType(currRing->cf) == n_Z)
+        //#if HAVE_RINGS
+        //if(rField_is_Ring(currRing))
+        //    ReduceCoef(strat->P.p, FALSE, strat);
+        if((strat->coefred == NULL) && (p_Deg(strat->S[pos], currRing) == 0))
+         {
+             strat->coefred = pGetCoeff(strat->S[pos]);
+             //ReduceCoefInitial(strat);
+         }
+         #endif
+        #if 0
+        if(nCoeff_is_Ring_Z(currRing->cf))
         {poly dummy;
         if((strat->coefred == NULL) && (strat->S[pos]!= NULL) && (p_Deg(strat->S[pos], currRing) == 0))
         {
