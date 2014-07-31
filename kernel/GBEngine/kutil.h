@@ -747,6 +747,7 @@ BOOLEAN kCheckStrongCreation(int atR, poly m1, int atS, poly m2, kStrategy strat
 //void ReduceCoef(poly &p, bool FromInitial, kStrategy &strat);
 ideal preIntegerCheck(ideal F, ideal Q);
 void postReduceByMon(LObject* h, kStrategy strat);
+void finalReduceByMon(kStrategy &strat);
 //void ReduceCoefL(LObject *h, bool FromInitial, kStrategy &strat);
 #endif
 // change strat->tailRing and adjust all data in strat, L, and T:

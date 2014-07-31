@@ -1814,6 +1814,9 @@ messageADI(red_result);
 #endif /* KDEBUG */
     kTest_TS(strat);
   }
+#ifdef HAVE_RINGS
+  finalReduceByMon(strat);
+#endif
 #ifdef KDEBUG
 #if MYTEST
   PrintS("bba finish GB: currRing: "); rWrite(currRing);

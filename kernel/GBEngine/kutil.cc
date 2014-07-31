@@ -9540,7 +9540,7 @@ void ReduceCoef(poly &p, bool FromInitial, kStrategy &strat)
 }
 #endif
 /*!
-  used by strategy option(checkConstFirst) for GB over ZZ
+  used for GB over ZZ: look for constant and monomial elements in the ideal
   background: any known constant element of ideal suppresses 
               intermediate coefficient swell
 */
@@ -9654,7 +9654,11 @@ if(nCoeff_is_Ring_Z(currRing->cf))
     return F;
   }
 }
-
+/*!
+  used for GB over ZZ: intermediate reduction by monomial elements
+  background: any known constant element of ideal suppresses 
+              intermediate coefficient swell
+*/
 void postReduceByMon(LObject* h, kStrategy strat)
 {
   if(!nCoeff_is_Ring_Z(currRing->cf))
@@ -9707,6 +9711,58 @@ void postReduceByMon(LObject* h, kStrategy strat)
   h->SetLmCurrRing();
   if(deleted)
     strat->initEcart(h);
+}
+
+/*!
+  used for GB over ZZ: final reduction by constant elements
+  background: any known constant element of ideal suppresses 
+              intermediate coefficient swell and beautifies output
+*/
+void finalReduceByMon(kStrategy &strat)
+{
+  if(!nCoeff_is_Ring_Z(currRing->cf))
+      return;
+  poly p,pp;
+  for(int j = 0; j<=strat->sl; j++)
+  {
+    if(pNext(strat->S[j]) == NULL)
+    {
+      for(int i = 0; i<=strat->sl; i++)
+      {
+        if(i != j)
+        {
+          p = strat->S[i];
+          if(pLmDivisibleBy(strat->S[j], p))
+          {
+            p->coef = currRing->cf->cfIntMod(p->coef, strat->S[j]->coef, currRing->cf);
+          }
+          pp = pNext(p); 
+          while(pp != NULL)
+          {
+            if(pLmDivisibleBy(strat->S[j], pp))
+            {
+              pp->coef = currRing->cf->cfIntMod(pp->coef, strat->S[j]->coef, currRing->cf);
+              if(nIsZero(pp->coef))
+              {
+                pLmDelete(&pNext(p));
+                pp = pNext(p);
+              }
+              else
+              {
+                p = pp;
+                pp = pNext(p);
+              }
+            }
+            else
+            {
+              p = pp;
+              pp = pNext(p);
+            }
+          }
+        }
+      }
+    }
+  }
 }
 #if 0
 void ReduceCoefL(LObject* h, bool FromInitial, kStrategy &strat)
