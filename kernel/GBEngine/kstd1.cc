@@ -1496,11 +1496,6 @@ loop_count = 1;
   int hilbeledeg=1,hilbcount=0;
   BITSET save1;
   SI_SAVE_OPT1(save1);
-  #if HAVE_RINGS
-  if(nCoeff_is_Ring_Z(currRing->cf))
-      F=preIntegerCheck(F, Q);
-  #endif
-  printf("\nIdeal after Preintegercheck: \n");idPrint(F);
   if (currRing->MixedOrder)
   {
     si_opt_1 &= ~Sy_bit(OPT_REDSB);
@@ -1807,6 +1802,10 @@ loop_count = 1;
 //      ecartWeights=NULL;
 //    }
 //  }
+#ifdef HAVE_RINGS
+  if(nCoeff_is_Ring_Z(currRing->cf))
+    finalReduceByMon(strat);
+#endif
   if (Q!=NULL) updateResult(strat->Shdl,Q,strat);
   SI_RESTORE_OPT1(save1);
   idTest(strat->Shdl);
@@ -1901,7 +1900,7 @@ poly kNF1 (ideal F,ideal Q,poly q, kStrategy strat, int lazyReduce)
 //  kDebugPrint(strat);
 #endif
   /*- compute------------------------------------------- -*/
-  printf("\nBin hier\n");getchar();
+  //printf("\nBin hier\n");getchar();
   p = pCopy(q);
   deleteHC(&p,&o,&j,strat);
   kTest(strat);
@@ -2210,10 +2209,22 @@ ideal kStd(ideal F, ideal Q, tHomog h,intvec ** w, intvec *hilb,int syzComp,
 #ifdef HAVE_RINGS
   if (rField_is_Ring(currRing))
     {
-    if(currRing->OrdSgn == -1)
-      r=mora(F,Q,NULL,hilb,strat);
-    else
-      r=bba(F,Q,NULL,hilb,strat);
+        if(nCoeff_is_Ring_Z(currRing->cf))
+        {
+            ideal FCopy = idCopy(F);
+            FCopy = preIntegerCheck(FCopy, Q);
+            if(currRing->OrdSgn == -1)
+                r=mora(FCopy,Q,NULL,hilb,strat);
+            else
+                r=bba(FCopy,Q,NULL,hilb,strat);
+        }
+        else
+        {
+            if(currRing->OrdSgn == -1)
+                r=mora(F,Q,NULL,hilb,strat);
+            else
+                r=bba(F,Q,NULL,hilb,strat);
+        }
     }
   else
 #endif
