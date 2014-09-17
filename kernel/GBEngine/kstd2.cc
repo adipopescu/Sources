@@ -1482,11 +1482,12 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
   BOOLEAN withT = FALSE;
   BITSET save;
   SI_SAVE_OPT1(save);
-  
+  printf("\nIch bin hier!!\n");
   #if HAVE_RINGS
   if(nCoeff_is_Ring_Z(currRing->cf))
       F=preIntegerCheck(F, Q);
   #endif
+  printf("\nUnd jetzt hier!!\n");
   //idPrint(F);getchar();
   
   initBuchMoraCrit(strat); /*set Gebauer, honey, sugarCrit*/
@@ -1522,6 +1523,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
 #endif /* KDEBUG */
 
 #ifdef HAVE_TAIL_RING
+    getchar();
   if(!idIs0(F) &&(!rField_is_Ring(currRing)))  // create strong gcd poly computes with tailring and S[i] ->to be fixed
     kStratInitChangeTailRing(strat);
 #endif
@@ -1563,7 +1565,6 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
         
                                 
     }
-    //getchar();
     #endif
     #ifdef KDEBUG
       loop_count++;

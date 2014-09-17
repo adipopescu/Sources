@@ -1,5 +1,5 @@
 LIB "tst.lib"; tst_init();
-
+TRACE = 1;
 ring r = integer,(v,w,t),dp; r;
 
 

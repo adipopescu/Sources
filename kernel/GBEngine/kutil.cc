@@ -9558,8 +9558,9 @@ if(nCoeff_is_Ring_Z(currRing->cf))
     idSkipZeroes(monred);
     if(idPosConstant(F) != -1)
     {
-      F = kNF(monred, Q, F);
-      F = idSimpleAdd(F, monred);
+      idPrint(F);idPrint(monred);
+      F = kNF(monred, Q, F);idPrint(F);
+      F = idSimpleAdd(F, monred);idPrint(F);
       idDelete(&monred, currRing);
       return F;
     }
