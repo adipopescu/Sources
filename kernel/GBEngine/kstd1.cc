@@ -2209,16 +2209,19 @@ ideal kStd(ideal F, ideal Q, tHomog h,intvec ** w, intvec *hilb,int syzComp,
 #ifdef HAVE_RINGS
   if (rField_is_Ring(currRing))
     {
+#if 1        
         if(nCoeff_is_Ring_Z(currRing->cf))
         {
             ideal FCopy = idCopy(F);
-            FCopy = preIntegerCheck(FCopy, Q);
+            poly pFmon = preIntegerCheck(FCopy, Q);
+  //          idInsertPoly(FCopy, pFmon); 
             if(currRing->OrdSgn == -1)
                 r=mora(FCopy,Q,NULL,hilb,strat);
             else
                 r=bba(FCopy,Q,NULL,hilb,strat);
         }
         else
+#endif
         {
             if(currRing->OrdSgn == -1)
                 r=mora(F,Q,NULL,hilb,strat);

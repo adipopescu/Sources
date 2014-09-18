@@ -8364,10 +8364,8 @@ void enterT(LObject p, kStrategy strat, int atT)
       strat->R[strat->T[i].i_r] = &(strat->T[i]);
     }
   }
-  assume(kTest_TS(strat));
   if ((strat->tailBin != NULL) && (pNext(p.p) != NULL))
   {
-    pWrite(p.p);
     pNext(p.p)=p_ShallowCopyDelete(pNext(p.p),
                                    (strat->tailRing != NULL ?
                                     strat->tailRing : currRing),
@@ -8788,7 +8786,6 @@ void initBuchMora (ideal F,ideal Q,kStrategy strat)
   }
   strat->fromT = FALSE;
   strat->noTailReduction = !TEST_OPT_REDTAIL;
-  assume(kTest_TS(strat));
   if ((!TEST_OPT_SB_1)
   #ifdef HAVE_RINGS
   || (rField_is_Ring(currRing))
@@ -8797,8 +8794,9 @@ void initBuchMora (ideal F,ideal Q,kStrategy strat)
   {
     updateS(TRUE,strat);
   }
-  if (strat->fromQ!=NULL) omFreeSize(strat->fromQ,IDELEMS(strat->Shdl)*sizeof(int));
-  strat->fromQ=NULL;
+  //if (strat->fromQ!=NULL) omFreeSize(strat->fromQ,IDELEMS(strat->Shdl)*sizeof(int));
+  //strat->fromQ=NULL;
+  assume(kTest_TS(strat));
 }
 
 void exitBuchMora (kStrategy strat)
@@ -9061,17 +9059,22 @@ void updateResult(ideal r,ideal Q, kStrategy strat)
           if ((Q->m[q]!=NULL)
           &&(pLmDivisibleBy(Q->m[q],r->m[l])))
           {
-            if (TEST_OPT_REDSB)
+            #if HAVE_RINGS
+            if(!rField_is_Ring(currRing) || (rField_is_Ring(currRing) && n_DivBy(r->m[l]->coef, Q->m[q]->coef, currRing)))
+            #endif
             {
-              p=r->m[l];
-              r->m[l]=kNF(Q,NULL,p);
-              pDelete(&p);
+                if (TEST_OPT_REDSB)
+                {
+                  p=r->m[l];
+                  r->m[l]=kNF(Q,NULL,p);
+                  pDelete(&p);
+                }
+                else
+                {
+                  pDelete(&r->m[l]); // and set it to NULL
+                }
+                break;
             }
-            else
-            {
-              pDelete(&r->m[l]); // and set it to NULL
-            }
-            break;
           }
         }
       }
@@ -9119,21 +9122,23 @@ void updateResult(ideal r,ideal Q, kStrategy strat)
         {
           for(q=IDELEMS(Q)-1; q>=0;q--)
           {
-            if ((Q->m[q]!=NULL)&&(pLmEqual(Q->m[q],r->m[l]))
-            && pDivisibleBy(Q->m[q],r->m[l]))
+            if(!rField_is_Ring(currRing) || (rField_is_Ring(currRing) && n_DivBy(r->m[l]->coef, Q->m[q]->coef, currRing)))
             {
-              if (TEST_OPT_REDSB)
-              {
-                p=r->m[l];
-                r->m[l]=kNF(Q,NULL,p);
-                pDelete(&p);
-                reduction_found=TRUE;
-              }
-              else
-              {
-                pDelete(&r->m[l]); // and set it to NULL
-              }
+                if ((Q->m[q]!=NULL)&&(pLmEqual(Q->m[q],r->m[l])) && pDivisibleBy(Q->m[q],r->m[l]))
+                {
+                  if (TEST_OPT_REDSB)
+                  {
+                    p=r->m[l];
+                    r->m[l]=kNF(Q,NULL,p);
+                    pDelete(&p);
+                    reduction_found=TRUE;
+                  }
+                  else
+                  {
+                    pDelete(&r->m[l]); // and set it to NULL
+                  }
               break;
+              }
             }
           }
         }
@@ -9152,7 +9157,10 @@ void updateResult(ideal r,ideal Q, kStrategy strat)
             && (r->m[q]!=NULL)
             &&(pLmDivisibleBy(r->m[l],r->m[q])))
             {
-              pDelete(&r->m[q]);
+                #if HAVE_RINGS
+                if(!rField_is_Ring(currRing) || (rField_is_Ring(currRing) && n_DivBy(r->m[q]->coef, r->m[l]->coef, currRing)))
+                #endif
+                  pDelete(&r->m[q]);
             }
           }
         }
@@ -9548,13 +9556,11 @@ void ReduceCoef(poly &p, bool FromInitial, kStrategy &strat)
   background: any known constant element of ideal suppresses 
               intermediate coefficient swell
 */
-ideal preIntegerCheck(ideal F, ideal Q)
-{
-idSkipZeroes(F);
-
-printf("entering preIntegerCheck\n");
-idPrint(F);
-idPrint(Q);
+poly preIntegerCheck(ideal FOrig, ideal Q)
+{  
+  ideal F = idCopy(FOrig);
+  idSkipZeroes(F);
+  poly pmon;
   if(nCoeff_is_Ring_Z(currRing->cf))
   {
     ring origR = currRing;
@@ -9567,15 +9573,9 @@ idPrint(Q);
     int posconst = idPosConstant(F);
     if((posconst != -1) && (!nIsZero(F->m[posconst]->coef)))
     {
-idPrint(F);idPrint(monred);
-      F = kNF(monred, Q, F);idPrint(F);
-      F = idSimpleAdd(F, monred);idPrint(F);
-      idDelete(&monred, currRing);
-printf("found constant\n");
-idPrint(F);
-      return F;
+        pmon = pCopy(F->m[posconst]);
+        return pmon;
     }
-printf("searched F for monomials\n");
     int idelemQ = 0;
     if(Q!=NULL)
     {
@@ -9586,21 +9586,14 @@ printf("searched F for monomials\n");
               idInsertPoly(monred, Q->m[i]);
         }
         idSkipZeroes(monred);
-idPrint(monred);
         posconst = idPosConstant(monred);
         //the constant, if found, will be from Q 
         if((posconst != -1) && (!nIsZero(monred->m[posconst]->coef)))
         {
-idPrint(Q);idPrint(monred);
-          F = kNF(monred, Q, F);idPrint(F);
-          F = idSimpleAdd(F, monred);idPrint(F);
-          idDelete(&monred, currRing);
-printf("found constant\n");
-idPrint(F);
-          return F;
+            pmon = pCopy(monred->m[posconst]);
+            return pmon;
         }
     }
-printf("no constant\n");idPrint(F);idPrint(Q);
     ring QQ_ring = rCopy(currRing);
     rUnComplete(QQ_ring);
     QQ_ring->cf->ref--;
@@ -9611,9 +9604,7 @@ printf("no constant\n");idPrint(F);idPrint(Q);
     QQ_ring = rAssure_c_dp(QQ_ring);
     rChangeCurrRing(QQ_ring);
     nMapFunc nMap = n_SetMap(origR->cf, QQ_ring->cf);
-printf("\nSucces with the ring change\n");
-    ideal II = idInit(IDELEMS(F)+idelemQ+1,1);
-printf("idelemII = %i\n",IDELEMS(II));
+    ideal II = idInit(IDELEMS(F)+idelemQ+2,1);
     int *perm = (int *)omAlloc0((QQ_ring->N+1)*sizeof(int));
     for(int i=QQ_ring->N;i>0;i--) 
         perm[i]=i;
@@ -9621,11 +9612,8 @@ printf("idelemII = %i\n",IDELEMS(II));
         II->m[j++] = p_PermPoly(F->m[i], perm, origR, QQ_ring, nMap, NULL, 0);
     for(int i = 0, j = IDELEMS(F); i<idelemQ; i++)
         II->m[j++] = p_PermPoly(Q->m[i], perm, origR, QQ_ring, nMap, NULL, 0);
-printf("idelemQ = %i\nII\n",idelemQ);idPrint(II);
     ideal one = kStd(II, NULL, isNotHomog, NULL);
     idSkipZeroes(one);
-printf("computed over QQ\n");
-idPrint(one);
     if(idIsConstant(one))
     {
         //one should be <1>
@@ -9648,10 +9636,8 @@ idPrint(one);
         }
         rChangeCurrRing(origR);
         nMapFunc nMap2 = n_SetMap(QQ_ring->cf, origR->cf);
-        poly integer_in_origR = p_PermPoly(integer, perm, QQ_ring, origR, nMap2, NULL, 0);
-        //pWrite(integer_in_origR);getchar();
-        idInsertPoly(F, integer_in_origR);
-        //idPrint(F);
+        pmon = p_PermPoly(integer, perm, QQ_ring, origR, nMap2, NULL, 0);
+        return pmon;
     }
     else
     {
@@ -9690,8 +9676,8 @@ idPrint(one);
             }
             rChangeCurrRing(origR);
             nMapFunc nMap2 = n_SetMap(QQ_ring->cf, origR->cf);
-            poly mindegmon_in_origR = p_PermPoly(mindegmon, perm, QQ_ring, origR, nMap2, NULL, 0);
-            idInsertPoly(F, mindegmon_in_origR);
+            pmon = p_PermPoly(mindegmon, perm, QQ_ring, origR, nMap2, NULL, 0);
+            return pmon;
         }
         else
             rChangeCurrRing(origR);
@@ -9699,11 +9685,7 @@ idPrint(one);
       else
         rChangeCurrRing(origR);
     }
-    F = kNF(monred, Q, F);
-    F = idSimpleAdd(F, monred);
-    idDelete(&monred, currRing);
-    idSkipZeroes(F);
-    return F;
+    return NULL;
   }
 }
 /*!
@@ -9719,25 +9701,20 @@ void postReduceByMon(LObject* h, kStrategy strat)
   poly p,pp;
   p = pH;
   bool deleted = FALSE;
-  //printf("\nBefore: \n");pWrite(pH);
   for(int i = 0; i<=strat->sl; i++)
   {
     if(pNext(strat->S[i]) == NULL)
     {
-      //printf("\nTrying to reduce with\n");pWrite(strat->S[i]);pWrite(p);
       if(pLmDivisibleBy(strat->S[i], p))
       {
         p->coef = currRing->cf->cfIntMod(p->coef, strat->S[i]->coef, currRing->cf);
-        //printf("\nIn pLm\n");pWrite(p);
       }
       pp = pNext(p); 
       while(pp != NULL)
       {
-        //pWrite(pp);pWrite(strat->S[i]);
         if(pLmDivisibleBy(strat->S[i], pp))
         {
           pp->coef = currRing->cf->cfIntMod(pp->coef, strat->S[i]->coef, currRing->cf);
-          //pWrite(pp);
           if(nIsZero(pp->coef))
           {
             pLmDelete(&pNext(p));

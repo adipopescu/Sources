@@ -1488,8 +1488,6 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
   initHilbCrit(F,Q,&hilb,strat);
   initBba(F,strat);
   /*set enterS, spSpolyShort, reduce, red, initEcart, initEcartPair*/
-  printf("\n                BBA 'Anfang\n");
-  idPrint(F);idPrint(Q);
   /*Shdl=*/initBuchMora(F, Q,strat);
   if (strat->minim>0) strat->M=idInit(IDELEMS(F),F->rank);
   reduc = olddeg = 0;
@@ -1727,8 +1725,7 @@ messageADI(red_result);
         //#if ADIDEBUG
         printf("\nThis element is added to S\n");
         pWrite(strat->P.p);pWrite(strat->P.p1);pWrite(strat->P.p2);
-        //idPrint(strat->Shdl);
-        getchar();
+        idPrint(strat->Shdl);
         #endif
         
         strat->enterS(strat->P, pos, strat, strat->tl);
@@ -1840,7 +1837,6 @@ messageADI(red_result);
         }
     }
   }
-
   /* complete reduction of the standard basis--------- */
   if (TEST_OPT_REDSB)
   {
@@ -1874,7 +1870,6 @@ messageADI(red_result);
   if (TEST_OPT_PROT) messageStat(hilbcount,strat);
   SI_RESTORE_OPT1(save);
   if (Q!=NULL) updateResult(strat->Shdl,Q,strat);
-
 #ifdef KDEBUG
 #if MYTEST
   PrintS("bba_end: currRing: "); rWrite(currRing);

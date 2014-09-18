@@ -745,7 +745,7 @@ BOOLEAN kCheckStrongCreation(int atR, poly m1, int atS, poly m2, kStrategy strat
 //to reduce the coefficients in S and L
 //void ReduceCoefInitial(kStrategy &strat);
 //void ReduceCoef(poly &p, bool FromInitial, kStrategy &strat);
-ideal preIntegerCheck(ideal F, ideal Q);
+poly preIntegerCheck(ideal F, ideal Q);
 void postReduceByMon(LObject* h, kStrategy strat);
 void finalReduceByMon(kStrategy &strat);
 //void ReduceCoefL(LObject *h, bool FromInitial, kStrategy &strat);
