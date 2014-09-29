@@ -6543,7 +6543,6 @@ poly redtailBba (LObject* L, int pos, kStrategy strat, BOOLEAN withT, BOOLEAN no
   TObject* With;
   // placeholder in case strat->tl < 0
   TObject  With_s(strat->tailRing);
-
   LObject Ln(pNext(h), strat->tailRing);
   Ln.pLength = L->GetpLength() - 1;
 
@@ -9604,7 +9603,7 @@ poly preIntegerCheck(ideal FOrig, ideal Q)
     QQ_ring = rAssure_c_dp(QQ_ring);
     rChangeCurrRing(QQ_ring);
     nMapFunc nMap = n_SetMap(origR->cf, QQ_ring->cf);
-    ideal II = idInit(IDELEMS(F)+idelemQ+2,1);
+    ideal II = idInit(IDELEMS(F)+idelemQ+2,id_RankFreeModule(F, origR));
     int *perm = (int *)omAlloc0((QQ_ring->N+1)*sizeof(int));
     for(int i=QQ_ring->N;i>0;i--) 
         perm[i]=i;
@@ -9617,11 +9616,11 @@ poly preIntegerCheck(ideal FOrig, ideal Q)
     if(idIsConstant(one))
     {
         //one should be <1>
-        for(int i = IDELEMS(II); i>=0; i--)
+        for(int i = IDELEMS(II)-1; i>=0; i--)
             II->m[i+1] = II->m[i];
         II->m[0] = pOne();
-        ideal syz = idSyzygies(II, isNotHomog, NULL);        
-        poly integer;
+        ideal syz = idSyzygies(II, isNotHomog, NULL);     
+        poly integer = NULL;
         for(int i = IDELEMS(syz)-1;i>=0; i--)
         {
             if(pGetComp(syz->m[i]) == 1)
@@ -9703,13 +9702,14 @@ void postReduceByMon(LObject* h, kStrategy strat)
   bool deleted = FALSE;
   for(int i = 0; i<=strat->sl; i++)
   {
+    p = pH;
     if(pNext(strat->S[i]) == NULL)
     {
       if(pLmDivisibleBy(strat->S[i], p))
       {
         p->coef = currRing->cf->cfIntMod(p->coef, strat->S[i]->coef, currRing->cf);
       }
-      pp = pNext(p); 
+      pp = pNext(p);
       while(pp != NULL)
       {
         if(pLmDivisibleBy(strat->S[i], pp))

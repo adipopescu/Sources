@@ -2214,7 +2214,7 @@ ideal kStd(ideal F, ideal Q, tHomog h,intvec ** w, intvec *hilb,int syzComp,
         {
             ideal FCopy = idCopy(F);
             poly pFmon = preIntegerCheck(FCopy, Q);
-  //          idInsertPoly(FCopy, pFmon); 
+            idInsertPoly(FCopy, pFmon); 
             if(currRing->OrdSgn == -1)
                 r=mora(FCopy,Q,NULL,hilb,strat);
             else
