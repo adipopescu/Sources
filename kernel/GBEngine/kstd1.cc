@@ -2215,6 +2215,37 @@ ideal kStd(ideal F, ideal Q, tHomog h,intvec ** w, intvec *hilb,int syzComp,
             ideal FCopy = idCopy(F);
             poly pFmon = preIntegerCheck(FCopy, Q);
             idInsertPoly(FCopy, pFmon); 
+            strat->kModW=kModW=NULL;
+            if (h==testHomog)
+            {
+                if (strat->ak == 0)
+                {
+                  h = (tHomog)idHomIdeal(F,Q);
+                  w=NULL;
+                }
+                else if (!TEST_OPT_DEGBOUND)
+                {
+                    h = (tHomog)idHomModule(F,Q,w);
+                }
+            }
+            currRing->pLexOrder=b;
+            if (h==isHomog)
+            {
+                if (strat->ak > 0 && (w!=NULL) && (*w!=NULL))
+                {
+                  strat->kModW = kModW = *w;
+                  if (vw == NULL)
+                  {
+                    strat->pOrigFDeg = currRing->pFDeg;
+                    strat->pOrigLDeg = currRing->pLDeg;
+                    pSetDegProcs(currRing,kModDeg);
+                    toReset = TRUE;
+                  }
+                }
+                currRing->pLexOrder = TRUE;
+                if (hilb==NULL) strat->LazyPass*=2;
+            }
+            strat->homog=h;
             if(currRing->OrdSgn == -1)
                 r=mora(FCopy,Q,NULL,hilb,strat);
             else
