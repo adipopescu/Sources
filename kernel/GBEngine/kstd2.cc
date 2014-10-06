@@ -1549,13 +1549,14 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     int iii;
     for(iii = 0; iii<= strat->Ll; iii++)
     {
-        printf("\nL[%i]: grad  = %i, length = %i\n", iii,strat->L[iii].FDeg,strat->L[iii].length);
+        printf("L[%i]:",iii);
         p_Write(strat->L[iii].p, strat->tailRing);
         p_Write(strat->L[iii].p1, strat->tailRing);
         p_Write(strat->L[iii].p2, strat->tailRing);
         
                                 
     }
+    getchar();
     #endif
     #ifdef KDEBUG
       loop_count++;
@@ -1725,7 +1726,7 @@ messageADI(red_result);
         //#if ADIDEBUG
         printf("\nThis element is added to S\n");
         pWrite(strat->P.p);pWrite(strat->P.p1);pWrite(strat->P.p2);
-        idPrint(strat->Shdl);
+        //idPrint(strat->Shdl);
         #endif
         
         strat->enterS(strat->P, pos, strat, strat->tl);

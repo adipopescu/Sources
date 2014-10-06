@@ -2214,18 +2214,19 @@ ideal kStd(ideal F, ideal Q, tHomog h,intvec ** w, intvec *hilb,int syzComp,
         {
             ideal FCopy = idCopy(F);
             poly pFmon = preIntegerCheck(FCopy, Q);
-            idInsertPoly(FCopy, pFmon); 
+            if(pFmon != NULL)
+                idInsertPoly(FCopy, pFmon); 
             strat->kModW=kModW=NULL;
             if (h==testHomog)
             {
                 if (strat->ak == 0)
                 {
-                  h = (tHomog)idHomIdeal(F,Q);
+                  h = (tHomog)idHomIdeal(FCopy,Q);
                   w=NULL;
                 }
                 else if (!TEST_OPT_DEGBOUND)
                 {
-                    h = (tHomog)idHomModule(F,Q,w);
+                    h = (tHomog)idHomModule(FCopy,Q,w);
                 }
             }
             currRing->pLexOrder=b;

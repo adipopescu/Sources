@@ -5665,14 +5665,14 @@ int posInL11Ring (const LSet set, const int length,
   int en = length+1;
   bool isFromF = (p->p1 == NULL) && (p->p2 == NULL);
   #if 0
-  printf("\nThis is L:\n");
-  for(int ii=0; ii<=strat->Ll; ii++)
+  //printf("\nThis is L:\n");
+  /*for(int ii=0; ii<=strat->Ll; ii++)
   {
         printf("\nL[%i]: grad  = %i, length = %i\n", ii,set[ii].FDeg,set[ii].length);
         pWrite(set[ii].p);
         pWrite(set[ii].p1);
         pWrite(set[ii].p2);
-  }
+  }*/
   printf("\nThis is P:\n");pWrite(p->p);pWrite(p->p1);pWrite(p->p2);
   #endif
   if(isFromF)
@@ -5696,12 +5696,16 @@ int posInL11Ring (const LSet set, const int length,
     while(set[i].FDeg > p->FDeg)
       i++;
     an = i;
+    //printf("\nan = %i\n",an);
     i = length;
+    //printf("\ni = %i\n", i);
     while(set[i].FDeg < p->FDeg)
       i--;
-    while(((set[i].p1 == NULL) && (set[i].p2 == NULL)) && (set[i].FDeg == p->FDeg))
+    //printf("\ni2 = %i\n", i);
+    while(((set[i].p1 == NULL) && (set[i].p2 == NULL)) && (set[i].FDeg == p->FDeg) && (i > an))
       i--;
     en = i+1;
+    //printf("\nen = %i\n",en);
   }
   //printf("\nan = %i\n en = %i\n",an,en);
   //getchar();
