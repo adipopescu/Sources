@@ -2215,7 +2215,7 @@ ideal kStd(ideal F, ideal Q, tHomog h,intvec ** w, intvec *hilb,int syzComp,
             ideal FCopy = idCopy(F);
             poly pFmon = preIntegerCheck(FCopy, Q);
             if(pFmon != NULL)
-                idInsertPoly(FCopy, pFmon); 
+                idInsertPoly(FCopy, pFmon);
             strat->kModW=kModW=NULL;
             if (h==testHomog)
             {

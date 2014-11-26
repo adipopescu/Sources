@@ -69,7 +69,8 @@ int ksReducePoly(LObject* PR,
   pAssume1(p_GetComp(p1, tailRing) == p_GetComp(p2, tailRing) ||
            (p_GetComp(p2, tailRing) == 0 &&
             p_MaxComp(pNext(p2),tailRing) == 0));
-
+printf("\nThis is PR:\n");pWrite(p1);pWrite(PR->GetP());
+    printf("\nThis is PW:\n");pWrite(p2);
 #ifdef HAVE_PLURAL
   if (rIsPluralRing(currRing))
   {
@@ -169,12 +170,13 @@ int ksReducePoly(LObject* PR,
  *
  ***************************************************************/
 int ksReducePolySig(LObject* PR,
-                 TObject* PW,
+                 TObject* PW, 
                  long /*idx*/,
                  poly spNoether,
                  number *coef,
                  kStrategy strat)
 {
+printf("\nksReducePolySig\n");
 #ifdef KDEBUG
   red_count++;
 #ifdef TEST_OPT_DEBUG_RED
@@ -262,11 +264,13 @@ int ksReducePolySig(LObject* PR,
     pDelete(&sigMult);
     // go on with the computations only if the signature of p2 is greater than the
     // signature of fm*p1
+    #ifndef HAVE_RINGS
     if(sigSafe != 1)
     {
       PR->is_redundant = TRUE;
       return 3;
     }
+    #endif
     //PW->is_sigsafe  = TRUE;
   }
   PR->is_redundant = FALSE;
@@ -303,6 +307,51 @@ int ksReducePolySig(LObject* PR,
   }
 #endif
 
+#ifdef HAVE_RINGS
+if(rField_is_Ring(currRing))
+{
+    poly fin = pCopy(PR->GetLm(currRing));
+    pNext(fin) = NULL;
+    PR->GetP();
+    printf("\nThis is PR:\n");pWrite(p1);pWrite(PR->sig);
+    printf("\nThis is PW:\n");pWrite(p2);pWrite(PW->sig);
+    /*
+    printf("\nPointers for PW: %p, %p\n", PW->p, PW->sig);
+    for(int ii=0; ii<=strat->sl; ii++)
+    {
+        printf("\nS[%i]\n",ii);pWrite(strat->S[ii]);pWrite(strat->sig[ii]);printf("%p, %p", strat->S[ii], strat->sig[ii]);printf("\nS_2_R: %i -> %i \n",ii ,strat->S_2_R[ii]);
+    }
+    for(int ii=0; ii<=strat->tl; ii++)
+    {
+        printf("\nT[%i]\n",ii);pWrite(strat->T[ii].p);pWrite(strat->T[ii].sig);printf("%p, %p", strat->T[ii].p, strat->T[ii].sig);
+    }
+    pWrite(fin);*/
+    assume(pNext(fin) == NULL);
+    p_ExpVectorSub(fin, p2, tailRing);
+    number bn = pGetCoeff(fin);
+    number an = pGetCoeff(p2);
+    assume(n_DivBy(bn,an,tailRing) == TRUE);
+    pSetCoeff(fin, nDiv(bn,an));
+    printf("\nfin:\n");pWrite(fin);
+    //ksCheckCoeff(&an, &bn, tailRing->cf);    // Calculate special LC
+    //int ct = ksCheckCoeff(&an, &bn, tailRing->cf);    // Calculate special LC
+    //p_SetCoeff(lm, bn, tailRing);
+    //p_SetCoeff(fin, bn, tailRing);
+    //p_Neg(fin, tailRing);
+    //p_Minus_qq_Mult_qq(PR->sig, PW->sig, fin, tailRing);#
+    poly sSigMult = pCopy(PW->sig);
+    p_Mult_mm(sSigMult, fin, tailRing);
+    pWrite(sSigMult);
+    PR->sig = p_Sub(PR->sig, sSigMult, tailRing);
+    PR->Tail_Minus_mm_Mult_qq(fin, t2, PW->GetpLength() - 1, spNoether);
+    assume(PW->GetpLength() == pLength(PW->p != NULL ? PW->p : PW->t_p));
+    PR->LmDeleteAndIter();
+    printf("\nThis is the final in redSig:\n");pWrite(PR->p);pWrite(PR->sig);//getchar();
+    return 1;
+}
+#endif
+  
+  
   if (t2==NULL)           // Divisor is just one term, therefore it will
   {                       // just cancel the leading term
     PR->LmDeleteAndIter();
@@ -851,6 +900,306 @@ x1:
         else
 #endif
         p_LmFree(m1,currRing);
+        return NULL;
+      }
+      goto x1;
+    }
+    if (a1==NULL)
+    {
+      p_LmFree(m1,currRing);
+      goto x2;
+    }
+  }
+}
+
+poly ksCreateShortSpolySig(poly p1, poly p2, bool &minus, ring tailRing)
+{
+  poly a1 = pNext(p1), a2 = pNext(p2);
+  long c1=p_GetComp(p1, currRing),c2=p_GetComp(p2, currRing);
+  long c;
+  poly m1,m2;
+  number t1 = NULL,t2 = NULL;
+  int cm,i;
+  BOOLEAN equal;
+
+#ifdef HAVE_RINGS
+  BOOLEAN is_Ring=rField_is_Ring(currRing);
+  number lc1 = pGetCoeff(p1), lc2 = pGetCoeff(p2);
+  if (is_Ring)
+  {
+    ksCheckCoeff(&lc1, &lc2, currRing->cf); // gcd and zero divisors
+    if (a1 != NULL) t2 = nMult(pGetCoeff(a1),lc2);
+    if (a2 != NULL) t1 = nMult(pGetCoeff(a2),lc1);
+    while (a1 != NULL && nIsZero(t2))
+    {
+      pIter(a1);
+      nDelete(&t2);
+      if (a1 != NULL) t2 = nMult(pGetCoeff(a1),lc2);
+    }
+    while (a2 != NULL && nIsZero(t1))
+    {
+      pIter(a2);
+      nDelete(&t1);
+      if (a2 != NULL) t1 = nMult(pGetCoeff(a2),lc1);
+    }
+  }
+#endif
+
+  if (a1==NULL)
+  {
+    if(a2!=NULL)
+    {
+      m2=p_Init(currRing);
+x2:
+      for (i = (currRing->N); i; i--)
+      {
+        c = p_GetExpDiff(p1, p2,i, currRing);
+        if (c>0)
+        {
+          p_SetExp(m2,i,(c+p_GetExp(a2,i,tailRing)),currRing);
+        }
+        else
+        {
+          p_SetExp(m2,i,p_GetExp(a2,i,tailRing),currRing);
+        }
+      }
+      if ((c1==c2)||(c2!=0))
+      {
+        p_SetComp(m2,p_GetComp(a2,tailRing), currRing);
+      }
+      else
+      {
+        p_SetComp(m2,c1,currRing);
+      }
+      p_Setm(m2, currRing);
+#ifdef HAVE_RINGS
+      if (is_Ring)
+      {
+          nDelete(&lc1);
+          nDelete(&lc2);
+          nDelete(&t2);
+          pSetCoeff0(m2, t1);
+      }
+      else
+#endif
+      nNew(&(pGetCoeff(m2)));
+      minus = FALSE;
+      return m2;
+    }
+    else
+    {
+#ifdef HAVE_RINGS
+      if (is_Ring)
+      {
+        nDelete(&lc1);
+        nDelete(&lc2);
+        nDelete(&t1);
+        nDelete(&t2);
+      }
+#endif
+      minus = FALSE;
+      return NULL;
+    }
+  }
+  if (a2==NULL)
+  {
+    m1=p_Init(currRing);
+x1:
+    for (i = (currRing->N); i; i--)
+    {
+      c = p_GetExpDiff(p2, p1,i,currRing);
+      if (c>0)
+      {
+        p_SetExp(m1,i,(c+p_GetExp(a1,i, tailRing)),currRing);
+      }
+      else
+      {
+        p_SetExp(m1,i,p_GetExp(a1,i, tailRing), currRing);
+      }
+    }
+    if ((c1==c2)||(c1!=0))
+    {
+      p_SetComp(m1,p_GetComp(a1,tailRing),currRing);
+    }
+    else
+    {
+      p_SetComp(m1,c2,currRing);
+    }
+    p_Setm(m1, currRing);
+#ifdef HAVE_RINGS
+    if (is_Ring)
+    {
+      pSetCoeff0(m1, t2);
+      nDelete(&lc1);
+      nDelete(&lc2);
+      nDelete(&t1);
+    }
+    else
+#endif
+      nNew(&(pGetCoeff(m1)));
+    minus = TRUE;
+    return m1;
+  }
+  m1 = p_Init(currRing);
+  m2 = p_Init(currRing);
+  loop
+  {
+    for (i = (currRing->N); i; i--)
+    {
+      c = p_GetExpDiff(p1, p2,i,currRing);
+      if (c > 0)
+      {
+        p_SetExp(m2,i,(c+p_GetExp(a2,i,tailRing)), currRing);
+        p_SetExp(m1,i,p_GetExp(a1,i, tailRing), currRing);
+      }
+      else
+      {
+        p_SetExp(m1,i,(p_GetExp(a1,i,tailRing)-c), currRing);
+        p_SetExp(m2,i,p_GetExp(a2,i, tailRing), currRing);
+      }
+    }
+    if(c1==c2)
+    {
+      p_SetComp(m1,p_GetComp(a1, tailRing), currRing);
+      p_SetComp(m2,p_GetComp(a2, tailRing), currRing);
+    }
+    else
+    {
+      if(c1!=0)
+      {
+        p_SetComp(m1,p_GetComp(a1, tailRing), currRing);
+        p_SetComp(m2,c1, currRing);
+      }
+      else
+      {
+        p_SetComp(m2,p_GetComp(a2, tailRing), currRing);
+        p_SetComp(m1,c2, currRing);
+      }
+    }
+    p_Setm(m1,currRing);
+    p_Setm(m2,currRing);
+    cm = p_LmCmp(m1, m2,currRing);
+    if (cm!=0)
+    {
+      if(cm==1)
+      {
+        p_LmFree(m2,currRing);
+#ifdef HAVE_RINGS
+        if (is_Ring)
+        {
+          pSetCoeff0(m1, t2);
+          nDelete(&lc1);
+          nDelete(&lc2);
+          nDelete(&t1);
+        }
+        else
+#endif
+        nNew(&(pGetCoeff(m1)));
+        minus = TRUE;
+        return m1;
+      }
+      else
+      {
+        p_LmFree(m1,currRing);
+#ifdef HAVE_RINGS
+        if (is_Ring)
+        {
+          pSetCoeff0(m2, t1);
+          nDelete(&lc1);
+          nDelete(&lc2);
+          nDelete(&t2);
+        }
+        else
+#endif
+        nNew(&(pGetCoeff(m2)));
+        minus = FALSE;
+        return m2;
+      }
+    }
+#ifdef HAVE_RINGS
+    if (is_Ring)
+    {
+      equal = nEqual(t1,t2);
+    }
+    else
+#endif
+    {
+      t1 = nMult(pGetCoeff(a2),pGetCoeff(p1));
+      t2 = nMult(pGetCoeff(a1),pGetCoeff(p2));
+      equal = nEqual(t1,t2);
+      nDelete(&t2);
+      nDelete(&t1);
+    }
+    if (!equal)
+    {
+      p_LmFree(m2,currRing);
+#ifdef HAVE_RINGS
+      if (is_Ring)
+      {
+          pSetCoeff0(m1, nSub(t1, t2));
+          nDelete(&lc1);
+          nDelete(&lc2);
+          nDelete(&t1);
+          nDelete(&t2);
+      }
+      else
+#endif
+      nNew(&(pGetCoeff(m1)));
+      minus = TRUE;
+      return m1;
+    }
+    pIter(a1);
+    pIter(a2);
+#ifdef HAVE_RINGS
+    if (is_Ring)
+    {
+      if (a2 != NULL)
+      {
+        nDelete(&t1);
+        t1 = nMult(pGetCoeff(a2),lc1);
+      }
+      if (a1 != NULL)
+      {
+        nDelete(&t2);
+        t2 = nMult(pGetCoeff(a1),lc2);
+      }
+      while ((a1 != NULL) && nIsZero(t2))
+      {
+        pIter(a1);
+        if (a1 != NULL)
+        {
+          nDelete(&t2);
+          t2 = nMult(pGetCoeff(a1),lc2);
+        }
+      }
+      while ((a2 != NULL) && nIsZero(t1))
+      {
+        pIter(a2);
+        if (a2 != NULL)
+        {
+          nDelete(&t1);
+          t1 = nMult(pGetCoeff(a2),lc1);
+        }
+      }
+    }
+#endif
+    if (a2==NULL)
+    {
+      p_LmFree(m2,currRing);
+      if (a1==NULL)
+      {
+#ifdef HAVE_RINGS
+        if (is_Ring)
+        {
+          nDelete(&lc1);
+          nDelete(&lc2);
+          nDelete(&t1);
+          nDelete(&t2);
+        }
+        else
+#endif
+        p_LmFree(m1,currRing);
+        minus = FALSE;
         return NULL;
       }
       goto x1;

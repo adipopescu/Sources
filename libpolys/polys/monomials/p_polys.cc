@@ -4560,8 +4560,8 @@ static inline unsigned long GetBitFields(long e,
 // if (ev1 & ~ev2) then exp1 does not divide exp2
 unsigned long p_GetShortExpVector(poly p, const ring r)
 {
-  assume(p != NULL);
   if (p == NULL) return 0;
+  assume(p != NULL);
   unsigned long ev = 0; // short exponent vector
   unsigned int n = BIT_SIZEOF_LONG / r->N; // number of bits per exp
   unsigned int m1; // highest bit which is filled with (n+1)

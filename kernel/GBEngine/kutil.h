@@ -197,6 +197,7 @@ public:
   poly  lcm;   /*- the lcm of p1,p2 -*/
   kBucket_pt bucket;
   int   i_r1, i_r2;
+  bool strong;
 
   // initialization
   KINLINE void Init(ring tailRing = currRing);
@@ -427,6 +428,7 @@ int posInT0 (const TSet set,const int length,LObject &p);
 int posInT1 (const TSet set,const int length,LObject &p);
 int posInT2 (const TSet set,const int length,LObject &p);
 int posInT11 (const TSet set,const int length,LObject &p);
+int posInTRingSig (const TSet set,const int length,LObject &p);
 int posInTSig (const TSet set,const int length,LObject &p);
 int posInT110 (const TSet set,const int length,LObject &p);
 int posInT13 (const TSet set,const int length,LObject &p);
@@ -718,6 +720,7 @@ void ksCreateSpoly(LObject* Pair, poly spNoether = NULL,
 *   2. pNext is undefined
 */
 poly ksCreateShortSpoly(poly p1, poly p2, ring tailRing);
+poly ksCreateShortSpolySig(poly p1, poly p2,bool &minus, ring tailRing);
 
 
 // old stuff
@@ -747,6 +750,7 @@ BOOLEAN kCheckStrongCreation(int atR, poly m1, int atS, poly m2, kStrategy strat
 //void ReduceCoef(poly &p, bool FromInitial, kStrategy &strat);
 poly preIntegerCheck(ideal F, ideal Q);
 void postReduceByMon(LObject* h, kStrategy strat);
+void postReduceByMonSig(LObject* h, kStrategy strat);
 void finalReduceByMon(kStrategy &strat);
 //void ReduceCoefL(LObject *h, bool FromInitial, kStrategy &strat);
 #endif
