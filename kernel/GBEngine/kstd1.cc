@@ -410,6 +410,19 @@ int redRiloc (LObject* h,kStrategy strat)
     if (j < 0)
     {
       if (strat->honey) h->SetLength(strat->length_pLength);
+      // over ZZ: cleanup coefficients by complete reduction with monomials
+      postReduceByMon(h, strat);
+      if(nIsZero(pGetCoeff(h->p))) return 2;
+      if(strat->tl >= 0)
+          h->i_r1 = strat->tl;
+      else
+          h->i_r1 = -1;
+      if (h->GetLmTailRing() == NULL)
+      {
+        if (h->lcm!=NULL) pLmDelete(h->lcm);
+        h->Clear();
+        return 0;
+      }
       return 1;
     }
 
@@ -959,7 +972,6 @@ BOOLEAN hasPurePower (LObject *L,int last, int *length,kStrategy strat)
 int posInL10 (const LSet set,const int length, LObject* p,const kStrategy strat)
 {
   int j,dp,dL;
-
   if (length<0) return 0;
   if (hasPurePower(p,strat->lastAxis,&dp,strat))
   {
@@ -984,7 +996,6 @@ int posInL10 (const LSet set,const int length, LObject* p,const kStrategy strat)
   }
   return strat->posInLOld(set,j,p,strat);
 }
-
 
 /*2
 * computes the s-polynomials L[ ].p in L
@@ -1501,7 +1512,6 @@ loop_count = 1;
     si_opt_1 &= ~Sy_bit(OPT_REDSB);
     si_opt_1 &= ~Sy_bit(OPT_REDTAIL);
   }
-
   strat->update = TRUE;
   /*- setting global variables ------------------- -*/
   initBuchMoraCrit(strat);
@@ -1532,23 +1542,64 @@ loop_count = 1;
   }
   kTest_TS(strat);
   strat->use_buckets = kMoraUseBucket(strat);
+    #if 0
+    for(int iii = 0; iii<= strat->Ll; iii++)
+    {
+        printf("L[%i]:",iii);
+        pWrite(strat->L[iii].p);
+    }
+    #endif
   /*- compute-------------------------------------------*/
 
 #ifdef HAVE_TAIL_RING
-//  if (strat->homog && strat->red == redFirst)
-  kStratInitChangeTailRing(strat);
+  //if (strat->homog && strat->red == redFirst)
+    //kStratInitChangeTailRing(strat); 
+     #if 1
+      for(int iii = 0; iii<= strat->Ll; iii++)
+    {
+        printf("L[%i]:",iii);
+        p_Write(strat->L[iii].p, strat->tailRing);
+    }
+    #endif
 #endif
-
   if (BVERBOSE(23))
   {
     kDebugPrint(strat);
   }
-
   while (strat->Ll >= 0)
   {
 #ifdef HAVE_ASSUME
     mora_loop_count++;
 #endif
+    #if 0
+    //#if ADIDEBUG
+    printf("\n      ------------------------NEW LOOP\n");
+    printf("\nShdl = \n");
+    idPrint(strat->Shdl);
+    /*for(int iii = 0; iii<= strat->sl; iii++)
+    {
+        printf("S[%i]:",iii);
+        p_Write(strat->S[iii], strat->tailRing);
+    }*/
+    printf("\n   list   L has %i\n", strat->Ll);
+    int iii;
+    #if 1
+    for(iii = 0; iii<= strat->Ll; iii++)
+    {
+        printf("L[%i]:",iii);
+        #if 0
+        p_Write(strat->L[iii].p, strat->tailRing);
+        p_Write(strat->L[iii].p1, strat->tailRing);
+        p_Write(strat->L[iii].p2, strat->tailRing);
+        #else
+        pWrite(strat->L[iii].p);
+        pWrite(strat->L[iii].p1);
+        pWrite(strat->L[iii].p2);
+        #endif
+    }
+    #endif
+    getchar();
+    #endif
     #ifdef KDEBUG
     if (TEST_OPT_DEBUG) messageSets(strat);
     #endif
@@ -1575,58 +1626,10 @@ loop_count = 1;
       else strat->noClearS=TRUE;
     }
 
-        #if ADIDEBUG
-    #ifdef KDEBUG
-
-    PrintLn();
-    PrintS("-------------------------------- LOOP ");printf("%d",loop_count);
-    PrintS(" ---------------------------------------");
-    PrintLn();
-    //print the list L: (p1,p2,p)
-    PrintLn();
-    PrintS("    The pair list L -- in loop ");
-    printf("%d",loop_count);PrintS(" -- is: "); PrintLn();
-    for(int iii=0;iii<=strat->Ll;iii++)
-      {
-      PrintLn();
-      PrintS("    L[");printf("%d",iii);Print("]: ");
-      PrintLn();
-      PrintS("        ");p_Write(strat->L[iii].p1,strat->tailRing);
-      PrintS("        ");p_Write(strat->L[iii].p2,strat->tailRing);
-      PrintS("        ");p_Write(strat->L[iii].p,strat->tailRing);
-      }
-    PrintLn();
-    #endif
-    #endif
-
-
     strat->P = strat->L[strat->Ll];/*- picks the last element from the lazyset L -*/
     if (strat->Ll==0) strat->interpt=TRUE;
     strat->Ll--;
-
-    #if ADIDEBUG
-    #ifdef KDEBUG
-    PrintS("    My new pair P = (p1,p2,p) is: "); PrintLn();
-    PrintS("      p1 = "); p_Write(strat->P.p1,strat->tailRing);PrintLn();
-    PrintS("      p2 = "); p_Write(strat->P.p2,strat->tailRing);PrintLn();
-    PrintS("      p = "); p_Write(strat->P.p,strat->tailRing); PrintLn();
-    PrintLn();
-    PrintS("    The old reducer list T -- at the beg of loop ");
-    printf("%d",loop_count);PrintS(" -- is :");
-    if(strat->tl<0)
-      {PrintS(" Empty.");PrintLn();}
-    else
-    for(int iii=0;iii<=strat->tl;iii++)
-      {
-        PrintLn();
-        PrintS("    T[");printf("%d",iii);PrintS("]:");
-        p_Write(strat->T[iii].p,strat->T->tailRing);
-      }
-    PrintLn();
-
-    #endif /* ADIDEBUG */
-    #endif
-
+    //printf("\nThis is P:\n");p_Write(strat->P.p,strat->tailRing);p_Write(strat->P.p1,strat->tailRing);p_Write(strat->P.p2,strat->tailRing);
     // create the real Spoly
     if (pNext(strat->P.p) == strat->tail)
     {
@@ -1666,7 +1669,9 @@ loop_count = 1;
       if (TEST_OPT_PROT)
         message(strat->P.ecart+strat->P.GetpFDeg(),&olddeg,&reduc,strat, red_result);
       // reduce
+      //printf("\nThis is P vor red:\n");p_Write(strat->P.p,strat->tailRing);p_Write(strat->P.p1,strat->tailRing);p_Write(strat->P.p2,strat->tailRing);
       red_result = strat->red(&strat->P,strat);
+      //printf("\nThis is P nach red:\n");p_Write(strat->P.p,strat->tailRing);p_Write(strat->P.p1,strat->tailRing);p_Write(strat->P.p2,strat->tailRing);
     }
 
     if (! strat->P.IsNull())
