@@ -5816,6 +5816,7 @@ int posInL11Ring (const LSet set, const int length,
               LObject* p,const kStrategy strat)
 {
   if (length < 0) return 0;
+  if(pIsConstant(pHead(p->p))) return length+1;
   if (set[length].FDeg > p->FDeg)
         return length+1;
   if (set[0].FDeg < p->FDeg)
@@ -10034,19 +10035,16 @@ void finalReduceByMon(kStrategy &strat)
 {
   if(!nCoeff_is_Ring_Z(currRing->cf))
       return;
-  printf("\n-----------------finalReduceByMon: \n");
   poly p,pp;
   for(int j = 0; j<=strat->sl; j++)
   {
     if((strat->S[j]!=NULL)&&(pNext(strat->S[j]) == NULL))
     {
-      printf("\nTrying to reduce with:\n");pWrite(strat->S[j]);
       for(int i = 0; i<=strat->sl; i++)
       {
         if((i != j) && (strat->S[i] != NULL))
         {
           p = strat->S[i];
-          printf("\nThis is p = \n");pWrite(p);
           if(pLmDivisibleBy(strat->S[j], p))
           {
             p->coef = currRing->cf->cfIntMod(p->coef, strat->S[j]->coef, currRing->cf);
@@ -10091,7 +10089,7 @@ void finalReduceByMon(kStrategy &strat)
           }
         }
       }
-      idPrint(strat->Shdl);
+      //idPrint(strat->Shdl);
     }
   }
   //idSkipZeroes(strat->Shdl);

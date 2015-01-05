@@ -69,8 +69,8 @@ int ksReducePoly(LObject* PR,
   pAssume1(p_GetComp(p1, tailRing) == p_GetComp(p2, tailRing) ||
            (p_GetComp(p2, tailRing) == 0 &&
             p_MaxComp(pNext(p2),tailRing) == 0));
-printf("\nThis is PR:\n");pWrite(p1);pWrite(PR->GetP());
-    printf("\nThis is PW:\n");pWrite(p2);
+//printf("\nThis is PR:\n");pWrite(p1);pWrite(PR->GetP());
+  //  printf("\nThis is PW:\n");pWrite(p2);
 #ifdef HAVE_PLURAL
   if (rIsPluralRing(currRing))
   {
