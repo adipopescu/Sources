@@ -1165,11 +1165,11 @@ static inline BOOLEAN sugarDivisibleBy(int ecart1, int ecart2)
 */
 void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int atR = -1)
 {
-  #if 1
+  #if 0
   assume(i<=strat->sl);
     int      l,j,compare,compareCoeff;
     LObject  Lp;
-  
+  omTestMemory(1);
     if (strat->interred_flag) return;
   #ifdef KDEBUG
     Lp.ecart=0; Lp.length=0;
@@ -1196,6 +1196,7 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
         pLmDelete(Lp.lcm);
         return;
     }
+    omTestMemory(1);
     // basic product criterion
     pLcm(p,strat->S[i],Lp.lcm);
   
@@ -1220,6 +1221,7 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
         return;
     }
     assume(!strat->fromT);
+    omTestMemory(1);
     /*
     *the set B collects the pairs of type (S[j],p)
     *suppose (r,p) is in B and (s,p) is the new pair and lcm(s,p) != lcm(r,p)
@@ -1314,6 +1316,7 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
         }
       }
     }
+    omTestMemory(1);
     /*
     *the pair (S[i],p) enters B if the spoly != 0
     */
@@ -1340,6 +1343,7 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
     {
       Lp.p = ksCreateShortSpoly(strat->S[i], p, strat->tailRing);
     }
+    omTestMemory(1);
     if (Lp.p == NULL)
     {
   #ifdef KDEBUG
@@ -1363,6 +1367,7 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
       *the first case is handeled in chainCrit
       */
       pLmDelete(Lp.lcm);
+      printf("\nsdkjhggh\n");
     }
     else
     {
@@ -1377,13 +1382,14 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
         Lp.i_r2 = atR;
         Lp.i_r1 = strat->S_2_R[i];
       }
-      #if 0
-      //#if HAVE_RINGS
-      ReduceCoefL(&Lp, FALSE, strat);
-      #endif
+      omTestMemory(1);
       strat->initEcartPair(&Lp,strat->S[i],p,strat->ecartS[i],ecart);
+      omTestMemory(1);
       l = strat->posInL(strat->L,strat->Ll,&Lp,strat);
+      omTestMemory(1);
       enterL(&strat->L,&strat->Ll,&strat->Lmax,Lp,l);
+      omTestMemory(1);
+      printf("\nJust printed and retuirned:\n");
     }
   #else
   number s, t;
@@ -1455,13 +1461,7 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
   h.sev = pGetShortExpVector(h.p);
   if (currRing!=strat->tailRing)
     h.t_p = k_LmInit_currRing_2_tailRing(h.p, strat->tailRing);
-  #if 0
-  //#if HAVE_RINGS
-  ReduceCoefL(&h, FALSE, strat);
-  if((h.p!=NULL) && (!nIsZero(h.p->coef)))
-  #endif
   enterL(&strat->L,&strat->Ll,&strat->Lmax,h,posx);
-  //printf("\nFinished: \n");pWrite(h.p);
   #endif
 }
 
@@ -1967,6 +1967,7 @@ printf("\nIn Spoly: m1, m2:\n");pWrite(m1);pWrite(m2);
   Lp.checked  = 0;
 #endif
   int sigCmp = p_LmCmp(pHead(pSigMult),pHead(sSigMult),currRing);
+  //#if 1
   #ifdef HAVE_RINGS
   if(rField_is_Ring(currRing))
   {
@@ -2012,8 +2013,8 @@ printf("\nIn Spoly: m1, m2:\n");pWrite(m1);pWrite(m2);
   Lp.sig = p_Sub(pS, sS, currRing);
   Lp.sevSig=p_GetShortExpVector(pHead(Lp.sig),currRing);
   assume(Lp.sevSig == pGetShortExpVector(pHead(Lp.sig)));
-  if  ( strat->syzCrit(pHead(Lp.sig),~Lp.sevSig,strat) //||
-        //strat->rewCrit1(pHead(Lp.sig),~Lp.sevSig,Lp.lcm,strat,i+1)
+  if  ( strat->syzCrit(pHead(Lp.sig),~Lp.sevSig,strat) ||
+        strat->rewCrit1(pHead(Lp.sig),~Lp.sevSig,Lp.lcm,strat,i+1)
       )
   {
     #if 1
@@ -3344,7 +3345,10 @@ void initenterpairs (poly h,int k,int ecart,int isFromQ,kStrategy strat, int atR
         for (j=0; j<=k; j++)
         {
             strat->enterOnePair(j,h,ecart,isFromQ,strat, atR);
-          //Print("j:%d, Ll:%d\n",j,strat->Ll);
+            printf("\nUnd dann gleich hier:\n");
+            omTestMemory(1);
+          Print("j:%d, Ll:%d\n",j,strat->Ll);
+          omTestMemory(1);
         }
       }
     }
@@ -3361,7 +3365,12 @@ void initenterpairs (poly h,int k,int ecart,int isFromQ,kStrategy strat, int atR
         }
       }
     }
-
+    //Comented because of the following example: 
+    //ring rng = (integer),(x,y,z),dp;
+    //ideal i = -5*z^2-y*z^2, x^3*y*z-z^2+1, y^2*z^2+5*x^2*y*z;
+    //ideal gI =  std(i);
+    //ideal ggI =  std(gI);
+#if 0
     if (new_pair)
     {
 #ifdef HAVE_RATGRING
@@ -3371,6 +3380,7 @@ void initenterpairs (poly h,int k,int ecart,int isFromQ,kStrategy strat, int atR
 #endif
       strat->chainCrit(h,ecart,strat);
     }
+#endif
   }
 }
 
@@ -3598,9 +3608,17 @@ void chainCritRing (poly p,int, kStrategy strat)
       {
         if (i < 0)  break;
         // Element is from B and has the same lcm as L[j]
+#if 0        
+        for(int ii=0; ii<=strat->Ll; ii++)
+{
+    printf("\nL[%i]\n",ii);pWrite(strat->L[ii].p);pWrite(strat->L[ii].p1);pWrite(strat->L[ii].p2);pWrite(strat->L[ii].lcm);
+}
+printf("\ni = %i\n j = %i\n",i,j);
+#endif
         if ((strat->L[i].p2 == p) && n_DivBy(pGetCoeff(strat->L[j].lcm), pGetCoeff(strat->L[i].lcm), currRing->cf)
              && pLmEqual(strat->L[j].lcm,strat->L[i].lcm))
         {
+            //printf("\nDELETED\n");
           /*L[i] could be canceled but we search for a better one to cancel*/
           strat->c3++;
 #ifdef KDEBUG
@@ -4146,6 +4164,7 @@ void initenterstrongPairsSig (poly h,poly hSig,int hFrom,int k,int ecart,int isF
       }
     }
     //for(int ii=0; ii<=strat->tl; ii++){printf("\nT[%i]\n",ii);pWrite(strat->T[ii].p);pWrite(strat->T[ii].sig);}
+    
     if (new_pair)
     { 
 #ifdef HAVE_RATGRING
@@ -4381,7 +4400,9 @@ void superenterpairs (poly h,int k,int ecart,int pos,kStrategy strat, int atR)
   #if 0
   int i = strat->Ll;
   #endif
+  omTestMemory(1);
   initenterpairs(h, k, ecart, 0, strat, atR);
+  omTestMemory(1);
   #if 0
   //#if ADIDEBUG
   if(i != strat->Ll)
@@ -4396,8 +4417,9 @@ void superenterpairs (poly h,int k,int ecart,int pos,kStrategy strat, int atR)
     pWrite(strat->L[i].p2);
   }
   #endif
-  
+  omTestMemory(1);
   initenterstrongPairs(h, k, ecart, 0, strat, atR);
+  omTestMemory(1);
   #if 0
   //#if ADIDEBUG
   if(i != strat->Ll)
@@ -4413,8 +4435,9 @@ void superenterpairs (poly h,int k,int ecart,int pos,kStrategy strat, int atR)
   }
   getchar();
   #endif
- 
+ omTestMemory(1);
   clearSbatch(h, k, pos, strat);
+  omTestMemory(1);
 }
 
 /*2
@@ -6280,7 +6303,7 @@ BOOLEAN syzCriterion(poly sig, unsigned long not_sevSig, kStrategy strat)
 BOOLEAN syzCriterionInc(poly sig, unsigned long not_sevSig, kStrategy strat)
 {
 //#if 1
-//return FALSE;
+return FALSE;
 #ifdef DEBUGF5
   Print("--- syzygy criterionINC checks:  ");
   pWrite(sig);
@@ -6334,7 +6357,7 @@ BOOLEAN syzCriterionInc(poly sig, unsigned long not_sevSig, kStrategy strat)
  */
 BOOLEAN faugereRewCriterion(poly sig, unsigned long not_sevSig, poly /*lm*/, kStrategy strat, int start=0)
 {
-  //return FALSE;
+  return FALSE;
   //printf("                    Faugere Rewritten Criterion\n");
 //#if 1
 #ifdef DEBUGF5
@@ -7371,6 +7394,7 @@ void initSLSba (ideal F, ideal Q,kStrategy strat)
 
 void initSyzRules (kStrategy strat)
 {
+  omTestMemory(10);
   if( strat->S[0] )
   {
     if( strat->S[1] )
@@ -7513,9 +7537,19 @@ void initSyzRules (kStrategy strat)
       if(rField_is_Ring(currRing))
         p_SetCoeff(q, nCopy(p_GetCoeff(strat->L[strat->Ll].p,currRing)),currRing);
       #endif
-      q               = p_Neg (q, currRing);
+      q = p_Neg (q, currRing);
       #else
-      poly q = pNeg(pCopy(strat->L[strat->Ll].GetP()));
+//printf("\nLl = %d\n",strat->Ll);
+      poly m1 = NULL, m2 = NULL;
+      //LObject* test = &strat->L[strat->Ll];
+      if(pNext(strat->L[strat->Ll].p) == strat->tail)
+        ksCreateSpoly(&(strat->L[strat->Ll]), NULL, strat->use_buckets,strat->tailRing, m1, m2, strat->R);
+      //poly sug = strat->L[strat->Ll].p;
+//printf("\nJetzt GetP\n");
+      //poly sug = test->GetP();
+  //    printf("\nThis is a test:");pWrite(sug);
+  //    pWrite(strat->L[strat->Ll].p1);pWrite(strat->L[strat->Ll].p2);
+      poly q = pNeg(pCopy(strat->L[strat->Ll].p));
       #endif
       p_SetCompP (q, p_GetComp(strat->sig[k], currRing), currRing);
       Q.sig = p_Add_q (Q.sig, q, currRing);
@@ -9775,6 +9809,7 @@ poly preIntegerCheck(ideal FOrig, ideal Q)
         II->m[j++] = p_PermPoly(F->m[i], perm, origR, QQ_ring, nMap, NULL, 0);
     for(int i = 0, j = IDELEMS(F); i<idelemQ; i++)
         II->m[j++] = p_PermPoly(Q->m[i], perm, origR, QQ_ring, nMap, NULL, 0);
+    //rWrite(currRing);
     ideal one = kStd(II, NULL, isNotHomog, NULL);
     idSkipZeroes(one);
     if(idIsConstant(one))

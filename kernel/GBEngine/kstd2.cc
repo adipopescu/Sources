@@ -71,7 +71,7 @@ long sba_interreduction_operations;
 /***********************************************
  * SBA stuff -- done
 ***********************************************/
-#define ADIDEBUG 1
+#define ADIDEBUG 0
 #define ADIDEBUG_COUNT 0
 
 #include <kernel/GBEngine/kutil.h>
@@ -716,8 +716,13 @@ int redSig (LObject* h,kStrategy strat)
     if (j < 0)
     {
       // over ZZ: cleanup coefficients by complete reduction with monomials
+      #if 1
       postReduceByMonSig(h, strat);
-      if(h->p == NULL || nIsZero(pGetCoeff(h->p))) return 2;
+      if(h->p == NULL || nIsZero(pGetCoeff(h->p))) 
+      {
+        h->Clear();
+        return 2;
+      }
       if(strat->tl >= 0)
           h->i_r1 = strat->tl;
       else
@@ -728,6 +733,7 @@ int redSig (LObject* h,kStrategy strat)
         h->Clear();
         return 0;
       }
+      #endif
       return 1;
     }
     #if ADIDEBUG
@@ -1484,6 +1490,7 @@ void kDebugPrint(kStrategy strat);
 
 ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
 {
+    omTestMemory(1);
 #ifdef KDEBUG
   bba_count++;
   int loop_count = 0;
@@ -1552,11 +1559,16 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
   /* compute------------------------------------------------------- */
   while (strat->Ll >= 0)
   {
-    #if 1
+    #if 0
     //#if ADIDEBUG
     printf("\n      ------------------------NEW LOOP\n");
     printf("\nShdl = \n");
+    #if 0
     idPrint(strat->Shdl);
+    #else
+    for(int ii = 0; ii<strat->sl;ii++)
+        p_Write(strat->S[ii],strat->tailRing);
+    #endif
     printf("\n   list   L\n");
     int iii;
     #if 1
@@ -1572,7 +1584,12 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     //getchar();
     #endif
     #endif
+    #if 0
     idPrint(strat->Shdl);
+    #else
+    for(int ii = 0; ii<strat->sl;ii++)
+        p_Write(strat->S[ii],strat->tailRing);
+    #endif
     #ifdef KDEBUG
       loop_count++;
       if (TEST_OPT_DEBUG) messageSets(strat);
@@ -1729,17 +1746,21 @@ messageADI(red_result);
       if ((!TEST_OPT_IDLIFT) || (pGetComp(strat->P.p) <= strat->syzComp))
       {
         enterT(strat->P, strat);
+        omTestMemory(1);
 #ifdef HAVE_RINGS
         if (rField_is_Ring(currRing))
           superenterpairs(strat->P.p,strat->sl,strat->P.ecart,pos,strat, strat->tl);
         else
 #endif
           enterpairs(strat->P.p,strat->sl,strat->P.ecart,pos,strat, strat->tl);
+          omTestMemory(1);
         // posInS only depends on the leading term
         #if 1
         //#if ADIDEBUG
         printf("\nThis element is added to S\n");
-        pWrite(strat->P.p);pWrite(strat->P.p1);pWrite(strat->P.p2);
+        //rWrite(currRing);
+        p_Write(strat->P.p, strat->tailRing);p_Write(strat->P.p1, strat->tailRing);p_Write(strat->P.p2, strat->tailRing);
+        omTestMemory(1);
         //idPrint(strat->Shdl);
         #endif
         
@@ -1820,7 +1841,7 @@ messageADI(red_result);
 #endif /* KDEBUG */
     kTest_TS(strat);
   }
-
+omTestMemory(1);
 #if 0
 //#ifdef HAVE_RINGS
   if(nCoeff_is_Ring_Z(currRing->cf))
@@ -1854,6 +1875,7 @@ messageADI(red_result);
         }
     }
   }
+  omTestMemory(1);
   /* complete reduction of the standard basis--------- */
   if (TEST_OPT_REDSB)
   {
@@ -1870,15 +1892,18 @@ messageADI(red_result);
       completeReduce(strat);
     }
 #endif
+omTestMemory(1);
 #ifdef HAVE_RINGS
   if(nCoeff_is_Ring_Z(currRing->cf))
     finalReduceByMon(strat);
 #endif
   }
   else if (TEST_OPT_PROT) PrintLn();
-
+omTestMemory(1);
   /* release temp data-------------------------------- */
+  omTestMemory(1);
   exitBuchMora(strat);
+  omTestMemory(1);
 //  if (TEST_OPT_WEIGHTM)
 //  {
 //    pRestoreDegProcs(currRing,pFDegOld, pLDegOld);
@@ -1901,6 +1926,7 @@ messageADI(red_result);
 messageADI(413);
 #endif
   idTest(strat->Shdl);
+  omTestMemory(1);
   return (strat->Shdl);
 }
 
@@ -2025,14 +2051,14 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
   /* compute------------------------------------------------------- */
   while (strat->Ll >= 0)
   {
-    #if 1
+    #if 0
     //#if ADIDEBUG
     printf("\n      ------------------------NEW LOOP\n");
     printf("\nShdl = \n");
     idPrint(strat->Shdl);
     printf("\n   list   L\n");
     int iii;
-    printf("\nL hast %i elements. Yey!!\n", strat->Ll);
+    printf("\nL hast %i elements. Yey!!\n", strat->Ll+1);
     #if 1
     for(iii = 0; iii<= strat->Ll; iii++)
     {
@@ -2050,7 +2076,7 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     {
         printf("\nT[%i]\n",ii);pWrite(strat->T[ii].p);pWrite(strat->T[ii].sig);
     }*/
-    #if 0
+    #if 1
     printf("\n         syz\n");
     for(iii = 0; iii<= strat->syzl-1; iii++)
     {
@@ -2100,13 +2126,17 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
       strat->currIdx  = pGetComp(pHead(strat->L[strat->Ll].sig));
 //#if 0
 #if F5C
+omTestMemory(1);
+kTest_TS(strat);
       // 1. interreduction of the current standard basis
       // 2. generation of new principal syzygy rules for syzCriterion
-      f5c ( strat, olddeg, minimcnt, hilbeledeg, hilbcount, srmax,
-          lrmax, reduc, Q, w, hilb );
+      f5c ( strat, olddeg, minimcnt, hilbeledeg, hilbcount, srmax, lrmax, reduc, Q, w, hilb );
 #endif
+kTest_TS(strat);
+omTestMemory(1);
       // initialize new syzygy rules for the next iteration step
       initSyzRules(strat);
+      kTest_TS(strat);
 
     }
     /*********************************************************************
@@ -2118,6 +2148,76 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     strat->Ll--;
     /* reduction of the element choosen from L */
 printf("\nThis is the new P:\n");pWrite(strat->P.p);pWrite(strat->P.p1);pWrite(strat->P.p2);pWrite(strat->P.sig);
+
+//Do not allow the same signature
+      #if 0
+      if(   (strat->sl >= 1) && 
+            ((pEqualPolys(pHead(strat->sig[strat->sl]), pHead(strat->P.sig))) || 
+            (pEqualPolys(pNeg(pHead(strat->sig[strat->sl])), pHead(strat->P.sig)))) &&
+            ((!pEqualPolys(strat->sig[strat->sl], strat->P.sig)) && 
+            ((!pEqualPolys(pNeg(strat->sig[strat->sl]), strat->P.sig))))
+        )
+      {
+        printf("\n!!!!!!!! Same signature. Delete!\n");
+        pWrite(strat->P.p);pWrite(strat->P.p1);pWrite(strat->P.p2);pWrite(strat->P.sig);
+        pWrite(strat->S[strat->sl]);pWrite(strat->sig[strat->sl]);
+        getchar();
+        #if 1
+        idPrint(strat->Shdl);
+        printf("\nThis is P:\n");pWrite(strat->P.p);pWrite(strat->P.sig);
+        printf("\nThis is last S:\n");pWrite(strat->S[strat->sl]);pWrite(strat->sig[strat->sl]);
+        for(int iii = 0; iii<= strat->Ll; iii++)
+        {
+        printf("\nL[%i]\n", iii);
+        p_Write(strat->L[iii].p, strat->tailRing);
+        p_Write(strat->L[iii].p1, strat->tailRing);
+        p_Write(strat->L[iii].p2, strat->tailRing);
+        p_Write(strat->L[iii].sig, currRing);
+        }
+    
+        for(int ii=0; ii<=strat->tl; ii++)
+        {
+        printf("\nT[%i]\n",ii);pWrite(strat->T[ii].p);pWrite(strat->T[ii].sig);
+        }
+        #endif
+        //Delete the corresponding pairs
+        for(int ii=0; ii<=strat->Ll; ii++)
+        {
+            if(
+                (pEqualPolys(strat->L[ii].p1, strat->S[strat->sl])) || 
+                (pEqualPolys(strat->L[ii].p2, strat->S[strat->sl]))
+              )
+            {
+                deleteInL(strat->L, &strat->Ll, ii, strat);
+                ii--;
+            }
+        }
+        //strat->S[strat->sl] = NULL;
+        //printf("\nsl = %i\n", strat->sl);
+//idPrint(strat->Shdl);
+        //deleteInS(strat->sl,strat);
+        //strat->T[strat->S_2_R[strat->sl]].p = NULL;
+//idPrint(strat->Shdl);
+        #if 1
+        printf("\nsl = %i\n", strat->sl);
+        idPrint(strat->Shdl);
+        for(int iii = 0; iii<= strat->Ll; iii++)
+        {
+        printf("\nL[%i]\n", iii);
+        p_Write(strat->L[iii].p, strat->tailRing);
+        p_Write(strat->L[iii].p1, strat->tailRing);
+        p_Write(strat->L[iii].p2, strat->tailRing);
+        p_Write(strat->L[iii].sig, currRing);
+        }
+        for(int ii=0; ii<=strat->tl; ii++)
+        {
+        printf("\nT[%i]\n",ii);pWrite(strat->T[ii].p);pWrite(strat->T[ii].sig);
+        }
+        #endif
+        kTest_TS(strat);
+      }
+      #endif
+
     if ((strat->P.strong == TRUE) || (!strat->rewCrit2(pHead(strat->P.sig), ~strat->P.sevSig, strat->P.GetLmCurrRing(), strat, strat->P.checked+1))) {
       //#if 1
 #ifdef DEBUGF5
@@ -2129,6 +2229,7 @@ printf("\nThis is the new P:\n");pWrite(strat->P.p);pWrite(strat->P.p1);pWrite(s
       pWrite(pHead(strat->P.p2));
       Print("-------------------------------------------------\n");
 #endif
+    kTest_TS(strat);
       if (pNext(strat->P.p) == strat->tail)
       {
         // deletes the short spoly
@@ -2145,7 +2246,8 @@ printf("\nThis is the new P:\n");pWrite(strat->P.p);pWrite(strat->P.p1);pWrite(s
           //       sutff is completely implemented
           strat->P.p = NULL;
         poly m1 = NULL, m2 = NULL;
-
+//idPrint(strat->Shdl);
+kTest_TS(strat);
         // check that spoly creation is ok
         while (strat->tailRing != currRing &&
             !kCheckSpolyCreation(&(strat->P), strat, m1, m2))
@@ -2159,18 +2261,21 @@ printf("\nThis is the new P:\n");pWrite(strat->P.p);pWrite(strat->P.p1);pWrite(s
             break;
           }
         }
+kTest_TS(strat);
         // create the real one
         ksCreateSpoly(&(strat->P), NULL, strat->use_buckets,
             strat->tailRing, m1, m2, strat->R);
-
+kTest_TS(strat);
       }
       else if (strat->P.p1 == NULL)
       {
+        kTest_TS(strat);
         if (strat->minim > 0)
           strat->P.p2=p_Copy(strat->P.p, currRing, strat->tailRing);
         // for input polys, prepare reduction
         strat->P.PrepareRed(strat->use_buckets);
       }
+      kTest_TS(strat);
       if (strat->P.p == NULL && strat->P.t_p == NULL)
       {
         red_result = 0;
@@ -2199,17 +2304,19 @@ printf("\nThis is the new P:\n");pWrite(strat->P.p);pWrite(strat->P.p1);pWrite(s
         }
 #else
 assume(strat->P.sevSig == pGetShortExpVector(pHead(strat->P.sig)));
+kTest_TS(strat);
         #if ADIDEBUG
         printf("\nBefore: \n");pWrite(strat->P.p);
         #endif
         assume(strat->P.pLength == 0 || pLength(strat->P.p) == strat->P.pLength);
         red_result = strat->red(&strat->P,strat);
+        printf("\nred_result = %i\n", red_result);pWrite(strat->P.p);pWrite(strat->P.p1);pWrite(strat->P.p2);
         assume(strat->P.pLength == 0 || pLength(strat->P.p) == strat->P.pLength);
         #if ADIDEBUG
         printf("\nAfter: \n");pWrite(strat->P.p);
         #endif
 #endif
-assume(strat->P.sevSig == pGetShortExpVector(pHead(strat->P.sig)));
+kTest_TS(strat);
       }
     } else {
       /*
@@ -2228,18 +2335,24 @@ assume(strat->P.sevSig == pGetShortExpVector(pHead(strat->P.sig)));
         pWrite(strat->P.sig);
     }
 #endif
-
+//idPrint(strat->Shdl);
     if (strat->overflow)
     {
         if (!kStratChangeTailRing(strat)) { Werror("OVERFLOW.."); break;}
     }
     assume(strat->P.pLength == 0 || pLength(strat->P.p) == strat->P.pLength);
 printf("\nWhat happend with this pair?: red_result: %i\n", red_result);pWrite(strat->P.p);pWrite(strat->P.sig);
+    if  ((strat->P.p != NULL)&& (strat->syzCrit(pHead(strat->P.sig),~strat->P.sevSig,strat)))
+    {
+        red_result = 2;
+        printf("\nHere\n");
+    }
     // reduction to non-zero new poly
     #if 0
     if((strat->sl >= 1)&&((pEqualPolys(pHead(strat->sig[strat->sl]), pHead(strat->P.sig))) || (pEqualPolys(pNeg(pHead(strat->sig[strat->sl])), pHead(strat->P.sig)))))
     red_result=2;
     #endif
+    kTest_TS(strat);
     if (red_result == 1)
     {
       // get the polynomial (canonicalize bucket, make sure P.p is set)
@@ -2257,10 +2370,17 @@ printf("\nWhat happend with this pair?: red_result: %i\n", red_result);pWrite(st
       if (TEST_OPT_PROT) PrintS("s");
 
 //Do not allow the same signature
-      #if 1
+// I shifted this check right after P was set since it may happen the following:
+// I have A and B with the same signatures. A is already in S and when B is considered,
+// we reduce B with A, and then delete A. This is wrong!
+      #if 0
       if((strat->sl >= 1)&&((pEqualPolys(pHead(strat->sig[strat->sl]), pHead(strat->P.sig))) || (pEqualPolys(pNeg(pHead(strat->sig[strat->sl])), pHead(strat->P.sig)))))
       {
-        #if 0
+        printf("\n!!!!!!!! Same signature. Delete!\n");
+        pWrite(strat->P.p);pWrite(strat->P.p1);pWrite(strat->P.p2);pWrite(strat->P.sig);
+        pWrite(strat->S[strat->sl]);pWrite(strat->sig[strat->sl]);
+        getchar();
+        #if 1
         idPrint(strat->Shdl);
         printf("\nThis is P:\n");pWrite(strat->P.p);pWrite(strat->P.sig);
         printf("\nThis is last S:\n");pWrite(strat->S[strat->sl]);pWrite(strat->sig[strat->sl]);
@@ -2292,9 +2412,10 @@ printf("\nWhat happend with this pair?: red_result: %i\n", red_result);pWrite(st
         }
         //strat->S[strat->sl] = NULL;
         //printf("\nsl = %i\n", strat->sl);
-        
+//idPrint(strat->Shdl);
         deleteInS(strat->sl,strat);
-        #if 0
+//idPrint(strat->Shdl);
+        #if 1
         printf("\nsl = %i\n", strat->sl);
         idPrint(strat->Shdl);
         for(int iii = 0; iii<= strat->Ll; iii++)
@@ -2377,7 +2498,7 @@ printf("\nWhat happend with this pair?: red_result: %i\n", red_result);pWrite(st
       PrintS("New (reduced) S: "); pDebugPrint(strat->P.p); PrintLn();
 #endif /* MYTEST */
 #endif /* KDEBUG */
-
+kTest_TS(strat);
       // min_std stuff
       if ((strat->P.p1==NULL) && (strat->minim>0))
       {
@@ -2407,12 +2528,14 @@ printf("\nVor enterT\n");pWrite(strat->P.p);pWrite(strat->P.sig);
       kTest_TS(strat);
       strat->T[strat->tl].is_sigsafe = FALSE;
       assume(strat->P.sevSig == pGetShortExpVector(pHead(strat->P.sig)));
+      kTest_TS(strat);
 #ifdef HAVE_RINGS
       if (rField_is_Ring(currRing))
         superenterpairsSig(strat->P.p, strat->P.sig, strat->sl+1, strat->sl,strat->P.ecart,pos,strat, strat->tl);
       else
 #endif
         enterpairsSig(strat->P.p,strat->P.sig,strat->sl+1,strat->sl,strat->P.ecart,pos,strat, strat->tl);
+      kTest_TS(strat);
       assume(strat->P.sevSig == pGetShortExpVector(pHead(strat->P.sig)));
       // posInS only depends on the leading term
       strat->enterS(strat->P, pos, strat, strat->tl);
@@ -2443,6 +2566,7 @@ printf("\nVor enterT\n");pWrite(strat->P.p);pWrite(strat->P.sig);
         pWrite(strat->sig[ii]);
       #endif
       #endif
+      kTest_TS(strat);
       if(strat->sbaOrder != 1)
       {
         BOOLEAN overwrite = FALSE;
@@ -2456,6 +2580,7 @@ printf("\nVor enterT\n");pWrite(strat->P.p);pWrite(strat->P.sig);
           }
         }
         //printf("OVERWRITE %d\n",overwrite);
+        kTest_TS(strat);
         if (overwrite)
         {
           int cmp = pGetComp(pHead(strat->P.sig));
@@ -2504,6 +2629,7 @@ printf("\nVor enterT\n");pWrite(strat->P.p);pWrite(strat->P.sig);
           }
         }
       }
+      kTest_TS(strat);
       // deg - idx - lp/rp
       // => we need to add syzygies with indices > pGetComp(strat->P.sig)
       if(strat->sbaOrder == 0 || strat->sbaOrder == 3)
@@ -2563,6 +2689,7 @@ printf("\nVor enterT\n");pWrite(strat->P.p);pWrite(strat->P.sig);
           //printf("++ -- done adding syzygies -- ++\n");
         }
       }
+      kTest_TS(strat);
 //#if 1
 #if DEBUGF50
     printf("---------------------------\n");
@@ -2601,6 +2728,7 @@ printf("\nVor enterT\n");pWrite(strat->P.p);pWrite(strat->P.sig);
     }
     else
     {
+      kTest_TS(strat);
       // adds signature of the zero reduction to
       // strat->syz. This is the leading term of
       // syzygy and can be used in syzCriterion()
@@ -2613,7 +2741,7 @@ printf("\nVor enterT\n");pWrite(strat->P.p);pWrite(strat->P.sig);
         if(strat->P.sig != NULL)
         {
             int pos = posInSyz(strat, pHead(strat->P.sig));
-            printf("\nThis is a new syz2: \n");pWrite(strat->P.p);pWrite(strat->P.p1);pWrite(strat->P.p2);pWrite(strat->P.sig);
+            printf("\nThis a new syz2: \n");pWrite(strat->P.p);pWrite(strat->P.p1);pWrite(strat->P.p2);pWrite(strat->P.sig);
             enterSyz(strat->P, strat, pos);
 //#if 1
 #ifdef DEBUGF5
@@ -2623,23 +2751,24 @@ printf("\nVor enterT\n");pWrite(strat->P.p);pWrite(strat->P.sig);
 #endif
         }
       }
+      kTest_TS(strat);
       if (strat->P.p1 == NULL && strat->minim > 0)
       {
         p_Delete(&strat->P.p2, currRing, strat->tailRing);
       }
     }
-
+kTest_TS(strat);
 #ifdef KDEBUG
     memset(&(strat->P), 0, sizeof(strat->P));
 #endif /* KDEBUG */
     kTest_TS(strat);
   }
-  idPrint(strat->Shdl);
+  //idPrint(strat->Shdl);
 #ifdef HAVE_RINGS
   if(nCoeff_is_Ring_Z(currRing->cf))
     finalReduceByMon(strat);
 #endif
-idPrint(strat->Shdl);
+//idPrint(strat->Shdl);
 #ifdef KDEBUG
 #if MYTEST
   PrintS("bba finish GB: currRing: "); rWrite(currRing);
@@ -2736,7 +2865,6 @@ idPrint(strat->Shdl);
   {
     rChangeCurrRing (currRingOld);
     F0          = idrMoveR (F1, sRing, currRing);
-    idPrint(strat->Shdl);
     strat->Shdl = idrMoveR_NoSort (strat->Shdl, sRing, currRing);
     //rDelete (sRing); 
     //-> The following example couldn't print after sba computation: 
@@ -3010,7 +3138,7 @@ void f5c (kStrategy strat, int& olddeg, int& minimcnt, int& hilbeledeg,
           }
           strat->initEcart(&h);
           pos = strat->Ll+1;
-          h.sev = pGetShortExpVector(h.p);
+          h.sev = pGetShortExpVector(pHead(h.p));
           enterL(&strat->L,&strat->Ll,&strat->Lmax,h,pos);
         }
       }
@@ -3174,12 +3302,11 @@ void f5c (kStrategy strat, int& olddeg, int& minimcnt, int& hilbeledeg,
                 currRing->PolyBin);
         minimcnt++;
       }
-
       // enter into S, L, and T
       // here we need to recompute new signatures, but those are trivial ones
       if ((!TEST_OPT_IDLIFT) || (pGetComp(strat->P.p) <= strat->syzComp))
       {
-        printf("\nenterT in f5c:\n");pWrite(strat->P.p);pWrite(strat->P.sig);//idPrint(strat->Shdl);
+        //printf("\nenterT in f5c:\n");pWrite(strat->P.p);pWrite(strat->P.sig);//idPrint(strat->Shdl);
         enterT(strat->P, strat);
         // posInS only depends on the leading term
         strat->enterS(strat->P, pos, strat, strat->tl);
@@ -3229,6 +3356,13 @@ void f5c (kStrategy strat, int& olddeg, int& minimcnt, int& hilbeledeg,
     cc++;
   }
   printf("\nIn f5c nach die Signatur Anpassung\n");
+  // One has to repoint the i_r1 and i_r2:
+  for(int ii = 0; ii<=strat->Ll; ii++)
+  {
+    strat->L[ii].i_r1 = kFindInT(strat->L[ii].p1, strat->T, strat->tl);
+    strat->L[ii].i_r2 = kFindInT(strat->L[ii].p2, strat->T, strat->tl);
+    //if((i_r1 == -1) || (i_r1 != kFindInT(strat->L[ii].p1, strat->T, strat->tl)))
+  }
   /*for(int ii = 0; ii<=strat->tl; ii++)
   {printf("\nT[%i]\n",ii);pWrite(strat->T[ii].p);pWrite(strat->T[ii].sig);pWrite(strat->sig[ii]);}*/
   //idPrint(strat->Shdl);

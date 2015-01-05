@@ -4957,6 +4957,7 @@ static BOOLEAN jjSTD(leftv res, leftv v)
   ideal v_id=(ideal)v->Data();
   intvec *w=(intvec *)atGet(v,"isHomog",INTVEC_CMD);
   tHomog hom=testHomog;
+  omTestMemory(1);
   if (w!=NULL)
   {
     if (!idTestHomModule(v_id,currRing->qideal,w))
@@ -4970,6 +4971,7 @@ static BOOLEAN jjSTD(leftv res, leftv v)
       w=ivCopy(w);
     }
   }
+  omTestMemory(1);
   result=kStd(v_id,currRing->qideal,hom,&w);
   idSkipZeroes(result);
   res->data = (char *)result;

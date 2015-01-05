@@ -2119,7 +2119,7 @@ ideal kStd(ideal F, ideal Q, tHomog h,intvec ** w, intvec *hilb,int syzComp,
 {
   if(idIs0(F))
     return idInit(1,F->rank);
-
+omTestMemory(1);
   ideal r;
   BOOLEAN b=currRing->pLexOrder,toReset=FALSE;
   BOOLEAN delete_w=(w==NULL);
@@ -2206,10 +2206,12 @@ ideal kStd(ideal F, ideal Q, tHomog h,intvec ** w, intvec *hilb,int syzComp,
   }
   else
 #endif
+omTestMemory(1);
 #ifdef HAVE_RINGS
   if (rField_is_Ring(currRing))
     {
 #if 1        
+        omTestMemory(1);
         if(nCoeff_is_Ring_Z(currRing->cf))
         {
             ideal FCopy = idCopy(F);
@@ -2247,6 +2249,7 @@ ideal kStd(ideal F, ideal Q, tHomog h,intvec ** w, intvec *hilb,int syzComp,
                 if (hilb==NULL) strat->LazyPass*=2;
             }
             strat->homog=h;
+            omTestMemory(1);
             if(currRing->OrdSgn == -1)
                 r=mora(FCopy,Q,NULL,hilb,strat);
             else
