@@ -232,8 +232,8 @@ printf("\nksReducePolySig\n");
     printf("--------------\n");
 #endif
     p_ExpVectorAddSub(sigMult,PR->GetLmCurrRing(),PW->GetLmCurrRing(),currRing);
-#if 1
-//#ifdef DEBUGF5
+//#if 1
+#ifdef DEBUGF5
     printf("------------------- IN KSREDUCEPOLYSIG: --------------------\n");
     pWrite(pHead(PR->GetLmCurrRing()));
     pWrite(pHead(PW->GetLmCurrRing()));
@@ -242,7 +242,7 @@ printf("\nksReducePolySig\n");
     printf("--------------\n");
 #endif
     int sigSafe = p_LmCmp(PR->sig,sigMult,currRing);
-    printf("\nsigSafe = %i\n",sigSafe);
+    //printf("\nsigSafe = %i\n",sigSafe);
 //#if 0
 #ifdef HAVE_RINGS
     if(rField_is_Ring(currRing))

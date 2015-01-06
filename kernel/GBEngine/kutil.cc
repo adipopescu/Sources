@@ -8627,6 +8627,7 @@ void enterSyz(LObject p, kStrategy strat, int atT)
   pWrite(strat->syz[atT]);
 #endif
   // recheck pairs in strat->L with new rule and delete correspondingly
+  #if 0
   int cc = strat->Ll;
   while (cc>-1)
   {
@@ -8647,6 +8648,7 @@ void enterSyz(LObject p, kStrategy strat, int atT)
     }
     cc--;
   }
+  #endif
 //#if 1
 #ifdef DEBUGF5
     Print("--- Syzygies ---\n");

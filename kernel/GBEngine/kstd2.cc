@@ -1571,7 +1571,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     #endif
     printf("\n   list   L\n");
     int iii;
-    #if 0
+    #if 1
     for(iii = 0; iii<= strat->Ll; iii++)
     {
         printf("L[%i]:",iii);
@@ -1584,7 +1584,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     //getchar();
     #endif
     #endif
-    #if 0
+    #if 1
     idPrint(strat->Shdl);
     #else
     for(int ii = 0; ii<strat->sl;ii++)
@@ -2086,7 +2086,7 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     #endif
     //getchar();
     #endif
-    #if 0
+    #if 1
     for(int iii = 0; iii < strat->Ll; iii++)
     {
         if(pLmCmp(strat->L[iii].sig, strat->L[iii+1].sig) == -1)
@@ -2541,7 +2541,7 @@ printf("\nVor enterT\n");pWrite(strat->P.p);pWrite(strat->P.sig);
       strat->enterS(strat->P, pos, strat, strat->tl);
       assume(strat->P.sevSig == pGetShortExpVector(pHead(strat->P.sig)));
       //for(int ii=0; ii<=strat->tl; ii++){printf("T[%i]",ii);pWrite(strat->T[ii].p);pWrite(strat->T[ii].sig);}
-      #if ADIDEBUG
+      #if 1
       printf("\nThis element is added to S: ");
       pWrite(strat->P.p);pWrite(strat->P.p1);pWrite(strat->P.p2);pWrite(strat->P.sig);
       //getchar();
