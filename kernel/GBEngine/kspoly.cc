@@ -29,6 +29,8 @@ int create_count = 0;
 #define TEST_OPT_DEBUG_RED
 #endif
 
+#define ADIDEBUG 0
+
 /***************************************************************
  *
  * Reduces PR with PW
@@ -176,7 +178,9 @@ int ksReducePolySig(LObject* PR,
                  number *coef,
                  kStrategy strat)
 {
+#if ADIDEBUG
 printf("\nksReducePolySig\n");
+#endif
 #ifdef KDEBUG
   red_count++;
 #ifdef TEST_OPT_DEBUG_RED
@@ -315,8 +319,10 @@ if(rField_is_Ring(currRing))
     poly fin = pCopy(PR->GetLm(currRing));
     pNext(fin) = NULL;
     PR->GetP();
+    #if ADIDEBUG
     printf("\nThis is PR:\n");pWrite(p1);pWrite(PR->sig);
     printf("\nThis is PW:\n");pWrite(p2);pWrite(PW->sig);
+    #endif
     /*
     printf("\nPointers for PW: %p, %p\n", PW->p, PW->sig);
     for(int ii=0; ii<=strat->sl; ii++)
@@ -334,7 +340,9 @@ if(rField_is_Ring(currRing))
     number an = pGetCoeff(p2);
     assume(n_DivBy(bn,an,tailRing) == TRUE);
     pSetCoeff(fin, nDiv(bn,an));
+    #if ADIDEBUG
     printf("\nfin:\n");pWrite(fin);
+    #endif
     //ksCheckCoeff(&an, &bn, tailRing->cf);    // Calculate special LC
     //int ct = ksCheckCoeff(&an, &bn, tailRing->cf);    // Calculate special LC
     //p_SetCoeff(lm, bn, tailRing);
@@ -343,12 +351,13 @@ if(rField_is_Ring(currRing))
     //p_Minus_qq_Mult_qq(PR->sig, PW->sig, fin, tailRing);#
     poly sSigMult = pCopy(PW->sig);
     p_Mult_mm(sSigMult, fin, tailRing);
-    pWrite(sSigMult);
     PR->sig = p_Sub(PR->sig, sSigMult, tailRing);
     PR->Tail_Minus_mm_Mult_qq(fin, t2, PW->GetpLength() - 1, spNoether);
     assume(PW->GetpLength() == pLength(PW->p != NULL ? PW->p : PW->t_p));
     PR->LmDeleteAndIter();
+    #if ADIDEBUG
     printf("\nThis is the final in redSig:\n");pWrite(PR->p);pWrite(PR->sig);//getchar();
+    #endif
     return 1;
 }
 #endif
