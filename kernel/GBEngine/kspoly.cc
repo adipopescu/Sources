@@ -29,7 +29,7 @@ int create_count = 0;
 #define TEST_OPT_DEBUG_RED
 #endif
 
-#define ADIDEBUG 0
+#define ADIDEBUG 1
 
 /***************************************************************
  *

@@ -2216,13 +2216,15 @@ omTestMemory(1);
   if (rField_is_Ring(currRing))
     {
 #if 1        
-        omTestMemory(1);
         if(nCoeff_is_Ring_Z(currRing->cf))
         {
             ideal FCopy = idCopy(F);
             poly pFmon = preIntegerCheck(FCopy, Q);
             if(pFmon != NULL)
-                idInsertPoly(FCopy, pFmon);
+            {    
+              idInsertPoly(FCopy, pFmon);
+              printf("\nPreintegerCheck found this constant:\n");pWrite(pFmon);
+            }
             strat->kModW=kModW=NULL;
             if (h==testHomog)
             {

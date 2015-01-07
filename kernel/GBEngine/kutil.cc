@@ -896,13 +896,8 @@ BOOLEAN kTest_TS(kStrategy strat)
   // test strat->L[i].i_r1
   for (i=0; i<=strat->Ll; i++)
   {
-    //pWrite(strat->L[i].p);
-    //pWrite(strat->L[i].p1);
-    //pWrite(strat->L[i].p2);
-    //printf("\n%i\n", strat->L[i].i_r1);
     if (strat->L[i].p1 != NULL && strat->L[i].p2)
     {
-      //pWrite(strat->L[i].T_1(strat)->p);printf("\nlalalalalalalalala\n");
       if (strat->L[i].i_r1 < 0 ||
           strat->L[i].i_r1 > strat->tl ||
           strat->L[i].T_1(strat)->p != strat->L[i].p1)
@@ -1441,6 +1436,7 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
 
   LObject h;
   h.p = gcd;
+  h.i_r = -1;
   if(h.p == NULL)
     return;
   h.tailRing = strat->tailRing;
@@ -1451,8 +1447,16 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
     return;
   h.i_r1 = -1;h.i_r2 = -1;
   strat->initEcart(&h);
-  #if 0
-  h.p1 = p;h.p2 = strat->S[i];
+  #if 1
+  h.p2 = strat->S[i];
+  h.p1 = p;
+  #endif
+  #if 1
+  if (atR >= 0)
+      {
+        h.i_r1 = atR;
+        h.i_r2 = strat->S_2_R[i];
+      }
   #endif
   if (strat->Ll==-1)
     posx =0;
@@ -1461,6 +1465,9 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
   h.sev = pGetShortExpVector(h.p);
   if (currRing!=strat->tailRing)
     h.t_p = k_LmInit_currRing_2_tailRing(h.p, strat->tailRing);
+  #if ADIDEBUG
+  printf("\nThis s-poly was added to L:\n");pWrite(h.p);pWrite(h.p1);pWrite(h.p2);printf("\ni_r1 = %i, i_r2 = %i\n",h.i_r1, h.i_r2);pWrite(strat->T[h.i_r1].p);pWrite(strat->T[h.i_r2].p);
+  #endif
   enterL(&strat->L,&strat->Ll,&strat->Lmax,h,posx);
   #endif
 }
@@ -1549,7 +1556,7 @@ BOOLEAN enterOneStrongPoly (int i,poly p,int /*ecart*/, int /*isFromQ*/,kStrateg
   h.i_r1 = -1;h.i_r2 = -1;
   if (currRing!=strat->tailRing)
     h.t_p = k_LmInit_currRing_2_tailRing(h.p, strat->tailRing);
-  #if 0
+  #if 1
   h.p1 = p;h.p2 = strat->S[i];
   #endif
   #if 0
@@ -1558,17 +1565,20 @@ BOOLEAN enterOneStrongPoly (int i,poly p,int /*ecart*/, int /*isFromQ*/,kStrateg
   if((h.p!=NULL) && (!nIsZero(h.p->coef)))
   #endif
   //printf("\natR = %i\n", atR);pWrite(h.p);
-  /*if (atR >= 0)
+  if (atR >= 0)
     {
-      h.i_r1 = strat->S_2_R[i];
-      h.i_r2 = atR;
+      h.i_r2 = strat->S_2_R[i];
+      h.i_r1 = atR;
     }
     else
     {
       h.i_r1 = -1;
       h.i_r2 = -1;
-    }*/
+    }
   enterL(&strat->L,&strat->Ll,&strat->Lmax,h,posx);
+  #if ADIDEBUG
+  printf("\nThis strong poly was added to L:\n");pWrite(h.p);pWrite(h.p1);pWrite(h.p2);printf("\ni_r1 = %i, i_r2 = %i\n",h.i_r1, h.i_r2);pWrite(strat->T[h.i_r1].p);pWrite(strat->T[h.i_r2].p);
+  #endif
   return TRUE;
 }
 #endif
@@ -2248,6 +2258,9 @@ printf("\nIn Spoly: m1, m2:\n");pWrite(m1);pWrite(m2);
     }
     l = strat->posInLSba(strat->B,strat->Bl,&Lp,strat);
     enterL(&strat->B,&strat->Bl,&strat->Bmax,Lp,l);
+  #if ADIDEBUG
+  printf("\nThis s-poly sig poly was added to L:\n");pWrite(Lp.p);pWrite(Lp.p1);pWrite(Lp.p2);printf("\ni_r1 = %i, i_r2 = %i\n",Lp.i_r1, Lp.i_r2);pWrite(strat->T[Lp.i_r1].p);pWrite(strat->T[Lp.i_r2].p);
+  #endif
 #if ADIDEBUG
 printf("\nAdded! Exit enteronepairSig\n");
 #endif
@@ -2615,6 +2628,9 @@ printf("\nCheck This:\n");
     }
     l = strat->posInLSba(strat->B,strat->Bl,&Lp,strat);
     enterL(&strat->B,&strat->Bl,&strat->Bmax,Lp,l);
+      #if ADIDEBUG
+  printf("\nThis strong sig poly was added to L:\n");pWrite(Lp.p);pWrite(Lp.p1);pWrite(Lp.p2);printf("\ni_r1 = %i, i_r2 = %i\n",Lp.i_r1, Lp.i_r2);pWrite(strat->T[Lp.i_r1].p);pWrite(strat->T[Lp.i_r2].p);
+  #endif
   }
 }
 
@@ -4462,7 +4478,7 @@ void superenterpairsSig (poly h,poly hSig,int hFrom,int k,int ecart,int pos,kStr
   int i;
   i = strat->Ll;
   initenterpairsSig(h, hSig, hFrom, k, ecart, pos, strat, atR);
-  #if ADIDEBUG
+  #if 0
   if(i != strat->Ll)
     printf("\ninitenterpairsSig changed L :)\n");
   else
@@ -4480,7 +4496,7 @@ void superenterpairsSig (poly h,poly hSig,int hFrom,int k,int ecart,int pos,kStr
   
   initenterstrongPairsSig(h, hSig, hFrom, k, ecart, 0, strat, atR);
   
-  #if ADIDEBUG
+  #if 0
   if(i != strat->Ll)
     printf("\ninitenterstrongPairsSig changed L :)\n");
   else
@@ -9811,7 +9827,7 @@ poly preIntegerCheck(ideal FOrig, ideal Q)
     QQ_ring->cf = nInitChar(n_Q, NULL);
     if(Q!= NULL)
         QQ_ring->qideal = NULL;
-    rComplete(QQ_ring);
+    rComplete(QQ_ring,1);
     QQ_ring = rAssure_c_dp(QQ_ring);
     rChangeCurrRing(QQ_ring);
     nMapFunc nMap = n_SetMap(origR->cf, QQ_ring->cf);

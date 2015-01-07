@@ -1614,7 +1614,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     #if 0
     idPrint(strat->Shdl);
     #else
-    for(int ii = 0; ii<strat->sl;ii++)
+    for(int ii = 0; ii<=strat->sl;ii++)
         p_Write(strat->S[ii],strat->tailRing);
     #endif
     printf("\n   list   L\n");
@@ -1623,8 +1623,8 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     for(iii = 0; iii<= strat->Ll; iii++)
     {
         printf("L[%i]:",iii);
-        p_Write(strat->L[iii].p, strat->tailRing);
-        p_Write(strat->L[iii].p1, strat->tailRing);
+        p_Write(strat->L[iii].p, /*strat->tailRing*/currRing);
+        p_Write(strat->L[iii].p1, /*strat->tailRing*/currRing);
         p_Write(strat->L[iii].p2, strat->tailRing);
         
                                 
@@ -2167,19 +2167,22 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
       else strat->noClearS=TRUE;
     }
     */
-    if (strat->sbaOrder == 1 && pGetComp(pHead(strat->L[strat->Ll].sig)) != strat->currIdx)
+    printf("\nAt the moment currIdx = %i\n", strat->currIdx);
+    // ADIDEBUG: It may happen that i have already t*gen(7) but now i can reduce it and obtain 
+    //           a t'*gen(4). In this case I may not want to apply f5c.
+    //if (strat->sbaOrder == 1 && pGetComp(pHead(strat->L[strat->Ll].sig)) != strat->currIdx)
+    if (strat->sbaOrder == 1 && (pGetComp(pHead(strat->L[strat->Ll].sig)) == strat->currIdx+1))
+    
     {
       strat->currIdx  = pGetComp(pHead(strat->L[strat->Ll].sig));
+      printf("\nChanged! New currIdx = %i\n", strat->currIdx);
+      
 //#if 0
 #if F5C
-omTestMemory(1);
-kTest_TS(strat);
       // 1. interreduction of the current standard basis
       // 2. generation of new principal syzygy rules for syzCriterion
       f5c ( strat, olddeg, minimcnt, hilbeledeg, hilbcount, srmax, lrmax, reduc, Q, w, hilb );
 #endif
-kTest_TS(strat);
-omTestMemory(1);
       // initialize new syzygy rules for the next iteration step
       initSyzRules(strat);
       kTest_TS(strat);
@@ -3155,6 +3158,27 @@ void f5c (kStrategy strat, int& olddeg, int& minimcnt, int& hilbeledeg,
           int& hilbcount, int& srmax, int& lrmax, int& reduc, ideal Q,
           intvec *w,intvec *hilb )
 {
+  #if 0
+  //ADIDEBUG
+  //Test whether L consists just of initial polys from input. If no, do not do it!
+  for(int ii=0; ii<=strat->Ll; ii++)
+  {
+    if((strat->L[ii].p1 != NULL) || (strat->L[ii].p2 != NULL))
+      return;
+  }
+  #endif
+  for(int ii = 0; ii<=strat->Ll; ii++)
+  {
+    printf("\nL[%i]\n",ii);
+    strat->L[ii].i_r1 = kFindInT(strat->L[ii].p1, strat->T, strat->tl);
+    strat->L[ii].i_r2 = kFindInT(strat->L[ii].p2, strat->T, strat->tl);
+    //if((i_r1 == -1) || (i_r1 != kFindInT(strat->L[ii].p1, strat->T, strat->tl)))
+    pWrite(strat->L[ii].p);
+    pWrite(strat->L[ii].p1);
+    pWrite(strat->L[ii].p2);
+    pWrite(strat->L[ii].sig);
+  }
+  idPrint(strat->Shdl);
   int Ll_old, red_result = 1;
   int pos  = 0;
   hilbeledeg=1;
@@ -3415,11 +3439,18 @@ void f5c (kStrategy strat, int& olddeg, int& minimcnt, int& hilbeledeg,
   printf("\nIn f5c nach die Signatur Anpassung\n");
   #endif
   // One has to repoint the i_r1 and i_r2:
+  printf("\nDas ist S:\n");
+  for(int ii = 0; ii<=strat->sl;ii++)
+    p_Write(strat->S[ii], strat->tailRing);
+  printf("\nUnd das ist L:\n");
   for(int ii = 0; ii<=strat->Ll; ii++)
   {
-    strat->L[ii].i_r1 = kFindInT(strat->L[ii].p1, strat->T, strat->tl);
-    strat->L[ii].i_r2 = kFindInT(strat->L[ii].p2, strat->T, strat->tl);
+    strat->L[ii].i_r1 = -1;//kFindInT(strat->L[ii].p1, strat->T, strat->tl);
+    strat->L[ii].i_r2 = -1;//kFindInT(strat->L[ii].p2, strat->T, strat->tl);
     //if((i_r1 == -1) || (i_r1 != kFindInT(strat->L[ii].p1, strat->T, strat->tl)))
+    p_Write(strat->L[ii].p, strat->tailRing);
+    p_Write(strat->L[ii].p1, strat->tailRing);
+    p_Write(strat->L[ii].p2, strat->tailRing);
   }
   /*for(int ii = 0; ii<=strat->tl; ii++)
   {printf("\nT[%i]\n",ii);pWrite(strat->T[ii].p);pWrite(strat->T[ii].sig);pWrite(strat->sig[ii]);}*/
