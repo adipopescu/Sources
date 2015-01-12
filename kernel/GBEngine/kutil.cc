@@ -1567,7 +1567,7 @@ void enterOnePairNormal (int i,poly p,int ecart, int isFromQ,kStrategy strat, in
 
       }
   }
-#if ADIDEBUG
+#if MYTEST
         PrintS("enterOnePairNormal::\n strat->S[i]: "); pWrite(strat->S[i]);
         PrintS("p: "); pWrite(p);
         PrintS("commutative SPoly: "); pWrite(Lp.p);

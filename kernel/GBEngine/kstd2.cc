@@ -1610,10 +1610,10 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     #if ADIDEBUG
     printf("\n      ------------------------NEW LOOP\n");
     printf("\nShdl = \n");
-    #if 0
+    #if 1
     idPrint(strat->Shdl);
     #else
-    for(int ii = 0; ii<strat->sl;ii++)
+    for(int ii = 0; ii<=strat->sl;ii++)
         p_Write(strat->S[ii],strat->tailRing);
     #endif
     printf("\n   list   L\n");
@@ -1916,7 +1916,7 @@ messageADI(red_result);
     }
   }
   /* complete reduction of the standard basis--------- */
-  if (TEST_OPT_REDSB)
+  if (TEST_OPT_REDSB || TEST_OPT_REDTAIL)
   {
     completeReduce(strat);
 #ifdef HAVE_TAIL_RING
@@ -1931,10 +1931,10 @@ messageADI(red_result);
       completeReduce(strat);
     }
 #endif
-#ifdef HAVE_RINGS
-  if(nCoeff_is_Ring_Z(currRing->cf))
-    finalReduceByMon(strat);
-#endif
+    #ifdef HAVE_RINGS
+    if(nCoeff_is_Ring_Z(currRing->cf))
+      finalReduceByMon(strat);
+    #endif
   }
   else if (TEST_OPT_PROT) PrintLn();
   /* release temp data-------------------------------- */
