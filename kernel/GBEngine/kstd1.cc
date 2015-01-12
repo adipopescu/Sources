@@ -1531,7 +1531,7 @@ loop_count = 1;
 #ifdef HAVE_TAIL_RING
   //if (strat->homog && strat->red == redFirst)
     //kStratInitChangeTailRing(strat); 
-     #if 1
+    #if ADIDEBUG
       for(int iii = 0; iii<= strat->Ll; iii++)
     {
         printf("L[%i]:",iii);
@@ -1548,16 +1548,15 @@ loop_count = 1;
 #ifdef HAVE_ASSUME
     //mora_loop_count++;
 #endif
-    #if 0
-    //#if ADIDEBUG
+    #if ADIDEBUG
     printf("\n      ------------------------NEW LOOP\n");
     printf("\nShdl = \n");
-    idPrint(strat->Shdl);
-    /*for(int iii = 0; iii<= strat->sl; iii++)
+    //idPrint(strat->Shdl);
+    for(int iii = 0; iii<= strat->sl; iii++)
     {
         printf("S[%i]:",iii);
         p_Write(strat->S[iii], strat->tailRing);
-    }*/
+    }
     printf("\n   list   L has %i\n", strat->Ll);
     int iii;
     #if 1
@@ -1678,22 +1677,23 @@ loop_count = 1;
       if (rField_is_Ring(currRing))
       {
         superenterpairs(strat->P.p,strat->sl,strat->P.ecart,0,strat, strat->tl);
-
-#if ADIDEBUG
-        Print("\n    The new pair list L -- after superenterpairs in loop %d -- is:\n",loop_count);
-        for(int iii=0;iii<=strat->Ll;iii++)
-        {
-          PrintS("\n    L[%d]:\n",iii);
-          PrintS("         ");p_Write(strat->L[iii].p1,strat->tailRing);
-          PrintS("         ");p_Write(strat->L[iii].p2,strat->tailRing);
-          PrintS("         ");p_Write(strat->L[iii].p,strat->tailRing);
-        }
-#endif
       }
       else
 #endif
       enterpairs(strat->P.p,strat->sl,strat->P.ecart,0,strat, strat->tl);
       // put in S
+
+        #if ADIDEBUG
+        Print("\n    The new pair list L -- after superenterpairs in loop %d -- is:\n",loop_count);
+        for(int iii=0;iii<=strat->Ll;iii++)
+        {
+          printf("\n    L[%d]:\n",iii);
+          PrintS("         ");p_Write(strat->L[iii].p,strat->tailRing);
+          PrintS("         ");p_Write(strat->L[iii].p1,strat->tailRing);
+          PrintS("         ");p_Write(strat->L[iii].p2,strat->tailRing);
+        }
+        #endif
+
       strat->enterS(strat->P,
                     posInS(strat,strat->sl,strat->P.p, strat->P.ecart),
                     strat, strat->tl);
@@ -1743,7 +1743,7 @@ loop_count = 1;
     Print("\n    The new reducer list T -- at the end of loop %d -- is\n",loop_count);
     for(int iii=0;iii<=strat->tl;iii++)
     {
-      PrintS("\n    T[%d]:",iii);
+      printf("\n    T[%d]:",iii);
       p_Write(strat->T[iii].p,strat->tailRing);
     }
     PrintLn();

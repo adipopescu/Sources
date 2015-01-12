@@ -1567,6 +1567,11 @@ void enterOnePairNormal (int i,poly p,int ecart, int isFromQ,kStrategy strat, in
 
       }
   }
+#if ADIDEBUG
+        PrintS("enterOnePairNormal::\n strat->S[i]: "); pWrite(strat->S[i]);
+        PrintS("p: "); pWrite(p);
+        PrintS("commutative SPoly: "); pWrite(Lp.p);
+#endif
   if (Lp.p == NULL)
   {
     /*- the case that the s-poly is 0 -*/
@@ -1611,7 +1616,11 @@ void enterOnePairNormal (int i,poly p,int ecart, int isFromQ,kStrategy strat, in
       Lp.i_r2 = -1;
     }
     strat->initEcartPair(&Lp,strat->S[i],p,strat->ecartS[i],ecart);
-
+#if ADIDEBUG
+        PrintS("enterOnePairNormal::\n strat->S[i]: "); pWrite(strat->S[i]);
+        PrintS("p: "); pWrite(p);
+        PrintS("commutative SPoly: "); pWrite(Lp.p);
+#endif
     if (TEST_OPT_INTSTRATEGY)
     {
       if (!rIsPluralRing(currRing))
@@ -2150,11 +2159,13 @@ printf("\nCheck This:\n");
   poly pSS = pCopy(pS);
   poly sSS = pCopy(sS);
   Lp.sig = p_Add_q(pS, sS, currRing);
+  #if ADIDEBUG  
   if((pLmCmp(Lp.sig, pSS) == -1) && (pLmCmp(Lp.sig, sSS) == -1)) 
   {
     printf("\n!!!!!!!!!!!!! Sig cancelled in strong:\n");pWrite(Lp.sig);printf("\npS head=\n");pWrite(pHead(pSS));printf("\nsS head=\n");pWrite(pHead(sSS));printf("\nThis is an example where the signature drops!\n");
     //getchar();
   }
+  #endif
   Lp.sevSig=p_GetShortExpVector(pHead(Lp.sig),currRing);
   Lp.strong = TRUE;
   if  ( strat->syzCrit(pHead(Lp.sig),~Lp.sevSig,strat) //||
@@ -3138,22 +3149,15 @@ void initenterpairs (poly h,int k,int ecart,int isFromQ,kStrategy strat, int atR
         }
       }
     }
-    //Comented because of the following example: 
-    //ring rng = (integer),(x,y,z),dp;
-    //ideal i = -5*z^2-y*z^2, x^3*y*z-z^2+1, y^2*z^2+5*x^2*y*z;
-    //ideal gI =  std(i);
-    //ideal ggI =  std(gI);
-#if 0
     if (new_pair)
     {
-#ifdef HAVE_RATGRING
+    #ifdef HAVE_RATGRING
       if (currRing->real_var_start>0)
         chainCritPart(h,ecart,strat);
       else
-#endif
+    #endif
       strat->chainCrit(h,ecart,strat);
     }
-#endif
   }
 }
 
@@ -4269,8 +4273,30 @@ void enterpairs (poly h,int k,int ecart,int pos,kStrategy strat, int atR)
 #ifdef HAVE_RINGS
   assume (!rField_is_Ring(currRing));
 #endif
+  #if ADIDEBUG
+        Print("\n    Vor initenterpairs: The new pair list L -- after superenterpairs in loop\n");
+        for(int iii=0;iii<=strat->Ll;iii++)
+        {
+          printf("\n    L[%d]:\n",iii);
+          PrintS("         ");p_Write(strat->L[iii].p,strat->tailRing);
+          PrintS("         ");p_Write(strat->L[iii].p1,strat->tailRing);
+          PrintS("         ");p_Write(strat->L[iii].p2,strat->tailRing);
+        }
+        #endif
 
   initenterpairs(h,k,ecart,0,strat, atR);
+
+      #if ADIDEBUG
+        Print("\n    Nach initenterpairs: The new pair list L -- after superenterpairs in loop \n");
+        for(int iii=0;iii<=strat->Ll;iii++)
+        {
+          printf("\n    L[%d]:\n",iii);
+          PrintS("         ");p_Write(strat->L[iii].p,strat->tailRing);
+          PrintS("         ");p_Write(strat->L[iii].p1,strat->tailRing);
+          PrintS("         ");p_Write(strat->L[iii].p2,strat->tailRing);
+        }
+        #endif
+
   if ( (!strat->fromT)
   && ((strat->syzComp==0)
     ||(pGetComp(h)<=strat->syzComp)))

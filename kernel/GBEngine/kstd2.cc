@@ -1538,7 +1538,6 @@ void kDebugPrint(kStrategy strat);
 
 ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
 {
-    omTestMemory(1);
 #ifdef KDEBUG
   bba_count++;
   int loop_count = 0;
@@ -1883,7 +1882,6 @@ messageADI(red_result);
 #endif /* KDEBUG */
     kTest_TS(strat);
   }
-omTestMemory(1);
 #if 0
 //#ifdef HAVE_RINGS
   if(nCoeff_is_Ring_Z(currRing->cf))
@@ -1917,7 +1915,6 @@ omTestMemory(1);
         }
     }
   }
-  omTestMemory(1);
   /* complete reduction of the standard basis--------- */
   if (TEST_OPT_REDSB)
   {
@@ -1934,18 +1931,14 @@ omTestMemory(1);
       completeReduce(strat);
     }
 #endif
-omTestMemory(1);
 #ifdef HAVE_RINGS
   if(nCoeff_is_Ring_Z(currRing->cf))
     finalReduceByMon(strat);
 #endif
   }
   else if (TEST_OPT_PROT) PrintLn();
-omTestMemory(1);
   /* release temp data-------------------------------- */
-  omTestMemory(1);
   exitBuchMora(strat);
-  omTestMemory(1);
 //  if (TEST_OPT_WEIGHTM)
 //  {
 //    pRestoreDegProcs(currRing,pFDegOld, pLDegOld);
@@ -1969,7 +1962,7 @@ messageADI(413);
 #endif
 #ifdef HAVE_RINGS
 if(rField_is_Ring(currRing))
-printf("\n--- size: %i\n",strat->sl);
+printf("\n--- size: %i\n",strat->sl+1);
 #endif
   idTest(strat->Shdl);
   omTestMemory(1);
