@@ -39,9 +39,8 @@
 #include "links/silink.h"
 #include "mod_lib.h"
 
-// the following 2 inline functions are just convenience shortcuts for Frank's code:
-static inline void number2mpz(number n, mpz_t m){ n_MPZ(m, n, coeffs_BIGINT); }
-static inline number mpz2number(mpz_t m){ return n_InitMPZ(m, coeffs_BIGINT); }
+static FORCE_INLINE void number2mpz(number n, mpz_t m){ number2mpz(n, coeffs_BIGINT, m); }
+static FORCE_INLINE number mpz2number(mpz_t m){ return mpz2number(m, coeffs_BIGINT); }
 
 
 void setListEntry(lists L, int index, mpz_t n)
@@ -784,9 +783,9 @@ extern "C"
 char * versionString(/*const bool bShowDetails = false*/ )
 {
   StringSetS("");
-  StringAppend("Singular for %s version %s (%s, %d bit) %s #%s",
+  StringAppend("Singular for %s version %s (%d, %d bit) %s #%s",
                S_UNAME, VERSION, // SINGULAR_VERSION,
-               PACKAGE_VERSION, SIZEOF_VOIDP*8, singular_date, GIT_VERSION);
+               SINGULAR_VERSION, SIZEOF_VOIDP*8, singular_date, GIT_VERSION);
   StringAppendS("\nwith\n\t");
 
 #if defined(mpir_version)

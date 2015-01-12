@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////
-version="version normal.lib 4.0.0.0 Jun_2013 "; // $Id$
+version="version normal.lib 4.0.1.1 Dec_2014 "; // $Id$
 category="Commutative Algebra";
 info="
 LIBRARY:  normal.lib     Normalization of Affine Rings
@@ -2328,7 +2328,8 @@ EXAMPLE: example genus; shows an example
       {
          execute("ring Rhelp=("+charstr(R0)+"),(@s),dp;");
       }
-      execute("minpoly = "+smp+";");
+      if (smp!="0")
+      { execute("minpoly = "+smp+";");}
       def newR=R+Rhelp;
       setring newR;
       ideal I=imap(R,I);
@@ -4017,7 +4018,10 @@ static proc substpartSpecial(ideal endid, ideal endphi)
 
         for ( jj = n(ii-1)+1; jj<=n(ii); jj++)
         {
-          if( Le[4][jj] !=0 )     //jj=index of var which was not substituted
+          if(  Le[4][jj] !=0 or                                             // jj=index of var which was not substituted
+               (  (ii==n3-1) and ( jj==n(ii) ) and  (size(newg2)==0) )      // or we have no variables yet in the new ring and
+                                                                            // want to keep at least the last one!
+            )
           {
             kk=kk+1;
             newg2[kk] = g2[jj];   //not substituted var from varlist
@@ -4082,6 +4086,7 @@ static proc substpartSpecial(ideal endid, ideal endphi)
       export(norid);
       export(normap);
       list L = newBAS;
+      setring BAS;
       return(L);
 
    //Hier scheint interred gut zu sein, da es Ergebnis relativ schnell

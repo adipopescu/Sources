@@ -24,7 +24,6 @@
 
 #include <coeffs/coeffs.h>
 #include <coeffs/numbers.h>
-#include <coeffs/longrat.h>
 #include <coeffs/bigintmat.h>
 
 
@@ -56,9 +55,7 @@
 #include "ipshell.h"
 #include "blackbox.h"
 
-#ifdef SINGULAR_4_1
 #include <Singular/number2.h>
-#endif
 
 
 /*=================== proc =================*/
@@ -544,6 +541,10 @@ static BOOLEAN jiA_POLY(leftv res, leftv a,Subexpr e)
       // for all ideal like data types: check indices
       if (j>MATCOLS(m))
       {
+        if (TEST_V_ALLWARN)
+        {
+          Warn("increase ideal %d -> %d in %s",MATCOLS(m),j,my_yylinebuf);
+        }
         pEnlargeSet(&(m->m),MATCOLS(m),j-MATCOLS(m));
         MATCOLS(m)=j;
       }
@@ -643,9 +644,7 @@ static BOOLEAN jiA_PROC(leftv res, leftv a, Subexpr)
   extern procinfo *iiInitSingularProcinfo(procinfo *pi, const char *libname,
                                           const char *procname, int line,
                                           long pos, BOOLEAN pstatic=FALSE);
-  extern void piCleanUp(procinfov pi);
-
-  if(res->data!=NULL) piCleanUp((procinfo *)res->data);
+  if(res->data!=NULL) piKill((procinfo *)res->data);
   if(a->Typ()==STRING_CMD)
   {
     res->data = (void *)omAlloc0Bin(procinfo_bin);
@@ -1578,6 +1577,10 @@ static BOOLEAN jiAssign_list(leftv l, leftv r)
   }
   if (i>li->nr)
   {
+    if (TEST_V_ALLWARN)
+    {
+      Warn("increase list %d -> %d in %s",li->nr,i,my_yylinebuf);
+    }
     li->m=(leftv)omreallocSize(li->m,(li->nr+1)*sizeof(sleftv),(i+1)*sizeof(sleftv));
     memset(&(li->m[li->nr+1]),0,(i-li->nr)*sizeof(sleftv));
     int j=li->nr+1;

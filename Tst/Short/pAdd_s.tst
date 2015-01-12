@@ -15,13 +15,13 @@ proc pAdd_Test(string rs)
   rs;
   rs = "ring r = " + rs + ";";
   execute(rs);
-  int n_vars = tst_rgen_nvars[tst_rgen_var_index];
+  int n_vars = tst_rgen_nvars[Tst::tst_rgen_var_index];
   ideal id = 1, tst_FullIdeal();
-  tst_TestAdd(id, 3, size(tst_rgen_comp_orderings[tst_rgen_comp_index]));
+  tst_TestAdd(id, 3, size(Tst::tst_rgen_comp_orderings[Tst::tst_rgen_comp_index]));
   kill r;
 }
-  
-  
+
+
 string rs = tst_next_ring();
 
 while (size(rs) > 1)
@@ -29,6 +29,6 @@ while (size(rs) > 1)
   pAdd_Test(rs);
   rs = tst_next_ring();
 }
- 
+
 tst_status(1);$
 

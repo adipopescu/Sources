@@ -4,23 +4,17 @@
 /*
 * ABSTRACT: finite fields with a none-prime number of elements (via tables)
 */
-
-
-
-
-
+#include <misc/auxiliary.h>
 #include <omalloc/omalloc.h>
 
-#include <misc/auxiliary.h>
 #include <misc/mylimits.h>
 #include <misc/sirandom.h>
 
 #include <reporter/reporter.h>
 
-#include <coeffs/coeffs.h>
-#include <coeffs/numbers.h>
-#include <coeffs/ffields.h>
-#include <coeffs/longrat.h>
+#include "coeffs.h"
+#include "numbers.h"
+#include "longrat.h"
 
 #include <string.h>
 #include <math.h>
@@ -802,8 +796,12 @@ nMapFunc nfSetMap(const coeffs src, const coeffs dst)
   {
     return nfMapP;    /* Z/p -> GF(p,n) */
   }
+
   if (src->rep==n_rep_gap_rat) /*Q, Z */
-    return nlModP;
+  {
+    return nlModP; // FIXME? TODO? // extern number nlModP(number q, const coeffs Q, const coeffs Zp); // Map q \in QQ \to Zp // FIXME!
+  }
+
   return NULL;     /* default */
 }
 
@@ -828,6 +826,11 @@ static char* nfCoeffString(const coeffs r)
   char *s=(char*)omAlloc(11+1+strlen(p));
   sprintf(s,"%d,%s",r->m_nfCharQ,p);
   return s;
+}
+
+static number nfRandom(siRandProc p,number ,number, const coeffs cf)
+{
+  return (number)(long)(p() %(cf->m_nfCharQ+1));
 }
 
 BOOLEAN nfInitChar(coeffs r,  void * parameter)
@@ -881,6 +884,8 @@ BOOLEAN nfInitChar(coeffs r,  void * parameter)
   r->cfCoeffWrite=nfCoeffWrite;
 
   r->cfParDeg = nfParDeg;
+
+  r->cfRandom = nfRandom;
 
 #ifdef LDEBUG
   r->cfDBTest=nfDBTest;

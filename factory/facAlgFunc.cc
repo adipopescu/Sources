@@ -366,8 +366,8 @@ simpleExtension (CFList& backSubst, const CFList & Astar,
         rb= R.mvar()-s*ra;
         for (; j.hasItem(); j++)
         {
-          j.getItem()= j.getItem() (ra, oldR.mvar());
           j.getItem()= j.getItem() (rb, i.getItem().mvar());
+          j.getItem()= j.getItem() (ra, oldR.mvar());
         }
         prune (alpha);
       }
@@ -395,11 +395,12 @@ simpleExtension (CFList& backSubst, const CFList & Astar,
         for (; j.hasItem(); j++)
         {
           CanonicalForm powdenra= power (denra, degree (j.getItem(),
-                                                        oldR.mvar()));
-          j.getItem()= evaluate (j.getItem(),ra, denra, powdenra, oldR.mvar());
-          powdenra= power (denra, degree (j.getItem(), i.getItem().mvar()));
+                                         i.getItem().mvar()));
           j.getItem()= evaluate (j.getItem(), rb, denrb, powdenra,
                                  i.getItem().mvar());
+          powdenra= power (denra, degree (j.getItem(), oldR.mvar()));
+          j.getItem()= evaluate (j.getItem(),ra, denra, powdenra, oldR.mvar());
+
         }
       }
 
@@ -523,7 +524,6 @@ Trager (const CanonicalForm & F, const CFList & Astar,
         f /= vcontent (f, as.getFirst().mvar());
 
         L.append (CFFactor (f, 1));
-        break;
       }
       else
       {

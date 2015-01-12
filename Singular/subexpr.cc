@@ -12,23 +12,22 @@
 #include <misc/intvec.h>
 #include <misc/options.h>
 
-
-#include <coeffs/ffields.h>
 #include <coeffs/numbers.h>
 #include <coeffs/bigintmat.h>
+
+#include <coeffs/ffields.h> // nfShowMipo // minpoly printing...
 
 #include <polys/monomials/maps.h>
 #include <polys/matpol.h>
 #include <polys/monomials/ring.h>
-#include <kernel/polys.h>
 
-#include <coeffs/longrat.h>
 // #include <coeffs/longrat.h>
 
+#include <kernel/polys.h>
 #include <kernel/ideals.h>
 #include <kernel/GBEngine/kstd1.h>
-#include <kernel/oswrapper/timer.h>
 #include <kernel/GBEngine/syz.h>
+#include <kernel/oswrapper/timer.h>
 
 #include <Singular/tok.h>
 #include <Singular/ipid.h>
@@ -614,7 +613,7 @@ void * slInternalCopy(leftv source, const int t, void *d, Subexpr e)
       || (source->rtyp==LIST_CMD)
       || ((source->rtyp==IDHDL)
           &&((IDTYP((idhdl)source->data)==LIST_CMD)
-	    || (IDTYP((idhdl)source->data)>MAX_TOK)))
+            || (IDTYP((idhdl)source->data)>MAX_TOK)))
       || (source->rtyp>MAX_TOK))
         return (void *)omStrDup((char *)d);
       else if (e->next==NULL)
@@ -763,6 +762,11 @@ char *  sleftv::String(void *d, BOOLEAN typed, int dim)
           }
           else
             return pString((poly)d);
+
+        #ifdef SINGULAR_4_1
+        case CNUMBER_CMD:
+          return n2String((number2)d,typed);
+        #endif
 
         case NUMBER_CMD:
           StringSetS((char*) (typed ? "number(" : ""));
@@ -1428,9 +1432,10 @@ leftv sleftv::LHdl()
 
 BOOLEAN assumeStdFlag(leftv h)
 {
-  if ((h->e!=NULL)&&(h->LTyp()==LIST_CMD))
+  if (h->e!=NULL)
   {
-    return assumeStdFlag(h->LData());
+    leftv hh=h->LData();
+    if (h!=hh) return assumeStdFlag(h->LData());
   }
   if (!hasFlag(h,FLAG_STD))
   {

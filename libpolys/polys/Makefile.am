@@ -2,7 +2,7 @@ ACLOCAL_AMFLAGS = -I ../../m4
 
 AM_CPPFLAGS	= -I${top_srcdir} -I${top_builddir} \
 ${FACTORY_INCLUDES} ${RESOURCES_INCLUDES} ${OMALLOC_INCLUDES} \
-${FLINT_CFLAGS} ${NTL_CFLAGS} ${GMP_CFLAGS} 
+${FLINT_CFLAGS} ${NTL_CFLAGS} ${GMP_CFLAGS}
 
 
 if ENABLE_P_PROCS_STATIC
@@ -15,7 +15,7 @@ endif
 
 if ENABLE_P_PROCS_DYNAMIC
   USE_P_PROCS_DYNAMIC_CC = templates/p_Procs_Dynamic.cc
-  P_PROCS_CPPFLAGS_COMMON = ${AM_CPPFLAGS} -DDYNAMIC_VERSION 
+  P_PROCS_CPPFLAGS_COMMON = ${AM_CPPFLAGS} -DDYNAMIC_VERSION
 else
   USE_P_PROCS_DYNAMIC_CC =
   P_PROCS_CPPFLAGS_COMMON = ${AM_CPPFLAGS}
@@ -34,7 +34,7 @@ SOURCES = \
 	sparsmat.cc \
         ${USE_P_PROCS_STATIC_CC} ${USE_P_PROCS_DYNAMIC_CC} mod_raw.cc \
         ext_fields/algext.cc ext_fields/transext.cc \
-	clapsing.cc clapconv.cc \
+	clapsing.cc clapconv.cc  flintconv.cc\
 	nc/old.gring.cc PolyEnumerator.cc
 
 LIBPOLYSHEADERS = monomials/ring.h monomials/monomials.h \
@@ -43,8 +43,8 @@ LIBPOLYSHEADERS = monomials/ring.h monomials/monomials.h \
 	operations/pShallowCopyDelete.h \
 	templates/p_Procs.h templates/p_MemAdd.h templates/p_MemCmp.h \
 	kbuckets.h sbuckets.h simpleideals.h weight.h matpol.h \
-	sparsmat.h clapsing.h clapconv.h coeffrings.h \
-	ext_fields/algext.h ext_fields/transext.h mod_raw.h  
+	sparsmat.h clapsing.h clapconv.h coeffrings.h flintconv.h\
+	ext_fields/algext.h ext_fields/transext.h mod_raw.h
 
 EXTRA_DIST = \
 	prCopy.pl prCopyTemplate.cc \
@@ -107,7 +107,7 @@ noinst_PROGRAMS = templates/p_Procs_Generate
 templates_p_Procs_Generate_SOURCES = templates/p_Procs_Generate.cc
 templates_p_Procs_Generate_CPPFLAGS = ${USE_P_PROCS_STATIC} ${AM_CPPFLAGS}
 templates_p_Procs_Generate_LDADD    = \
-${top_builddir}/reporter/libreporter.la ${top_builddir}/misc/libmisc.la 
+${top_builddir}/reporter/libreporter.la ${top_builddir}/misc/libmisc.la
 
 templates/p_Procs.inc: templates/p_Procs_Generate$(EXEEXT)
 	${builddir}/templates/p_Procs_Generate$(EXEEXT) > ${builddir}/templates/p_Procs.inc
@@ -119,10 +119,10 @@ CLEANFILES = $(BUILT_SOURCES)
 
 ######################################################################
 
-TESTS = test 
+TESTS = test
 check_PROGRAMS = $(TESTS)
 
-test_LDADD=libpolys.la \ 
+test_LDADD=libpolys.la \
 ${top_builddir}/reporter/libreporter.la ${top_builddir}/misc/libmisc.la \
 $(FACTORY_LIBS) $(RESOURCES_LIBS) $(OMALLOC_LIBS) \
 $(FLINT_LIBS) $(GMP_LIBS) $(NTL_LIBS)

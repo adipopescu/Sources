@@ -1,14 +1,16 @@
 #include "kernel/mod2.h" // general settings/macros
 
 #ifdef SINGULAR_4_1
-#include"reporter/reporter.h"  // for Print, WerrorS
-#include"Singular/ipid.h" // for SModulFunctions, leftv
-#include"coeffs/numbers.h" // nRegister, coeffs.h
-#include"coeffs/rmodulon.h" // ZnmInfo
-#include"coeffs/bigintmat.h" // bigintmat
-#include"coeffs/longrat.h" // nlGMP
-#include"Singular/blackbox.h" // blackbox type
-#include"Singular/ipshell.h" // IsPrime
+#include <reporter/reporter.h>  // for Print, WerrorS
+#include <coeffs/numbers.h> // nRegister, coeffs.h
+#include <coeffs/rmodulon.h> // ZnmInfo
+#include <coeffs/bigintmat.h> // bigintmat
+#include <coeffs/longrat.h> // BIGINTs: nlGMP
+
+#include <Singular/blackbox.h> // blackbox type
+#include <Singular/ipshell.h> // IsPrime
+
+#include <Singular/ipid.h> // for SModulFunctions, leftv
 
 #include <Singular/number2.h>
 
@@ -18,7 +20,7 @@ char *crString(coeffs c)
   {
     return omStrDup("oo");
   }
-  return omStrDup(c->cfCoeffName(c));
+  return omStrDup(nCoeffName(c));
 }
 void crPrint(coeffs c)
 {
@@ -43,7 +45,7 @@ BOOLEAN jjCRING_Zp(leftv res, leftv a, leftv b)
     else
     {
       ZnmInfo info;
-      mpz_ptr modBase= (int_number) omAlloc(sizeof(mpz_t));
+      mpz_ptr modBase= (mpz_ptr) omAlloc(sizeof(mpz_t));
       mpz_init_set_ui(modBase,i2);
       info.base= modBase;
       info.exp= 1;
@@ -61,7 +63,7 @@ BOOLEAN jjCRING_Zm(leftv res, leftv a, leftv b)
   {
     ZnmInfo info;
     number modBase= (number) omAlloc(sizeof(mpz_t));
-    nlGMP(i2,modBase,coeffs_BIGINT);
+    nlGMP(i2,modBase,coeffs_BIGINT); // FIXME? TODO? // extern void   nlGMP(number &i, number n, const coeffs r); // to be replaced with n_MPZ(modBase,i2,coeffs_BIGINT); // ?
     info.base= (mpz_ptr)modBase;
     info.exp= 1;
     res->data=(void *)nInitChar(n_Zn,&info);
@@ -267,29 +269,36 @@ BOOLEAN jjEQUAL_CR(leftv res, leftv a, leftv b)
 // -----------------------------------------------------------
 number2 n2Copy(const number2 d)
 {
-  number2 r=(number2)omAlloc(sizeof(*r));
-  d->cf->ref++;
-  r->cf=d->cf;
-  if (d->cf!=NULL)
-    r->n=n_Copy(d->n,d->cf);
-  else
-    r->n=NULL;
+  number2 r=NULL;
+  if ((d!=NULL)&&(d->cf!=NULL))
+  {
+    r=(number2)omAlloc(sizeof(*r));
+    d->cf->ref++;
+    r->cf=d->cf;
+    if (d->cf!=NULL)
+      r->n=n_Copy(d->n,d->cf);
+    else
+      r->n=NULL;
+  }
   return r;
 }
 void n2Delete(number2 &d)
 {
-  if (d->cf!=NULL)
+  if (d!=NULL)
   {
-    n_Delete(&d->n,d->cf);
+    if (d->cf!=NULL)
+    {
+      n_Delete(&d->n,d->cf);
+      nKillChar(d->cf);
+    }
+    omFreeSize(d,sizeof(*d));
+    d=NULL;
   }
-  nKillChar(d->cf);
-  omFreeSize(d,sizeof(*d));
-  d=NULL;
 }
 char *n2String(number2 d, BOOLEAN typed)
 {
   StringSetS("");
-  if (d->cf!=NULL)
+  if ((d!=NULL) && (d->cf!=NULL))
   {
     if (typed) StringAppendS("Number(");
     n_Write(d->n,d->cf);

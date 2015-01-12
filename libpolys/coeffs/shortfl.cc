@@ -9,21 +9,53 @@
 
 
 #include <misc/auxiliary.h>
-#include <coeffs/shortfl.h>
+#include <misc/mylimits.h>
+
+#include <reporter/reporter.h>
+
+#include "numbers.h"
+#include "coeffs.h"
+#include "mpr_complex.h"
+
+#include "shortfl.h"
+#include "longrat.h"
 
 #include <string.h>
 #include <math.h>
-#include <coeffs/coeffs.h>
-#include <coeffs/numbers.h>
-#include <reporter/reporter.h>
-#include <coeffs/numbers.h>
-#include <coeffs/longrat.h>
-#include <coeffs/mpr_complex.h>
-
-#include <misc/mylimits.h>
 
 /// Our Type!
 static const n_coeffType ID = n_R;
+
+// Private interface should be hidden!!!
+
+BOOLEAN nrGreaterZero (number k, const coeffs r);
+number  nrMult        (number a, number b, const coeffs r);
+number  nrInit        (long i, const coeffs r);
+int     nrInt         (number &n, const coeffs r);
+number  nrAdd         (number a, number b, const coeffs r);
+number  nrSub         (number a, number b, const coeffs r);
+void    nrPower       (number a, int i, number * result, const coeffs r);
+BOOLEAN nrIsZero      (number a, const coeffs r);
+BOOLEAN nrIsOne       (number a, const coeffs r);
+BOOLEAN nrIsMOne      (number a, const coeffs r);
+number  nrDiv         (number a, number b, const coeffs r);
+number  nrNeg         (number c, const coeffs r);
+number  nrInvers      (number c, const coeffs r);
+BOOLEAN nrGreater     (number a, number b, const coeffs r);
+BOOLEAN nrEqual       (number a, number b, const coeffs r);
+void    nrWrite       (number &a, const coeffs r);
+const char *  nrRead  (const char *s, number *a, const coeffs r);
+
+#ifdef LDEBUG
+BOOLEAN nrDBTest(number a, const coeffs r, const char *f, const int l);
+#endif
+
+/// Get a mapping function from src into the domain of this type: n_R
+nMapFunc nrSetMap(const coeffs src, const coeffs dst);
+
+// Where are the following used?
+// int     nrGetChar();
+number nrMapQ(number from, const coeffs r, const coeffs aRing);
 
 static const float nrEps = 1.0e-3;
 
@@ -708,7 +740,7 @@ BOOLEAN nrInitChar(coeffs n, void* p)
   n->is_domain=TRUE;
   n->rep=n_rep_float;
 
-  n->cfKillChar = ndKillChar; /* dummy */
+  //n->cfKillChar = ndKillChar; /* dummy */
   n->ch = 0;
   n->cfCoeffString = nrCoeffString;
 
@@ -721,7 +753,7 @@ BOOLEAN nrInitChar(coeffs n, void* p)
   n->cfExactDiv= nrDiv;
   n->cfInpNeg   = nrNeg;
   n->cfInvers= nrInvers;
-  n->cfCopy  = ndCopy;
+  //n->cfCopy  = ndCopy;
   n->cfGreater = nrGreater;
   n->cfEqual = nrEqual;
   n->cfIsZero = nrIsZero;
@@ -737,10 +769,10 @@ BOOLEAN nrInitChar(coeffs n, void* p)
     /* nName= ndName; */
     /*nSize  = ndSize;*/
 #ifdef LDEBUG
-  n->cfDBTest=ndDBTest; // not yet implemented: nrDBTest;
+  //n->cfDBTest=ndDBTest; // not yet implemented: nrDBTest;
 #endif
 
-  n->nCoeffIsEqual = ndCoeffIsEqual;
+  //n->nCoeffIsEqual = ndCoeffIsEqual;
 
   n->float_len = SHORT_REAL_LENGTH;
   n->float_len2 = SHORT_REAL_LENGTH;

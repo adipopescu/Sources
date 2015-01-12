@@ -1,9 +1,11 @@
-#include <stdio.h>
-#include <gmp.h>
-#include <math.h>
+#include <misc/auxiliary.h>
+#include <omalloc/omalloc.h>
+
 #include "AEQ.h"
 
-
+#include <stdio.h>
+#include <math.h>
+#ifdef SINGULAR_4_1
 
 using namespace std;
 
@@ -916,3 +918,4 @@ void Q_poly::Q_poly_print()
 #endif
 }
 
+#endif
