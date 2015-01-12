@@ -1188,25 +1188,6 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
   pNeg(m2);
   p_Test(m1,strat->tailRing);
   p_Test(m2,strat->tailRing);
-  
-//#if 1
-#ifdef KDEBUG
-  if (TEST_OPT_DEBUG)
-  {
-    PrintS("m1 = ");
-    p_wrp(m1, strat->tailRing);
-    PrintS(" ; m2 = ");
-    p_wrp(m2, strat->tailRing);
-    PrintS(" ; gcd = ");
-    wrp(gcd);
-    PrintS("\n--- create s-poly: ");
-    Print("\n p: ", i);
-    wrp(p);
-    Print("\n strat->S[%d]: ", i);
-    wrp(strat->S[i]);
-    PrintS(" ---> ");
-  }
-#endif
   gcd = p_Add_q(pp_Mult_mm(pNext(p), m1, strat->tailRing), pp_Mult_mm(pNext(strat->S[i]), m2, strat->tailRing), strat->tailRing);
   p_LmDelete(m1, strat->tailRing);
   p_LmDelete(m2, strat->tailRing);
@@ -6332,7 +6313,7 @@ kFindDivisibleByInS(kStrategy strat, int pos, LObject* L, TObject *T,
     {
       if (j > pos) return NULL;
 #if defined(PDEBUG) || defined(PDIV_DEBUG)
-      if (p_LmShortDivisibleBy(strat->S[j], sev[j], p, not_sev, r) &&
+      if (strat->S[j]!= NULL && p_LmShortDivisibleBy(strat->S[j], sev[j], p, not_sev, r) &&
           (ecart== LONG_MAX || ecart>= strat->ecartS[j]))
         {
 #ifdef HAVE_RINGS

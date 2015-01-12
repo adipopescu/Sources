@@ -1546,7 +1546,7 @@ loop_count = 1;
   while (strat->Ll >= 0)
   {
 #ifdef HAVE_ASSUME
-    mora_loop_count++;
+    //mora_loop_count++;
 #endif
     #if 0
     //#if ADIDEBUG
