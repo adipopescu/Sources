@@ -1916,7 +1916,7 @@ messageADI(red_result);
     }
   }
   /* complete reduction of the standard basis--------- */
-  if (TEST_OPT_REDSB || TEST_OPT_REDTAIL)
+  if (TEST_OPT_REDSB)
   {
     completeReduce(strat);
 #ifdef HAVE_TAIL_RING
