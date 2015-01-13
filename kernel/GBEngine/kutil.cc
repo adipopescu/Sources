@@ -1176,22 +1176,28 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
   assume(i<=strat->sl);
   assume(atR >= 0);
   poly m1, m2, gcd;
-  //printf("\nTrying to add spair S[%i] und p\n",i);pWrite(strat->S[i]);pWrite(p);
+  #if 1
+  //#if ADIDEBUG
+  printf("\nTrying to add spair S[%i] und p\n",i);pWrite(strat->S[i]);pWrite(p);
+  #endif
   s = pGetCoeff(strat->S[i]);
   t = pGetCoeff(p);
   k_GetLeadTerms(p,strat->S[i],currRing,m1,m2,currRing);
   ksCheckCoeff(&s, &t, currRing->cf);
-  //p_Test(m1,strat->tailRing);
-  //p_Test(m2,strat->tailRing);
   pSetCoeff0(m1, s);
   pSetCoeff0(m2, t);
   pNeg(m2);
   p_Test(m1,strat->tailRing);
   p_Test(m2,strat->tailRing);
-  gcd = p_Add_q(pp_Mult_mm(pNext(p), m1, strat->tailRing), pp_Mult_mm(pNext(strat->S[i]), m2, strat->tailRing), strat->tailRing);
+  poly si = pCopy(strat->S[i]);
+  poly pm1 = pp_Mult_mm(pNext(p), m1, strat->tailRing);
+  poly sim2 = pp_Mult_mm(pNext(si), m2, strat->tailRing);
+  printf("\ndfgdfgd = %i\n",pGetComp(pm1));
+  pSetComp(sim2, pGetComp(pm1));
+  pWrite(pm1);pWrite(sim2);
+  gcd = p_Add_q(pm1, sim2, strat->tailRing);
   p_LmDelete(m1, strat->tailRing);
   p_LmDelete(m2, strat->tailRing);
-
 #ifdef KDEBUG
   if (TEST_OPT_DEBUG)
   {
@@ -1199,7 +1205,6 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
     PrintLn();
   }
 #endif
-
   LObject h;
   h.p = gcd;
   if(h.p == NULL)
@@ -1210,6 +1215,11 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
   //printf("\nThis is our new achieved polynomial:\n");pWrite(gcd);
   if(h.p == NULL)
     return;
+  pSetm(h.p);
+  #if 1
+  //#if ADIDEBUG
+  pWrite(h.p);
+  #endif
   h.i_r1 = -1;h.i_r2 = -1;
   strat->initEcart(&h);
   #if 0
@@ -1223,6 +1233,7 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
   if (currRing!=strat->tailRing)
     h.t_p = k_LmInit_currRing_2_tailRing(h.p, strat->tailRing);
   enterL(&strat->L,&strat->Ll,&strat->Lmax,h,posx);
+  kTest_TS(strat);
 }
 
 

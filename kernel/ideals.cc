@@ -1342,9 +1342,7 @@ ideal idQuot (ideal  h1, ideal h2, BOOLEAN h1IsStb, BOOLEAN resultIsIdeal)
   intvec * weights1;
 
   ideal s_h4 = idInitializeQuot (h1,h2,h1IsStb,&addOnlyOne,&kmax);
-
   hom = (tHomog)idHomModule(s_h4,currRing->qideal,&weights1);
-
   ring orig_ring=currRing;
   ring syz_ring=rAssure_SyzComp(orig_ring,TRUE);  rChangeCurrRing(syz_ring);
   rSetSyzComp(kmax-1,syz_ring);

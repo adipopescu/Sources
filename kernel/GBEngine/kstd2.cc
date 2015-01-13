@@ -452,11 +452,7 @@ int redRing (LObject* h,kStrategy strat)
     pWrite(h->p);
     printf("\nFound j = %i\n",j);pWrite(strat->T[j].p);
     #endif
-    //printf("\nsdjksdjkhsdhasdkfhk\n");pWrite(h->p);pWrite(strat->T[j].p);
-    //printf("\nredring1:\n");idPrint(strat->Shdl);
     ksReducePoly(h, &(strat->T[j]), NULL, NULL, strat); // with debug output
-    //printf("\nredring2:\n");idPrint(strat->Shdl);
-    //#if 1
     #if ADIDEBUG
     printf("\nand after reduce: \n");pWrite(h->p);
     #endif
@@ -1618,7 +1614,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     #endif
     printf("\n   list   L\n");
     int iii;
-    #if 1
+    #if 0
     for(iii = 0; iii<= strat->Ll; iii++)
     {
         printf("L[%i]:",iii);
@@ -1628,8 +1624,17 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
         
                                 
     }
-    getchar();
+    #else
+    {
+        printf("L[%i]:",strat->Ll);
+        p_Write(strat->L[strat->Ll].p, strat->tailRing);
+        p_Write(strat->L[strat->Ll].p1, strat->tailRing);
+        p_Write(strat->L[strat->Ll].p2, strat->tailRing);
+        
+                                
+    }
     #endif
+    getchar();
     #endif
     #ifdef KDEBUG
       loop_count++;
@@ -1788,6 +1793,7 @@ messageADI(red_result);
       {
         enterT(strat->P, strat);
         omTestMemory(1);
+        kTest_TS(strat);
 #ifdef HAVE_RINGS
         if (rField_is_Ring(currRing))
           superenterpairs(strat->P.p,strat->sl,strat->P.ecart,pos,strat, strat->tl);
@@ -1795,6 +1801,7 @@ messageADI(red_result);
 #endif
           enterpairs(strat->P.p,strat->sl,strat->P.ecart,pos,strat, strat->tl);
           omTestMemory(1);
+          kTest_TS(strat);
         // posInS only depends on the leading term
         //#if 1
         #if ADIDEBUG

@@ -2188,7 +2188,7 @@ omTestMemory(1);
 #ifdef HAVE_RINGS
   if (rField_is_Ring(currRing))
     {
-#if 1        
+#if 0        
         if(nCoeff_is_Ring_Z(currRing->cf))
         {
             ideal FCopy = idCopy(F);
