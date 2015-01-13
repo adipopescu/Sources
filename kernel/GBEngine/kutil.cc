@@ -9605,7 +9605,8 @@ poly preIntegerCheck(ideal FOrig, ideal Q)
     QQ_ring->cf = nInitChar(n_Q, NULL);
     if(Q!= NULL)
         QQ_ring->qideal = NULL;
-    rComplete(QQ_ring);
+    rComplete(QQ_ring,1);
+    assume(QQ_ring->PolyBin != NULL);
     QQ_ring = rAssure_c_dp(QQ_ring);
     rChangeCurrRing(QQ_ring);
     nMapFunc nMap = n_SetMap(origR->cf, QQ_ring->cf);

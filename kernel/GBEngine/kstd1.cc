@@ -2194,7 +2194,8 @@ omTestMemory(1);
             ideal FCopy = idCopy(F);
             poly pFmon = preIntegerCheck(FCopy, Q);
             if(pFmon != NULL)
-                idInsertPoly(FCopy, pFmon);
+            {    idInsertPoly(FCopy, pFmon);
+            printf("\npreIntCheck found this: \n");pWrite(pFmon);}
             strat->kModW=kModW=NULL;
             if (h==testHomog)
             {
