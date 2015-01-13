@@ -1529,8 +1529,8 @@ loop_count = 1;
   /*- compute-------------------------------------------*/
 
 #ifdef HAVE_TAIL_RING
-  //if (strat->homog && strat->red == redFirst)
-    //kStratInitChangeTailRing(strat); 
+  if (strat->homog && strat->red == redFirst)
+    kStratInitChangeTailRing(strat); 
     #if ADIDEBUG
       for(int iii = 0; iii<= strat->Ll; iii++)
     {
