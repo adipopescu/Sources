@@ -1,9 +1,11 @@
-#include <stdio.h>
-#include <gmp.h>
-#include <math.h>
+#include <misc/auxiliary.h>
+#include <omalloc/omalloc.h>
+
 #include "AEp.h"
 
-
+#include <stdio.h>
+#include <math.h>
+#ifdef SINGULAR_4_1
 
 
 using namespace std;
@@ -1043,3 +1045,4 @@ void p_poly::p_poly_print()
 #endif
 }
 
+#endif

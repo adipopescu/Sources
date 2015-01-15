@@ -5,28 +5,73 @@
 * ABSTRACT: numbers modulo p (<=32003)
 */
 
-
-
-
 #include <misc/auxiliary.h>
+#include <omalloc/omalloc.h>
 
 #include <factory/factory.h>
 
-#include <string.h>
-#include <omalloc/omalloc.h>
-#include <coeffs/coeffs.h>
-#include <reporter/reporter.h>
-#include <coeffs/numbers.h>
-#include <coeffs/longrat.h>
-#include <coeffs/mpr_complex.h>
 #include <misc/mylimits.h>
 #include <misc/sirandom.h>
-#include <coeffs/modulop.h>
 
-// int npGen=0;
+#include <reporter/reporter.h>
+
+#include <coeffs/coeffs.h>
+#include <coeffs/numbers.h>
+#include <coeffs/mpr_complex.h>
+
+#include "longrat.h"
+#include "modulop.h"
+
+#include <string.h>
 
 /// Our Type!
 static const n_coeffType ID = n_Zp;
+
+BOOLEAN npGreaterZero (number k, const coeffs r);
+number  npMult        (number a, number b, const coeffs r);
+number  npInit        (long i, const coeffs r);
+int     npInt         (number &n, const coeffs r);
+number  npAdd         (number a, number b,const coeffs r);
+number  npSub         (number a, number b,const coeffs r);
+void    npPower       (number a, int i, number * result,const coeffs r);
+BOOLEAN npIsZero      (number a,const coeffs r);
+BOOLEAN npIsOne       (number a,const coeffs r);
+BOOLEAN npIsMOne       (number a,const coeffs r);
+number  npDiv         (number a, number b,const coeffs r);
+number  npNeg         (number c,const coeffs r);
+number  npInvers      (number c,const coeffs r);
+BOOLEAN npGreater     (number a, number b,const coeffs r);
+BOOLEAN npEqual       (number a, number b,const coeffs r);
+void    npWrite       (number &a, const coeffs r);
+void    npCoeffWrite  (const coeffs r, BOOLEAN details);
+const char *  npRead  (const char *s, number *a,const coeffs r);
+#ifdef LDEBUG
+BOOLEAN npDBTest      (number a, const char *f, const int l, const coeffs r);
+#define npTest(A,r)     npDBTest(A,__FILE__,__LINE__, r)
+#else
+#define npTest(A,r)     (0)
+#endif
+
+//int     npGetChar();
+
+nMapFunc npSetMap(const coeffs src, const coeffs dst);
+number  npMapP(number from, const coeffs src, const coeffs r);
+
+// extern int npGen; // obsolete
+
+// int npGen=0;
+
+/*-------specials for spolys, do NOT use otherwise--------------------------*/
+/* for npMultM, npSubM, npNegM, npEqualM : */
+#ifdef HAVE_DIV_MOD
+extern unsigned short *npInvTable;
+#else
+#ifndef HAVE_MULT_MOD
+extern long npPminus1M;
+extern unsigned short *npExpTable;
+extern unsigned short *npLogTable;
+#endif
+#endif
 
 #ifdef NV_OPS
 #pragma GCC diagnostic ignored "-Wlong-long"
@@ -447,6 +492,11 @@ static number npReadFd(s_buff f, const coeffs r)
   return (number)(long)dd;
 }
 
+static number npRandom(siRandProc p, number, number, const coeffs cf)
+{
+  return npInit(p(),cf);
+}
+
 BOOLEAN npInitChar(coeffs r, void* p)
 {
   assume( getCoeffType(r) == ID );
@@ -497,14 +547,14 @@ BOOLEAN npInitChar(coeffs r, void* p)
   r->cfIsMOne = npIsMOne;
   r->cfGreaterZero = npGreaterZero;
   //r->cfPower = npPower;
-  r->cfGetDenom = ndGetDenom;
-  r->cfGetNumerator = ndGetNumerator;
+  //r->cfGetDenom = ndGetDenom;
+  //r->cfGetNumerator = ndGetNumerator;
   //r->cfGcd  = ndGcd;
   //r->cfLcm  = ndGcd;
   //r->cfDelete= ndDelete;
   r->cfSetMap = npSetMap;
   //r->cfName = ndName;
-  r->cfInpMult=ndInpMult;
+  //r->cfInpMult=ndInpMult;
 #ifdef NV_OPS
   if (c>NV_MAX_PRIME)
   {
@@ -523,6 +573,8 @@ BOOLEAN npInitChar(coeffs r, void* p)
 
   r->convSingNFactoryN=npConvSingNFactoryN;
   r->convFactoryNSingN=npConvFactoryNSingN;
+
+  r->cfRandom=npRandom;
 
   // io via ssi
   r->cfWriteFd=npWriteFd;
@@ -680,10 +732,10 @@ static number npMapLongR(number from, const coeffs /*src*/, const coeffs dst_r)
 */
 number npMapGMP(number from, const coeffs /*src*/, const coeffs dst)
 {
-  int_number erg = (int_number) omAlloc(sizeof(mpz_t)); // evtl. spaeter mit bin
+  mpz_ptr erg = (mpz_ptr) omAlloc(sizeof(mpz_t)); // evtl. spaeter mit bin
   mpz_init(erg);
 
-  mpz_mod_ui(erg, (int_number) from, dst->ch);
+  mpz_mod_ui(erg, (mpz_ptr) from, dst->ch);
   number r = (number) mpz_get_si(erg);
 
   mpz_clear(erg);
@@ -736,7 +788,7 @@ nMapFunc npSetMap(const coeffs src, const coeffs dst)
 #endif
   if (src->rep==n_rep_gap_rat)  /* Q, Z */
   {
-    return nlModP; // npMap0;
+    return nlModP; // npMap0; // FIXME? TODO? // extern number nlModP(number q, const coeffs Q, const coeffs Zp); // Map q \in QQ \to Zp // FIXME!
   }
   if ((src->rep==n_rep_int) &&  nCoeff_is_Zp(src) )
   {

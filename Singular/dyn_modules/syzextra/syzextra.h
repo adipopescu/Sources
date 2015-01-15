@@ -18,6 +18,8 @@
 
 #include <vector>
 #include <map>
+#include <string.h>
+#include <stack>
 
 // include basic definitions
 #include "singularxx_defs.h"
@@ -28,9 +30,17 @@ struct ip_sring; typedef struct ip_sring* ring; typedef struct ip_sring const* c
 struct sip_sideal; typedef struct sip_sideal *       ideal;
 class idrec; typedef idrec *   idhdl;
 
-class sBucket; typedef sBucket* sBucket_pt;
 class kBucket; typedef kBucket* kBucket_pt;
 
+#ifndef NOPRODUCT
+# define NOPRODUCT 1
+#endif
+
+// set to 1 if all leading coeffs are assumed to be all =1...
+// note the use of simplify on input in SSinit!
+#ifndef NODIVISION
+# define NODIVISION 1
+#endif
 
 BEGIN_NAMESPACE_SINGULARXX    BEGIN_NAMESPACE(SYZEXTRA)
 
@@ -52,6 +62,126 @@ ideal id_Tail(const ideal id, const ring r);
 void Sort_c_ds(const ideal id, const ring r);
 
 
+class sBucket; typedef sBucket* sBucket_pt;
+
+/** @class SBucketFactory syzextra.h
+ *
+ * sBucket Factory
+ *
+ * Cleate/store/reuse buckets
+ *
+ */
+class SBucketFactory: private std::stack <sBucket_pt>
+{
+  private:
+    typedef std::stack <sBucket_pt> Base;
+//    typedef std::vector<Bucket> Memory;
+//    typedef std::deque <Bucket> Memory;
+//    typedef std::stack <Bucket, Memory > Base;
+
+  public:
+    typedef Base::value_type Bucket;
+
+    SBucketFactory(const ring r)
+#ifndef SING_NDEBUG
+        : m_ring(r)
+#endif
+    {
+      push ( _CreateBucket(r) ); // start with at least one sBucket...?
+      assume( top() != NULL );
+    };
+
+    ~SBucketFactory()
+    {
+      while( !empty() )
+      {
+        _DestroyBucket( top() );
+        pop();
+      }
+    }
+
+    Bucket getBucket(const ring r, const bool remove = true)
+    {
+      assume( r == m_ring );
+
+      Bucket bt = NULL;
+
+      if( !empty() )
+      {
+        bt = top();
+
+        if( remove )
+          pop();
+      }
+      else
+      {
+        bt = _CreateBucket(r);
+
+        if( !remove )
+        {
+          push(bt);
+          assume( bt == top() );
+        }
+      }
+
+      assume( bt != NULL );
+      assume( _IsBucketEmpty(bt) );
+      assume( r == _GetBucketRing(bt) );
+
+      return bt;
+    }
+
+    // TODO: this may be spared if we give-out a smart Bucket (which returns here upon its destructor!)
+    void putBucket(const Bucket & bt, const bool replace = false)
+    {
+      assume( bt != NULL );
+      assume( _IsBucketEmpty(bt) );
+      assume( m_ring == _GetBucketRing(bt) );
+
+      if( empty() )
+        push( bt );
+      else
+      {
+        if( replace )
+          top() = bt;
+        else
+        {
+          if( bt != top() )
+            push( bt );
+        }
+      }
+
+      assume( bt == top() );
+    }
+
+  private:
+
+#ifndef SING_NDEBUG
+    const ring m_ring; ///< For debugging: all buckets are over the same ring... right?!
+
+    /// get bucket ring
+    static ring _GetBucketRing(const Bucket& bt);
+
+    static bool  _IsBucketEmpty(const Bucket& bt);
+#endif
+
+    /// inital allocation for new buckets
+    static Bucket _CreateBucket(const ring r);
+
+    /// we only expect empty buckets to be left at the end for destructor
+    /// bt will be set to NULL
+    static void _DestroyBucket(Bucket & bt);
+
+  private:
+    SBucketFactory();
+    SBucketFactory(const SBucketFactory&);
+    void operator=(const SBucketFactory&);
+
+};
+
+
+
+
 
 
 
@@ -61,43 +191,51 @@ struct SchreyerSyzygyComputationFlags
     SchreyerSyzygyComputationFlags(idhdl rootRingHdl);
 
     SchreyerSyzygyComputationFlags(const SchreyerSyzygyComputationFlags& attr):
-        __DEBUG__(attr.__DEBUG__),
-  //      __SYZCHECK__(attr.__SYZCHECK__),
-        __LEAD2SYZ__(attr.__LEAD2SYZ__),  __TAILREDSYZ__(attr.__TAILREDSYZ__),
-        __HYBRIDNF__(attr.__HYBRIDNF__), __IGNORETAILS__(attr.__IGNORETAILS__),
-        __SYZNUMBER__(attr.__SYZNUMBER__), __TREEOUTPUT__(attr.__TREEOUTPUT__),
+        OPT__DEBUG(attr.OPT__DEBUG),
+        OPT__LEAD2SYZ(attr.OPT__LEAD2SYZ),  OPT__TAILREDSYZ(attr.OPT__TAILREDSYZ),
+        OPT__HYBRIDNF(attr.OPT__HYBRIDNF), OPT__IGNORETAILS(attr.OPT__IGNORETAILS),
+        OPT__SYZNUMBER(attr.OPT__SYZNUMBER), OPT__TREEOUTPUT(attr.OPT__TREEOUTPUT),
+        OPT__SYZCHECK(attr.OPT__SYZCHECK), OPT__PROT(attr.OPT__PROT),
+        OPT__NOCACHING(attr.OPT__NOCACHING),
         m_rBaseRing(attr.m_rBaseRing)
     {}
 
   /// output all the intermediate states
-  const int __DEBUG__; // DebugOutput;
-
-  //  const bool __SYZCHECK__; // CheckSyzygyProperty: never tested here...
+  const int OPT__DEBUG; // DebugOutput;
 
   /// ?
-  const int __LEAD2SYZ__; // TwoLeadingSyzygyTerms;
+  const int OPT__LEAD2SYZ; // TwoLeadingSyzygyTerms;
 
   /// Reduce syzygy tails wrt the leading syzygy terms
-  const int __TAILREDSYZ__; // TailReducedSyzygies;
+  const int OPT__TAILREDSYZ; // TailReducedSyzygies;
 
   /// Use the usual NF's S-poly reduction while dropping lower order terms
   /// 2 means - smart selection!
-  const int __HYBRIDNF__; // UseHybridNF
+  const int OPT__HYBRIDNF; // UseHybridNF
 
 
   /// ignore tails and compute the pure Schreyer frame
-  const int __IGNORETAILS__; // @IGNORETAILS
+  const int OPT__IGNORETAILS; // @IGNORETAILS
 
   /// Syzygy level (within a resolution)
-  mutable int __SYZNUMBER__;
+  mutable int OPT__SYZNUMBER;
 
   inline void  nextSyzygyLayer() const
   {
-     __SYZNUMBER__++;
+     OPT__SYZNUMBER++;
   }
 
   /// output lifting tree
-  const int __TREEOUTPUT__;
+  const int OPT__TREEOUTPUT;
+
+  /// CheckSyzygyProperty: TODO
+  const int OPT__SYZCHECK;
+
+  /// TEST_OPT_PROT
+  const bool OPT__PROT;
+
+  /// no caching/stores/lookups
+  const int OPT__NOCACHING;
 
   /// global base ring
   const ring m_rBaseRing;
@@ -124,18 +262,41 @@ class CLeadingTerm
   public:
     CLeadingTerm(unsigned int label,  const poly lt, const ring);
 
-  public:
+#ifndef SING_NDEBUG
+    ~CLeadingTerm();
+#endif
 
-    const unsigned long m_sev; ///< not short exp. vector
-        // NOTE/TODO: either of the following should be enough:
-    const unsigned int  m_label; ///< index in the main L[] + 1
-    const poly          m_lt; ///< the leading term itself L[label-1]
-
-  public:
-    bool DivisibilityCheck(const poly product, const unsigned long not_sev, const ring r) const;
+#if NOPRODUCT
     bool DivisibilityCheck(const poly multiplier, const poly t, const unsigned long not_sev, const ring r) const;
+#endif
+    bool DivisibilityCheck(const poly product, const unsigned long not_sev, const ring r) const;
+
+    bool CheckLT( const ideal & L ) const;
+
+#ifndef SING_NDEBUG
+    poly lt() const;
+    unsigned long sev() const;
+    unsigned int label() const;
+#else
+    inline poly lt() const { return m_lt; };
+    inline unsigned long sev() const { return m_sev; };
+    inline unsigned int label() const { return m_label; };
+#endif
 
   private:
+    const unsigned long m_sev; ///< not short exp. vector
+
+    // NOTE/TODO: either of the following should be enough:
+    const unsigned int  m_label; ///< index in the main L[] + 1
+
+    const poly          m_lt; ///< the leading term itself L[label-1]
+
+#ifndef SING_NDEBUG
+    const ring _R;
+
+    const poly          m_lt_copy; ///< original copy of LEAD(lt) (only for debug!!!)
+#endif
+
     // disable the following:
     CLeadingTerm();
     CLeadingTerm(const CLeadingTerm&);
@@ -146,8 +307,10 @@ class CLeadingTerm
 // TODO: needs a specialized variant without a component (hash!)
 class CReducerFinder: public SchreyerSyzygyComputationFlags
 {
-  friend class CDivisorEnumerator;
+#if NOPRODUCT
   friend class CDivisorEnumerator2;
+#endif
+  friend class CDivisorEnumerator;
 
   public:
     typedef long TComponentKey;
@@ -164,21 +327,27 @@ class CReducerFinder: public SchreyerSyzygyComputationFlags
 
     ~CReducerFinder();
 
+
+#if NOPRODUCT
+    poly
+        FindReducer(const poly multiplier, const poly monom, const poly syzterm, const CReducerFinder& checker) const;
+
+#endif
     // TODO: save shortcut (syz: |-.->) LM(LM(m) * "t") -> syz?
     poly // const_iterator // TODO: return const_iterator it, s.th: it->m_lt is the needed
-    FindReducer(const poly product, const poly syzterm, const CReducerFinder& checker) const;
+        FindReducer(const poly product, const poly syzterm, const CReducerFinder& checker) const;
 
     bool IsDivisible(const poly q) const;
+
 
     inline bool IsNonempty() const { return !m_hash.empty(); }
 
     /// is the term to be "preprocessed" as lower order term or lead to only reducible syzygies...
     int PreProcessTerm(const poly t, CReducerFinder& syzChecker) const;
 
-    poly FindReducer(const poly multiplier, const poly monom, const poly syzterm, const CReducerFinder& checker) const;
-
-#ifndef NDEBUG
+#ifndef SING_NDEBUG
     void DebugPrint() const;
+    void Verify() const;
 #endif
 
   private:
@@ -214,6 +383,7 @@ struct CCacheCompare
 typedef std::map<TCacheKey, TCacheValue, CCacheCompare> TP2PCache; // deallocation??? !!!
 typedef std::map<int, TP2PCache> TCache;
 
+
 /** @class SchreyerSyzygyComputation syzextra.h
  *
  * Computing syzygies after Schreyer
@@ -237,8 +407,10 @@ class SchreyerSyzygyComputation: public SchreyerSyzygyComputationFlags
         m_syzLeads(NULL), m_syzTails(NULL),
         m_LS(NULL), m_lcm(m_idLeads, setting),
         m_div(m_idLeads, setting), m_checker(NULL, setting), m_cache(),
-        m_sum_bucket(NULL), m_spoly_bucket(NULL)
+        m_sum_bucket_factory(setting.m_rBaseRing),
+        m_spoly_bucket(NULL)
     {
+      if( UNLIKELY(OPT__PROT) ) memset( &m_stat, 0, sizeof(m_stat) );
     }
 
     /// Construct a global object for given input data (separated into leads & tails)
@@ -248,9 +420,12 @@ class SchreyerSyzygyComputation: public SchreyerSyzygyComputationFlags
         m_syzLeads(syzLeads), m_syzTails(NULL),
         m_LS(syzLeads), m_lcm(m_idLeads, setting),
         m_div(m_idLeads, setting), m_checker(NULL, setting), m_cache(),
-        m_sum_bucket(NULL), m_spoly_bucket(NULL)
+        m_sum_bucket_factory(setting.m_rBaseRing),
+        m_spoly_bucket(NULL)
     {
-      if( __TAILREDSYZ__ && !__IGNORETAILS__)
+      if( UNLIKELY(OPT__PROT) ) memset( &m_stat, 0, sizeof(m_stat) );
+
+      if( LIKELY(OPT__TAILREDSYZ && !OPT__IGNORETAILS) )
       {
         if (syzLeads != NULL)
           m_checker.Initialize(syzLeads);
@@ -266,6 +441,9 @@ class SchreyerSyzygyComputation: public SchreyerSyzygyComputationFlags
     /// Preprocess m_idTails as well...?
     void SetUpTailTerms();
 
+    /// print statistics about the used heuristics
+    void PrintStats() const;
+
     /// Read off the results while detaching them from this object
     /// NOTE: no copy!
     inline void ReadOffResult(ideal& syzL, ideal& syzT)
@@ -273,7 +451,11 @@ class SchreyerSyzygyComputation: public SchreyerSyzygyComputationFlags
       syzL = m_syzLeads; syzT = m_syzTails;
 
       m_syzLeads = m_syzTails = NULL; // m_LS ?
+
+      if ( UNLIKELY(OPT__PROT) )
+        PrintStats();
     }
+
 
     /// The main driver function: computes
     void ComputeSyzygy();
@@ -282,7 +464,14 @@ class SchreyerSyzygyComputation: public SchreyerSyzygyComputationFlags
     /// The result is stored into m_syzLeads
     void ComputeLeadingSyzygyTerms(bool bComputeSecondTerms = true);
 
+
+
+    /// Main HybridNF == 1: poly reduce + LOT + LCM?
     poly SchreyerSyzygyNF(const poly syz_lead, poly syz_2 = NULL) const;
+
+
+    // Main (HybridNF == 0) Tree Travers + LOT + LCM?
+    poly TraverseNF(const poly syz_lead, const poly syz_2 = NULL) const;
 
     /// High level caching function!!!
     poly TraverseTail(poly multiplier, const int tail) const;
@@ -297,8 +486,6 @@ class SchreyerSyzygyComputation: public SchreyerSyzygyComputationFlags
     /// low level computation...
     poly ComputeImage(poly multiplier, const int tail) const;
 
-    //
-    poly TraverseNF(const poly syz_lead, const poly syz_2 = NULL) const;
 
 
   public:
@@ -315,6 +502,8 @@ class SchreyerSyzygyComputation: public SchreyerSyzygyComputationFlags
 
     /// leading + second terms
     ideal Compute2LeadingSyzygyTerms();
+
+
 
   private:
     /// input leading terms
@@ -368,12 +557,19 @@ class SchreyerSyzygyComputation: public SchreyerSyzygyComputationFlags
     // NOTE/TODO: the following globally shared buckets violate reentrance - they should rather belong to TLS!
 
     /// used for simple summing up
-    mutable sBucket_pt m_sum_bucket;
+    mutable SBucketFactory m_sum_bucket_factory; // sBucket_pt
 
     /// for S-Polynomial reductions
-    mutable kBucket_pt m_spoly_bucket;
-};
+    mutable kBucket_pt m_spoly_bucket; // only used inside of SchreyerSyzygyNF! destruction by CleanUp()!
 
+
+    /// Statistics:
+    ///  0..3: as in SetUpTailTerms()::PreProcessTerm() // TODO!!??
+    ///  4: number of terms discarded due to LOT heuristics
+    ///  5: number of terms discarded due to LCM heuristics
+    ///  6, 7: lookups without & with rescale, 8: stores
+    mutable unsigned long m_stat[9];
+};
 
 // The following wrappers are just for testing separate functions on highest level (within schreyer.lib)
 

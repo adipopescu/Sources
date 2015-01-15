@@ -7,20 +7,64 @@
 //Schauen was hier überhaupt sinn macht
 
 #include <misc/auxiliary.h>
-
+#include <omalloc/omalloc.h>
 #include <factory/factory.h>
+#include <misc/mylimits.h>
+#include <reporter/reporter.h>
+
+#include "coeffs.h"
+#include "numbers.h"
+#include "mpr_complex.h"
+
+#include "OPAE.h"
+#include "AE.h"
 
 #include <string.h>
-#include <omalloc/omalloc.h>
-#include <coeffs/coeffs.h>
-#include <reporter/reporter.h>
-#include <coeffs/numbers.h>
-#include <coeffs/longrat.h>
-#include <coeffs/modulop.h>
-#include <coeffs/mpr_complex.h>
-#include <misc/mylimits.h>
-#include <coeffs/OPAE.h>
-#include <coeffs/AE.h>
+
+#ifdef SINGULAR_4_1
+
+BOOLEAN nAECoeffIsEqual     (number a, number b, const coeffs r);
+number  nAEMult        (number a, number b, const coeffs r);
+number  nAESub         (number a, number b, const coeffs r);
+number  nAEAdd         (number a, number b, const coeffs r);
+number  nAEDiv         (number a, number b, const coeffs r);
+number  nAEIntMod      (number a, number b, const coeffs r);// Hir wollte wir was gucken
+number  nAEExactDiv    (number a, number b, const coeffs r);
+number  nAEInit        (long i, const coeffs r);
+number  nAEInitMPZ     (mpz_t m, const coeffs r); //nachgucken/fragen
+int     nAESize        (number a, const coeffs r);///
+int     nAEInt         (number &a, const coeffs r);
+number  nAEMPZ         (number a, const coeffs r); //nachgucken/fragen
+number  nAENeg         (number c, const coeffs r);
+number  nAECopy        (number a, number b, const coeffs r); // nachgicken
+number  nAERePart      (number a, number b, const coeffs r); // nachgicken
+number  nAEImPart      (number a, number b, const coeffs r); // nachgicken
+
+void    nAEWriteLong   (number &a, const coeffs r);//
+void    nAEWriteShort  (number &a, const coeffs r);//
+
+
+const char *  nAERead  (const char *s, number *a, const coeffs r);
+number nAENormalize    (number a, number b, const coeffs r);//
+BOOLEAN nAEGreater     (number a, number b, const coeffs r);//
+BOOLEAN nAEEqual       (number a, number b, const coeffs r);
+BOOLEAN nAEIsZero      (number a, const coeffs r);
+BOOLEAN nAEIsOne       (number a, const coeffs r);
+BOOLEAN nAEIsMOne      (number a, const coeffs r);
+BOOLEAN nAEGreaterZero (number a, number b, const coeffs r);
+void    nAEPower       (number a, int i, number * result, const coeffs r);
+number nAEGetDenom     (number &a, const coeffs r);//
+number nAEGetNumerator (number &a, const coeffs r);//
+number nAEGcd          (number a, number b, const coeffs r);
+number nAELcm          (number a, number b, const coeffs r);
+
+void    nAEDelete       (number *a, const coeffs r);//
+number    nAESetMap      (number a, const coeffs r);//
+void    nAEInpMult      (number &a ,number b, const coeffs r);//
+void    nAECoeffWrite   (const coeffs r, BOOLEAN details);//
+
+BOOLEAN nAEClearContent  (number a, const coeffs r);//
+BOOLEAN nAEClearDenominators  (number a, const coeffs r);//
 
 
 
@@ -258,12 +302,11 @@ void    nAEDelete       (number *, const coeffs)
         return;
 }
 
-/*
-number    nAESetMap        (number a, const coeffs)
+nMapFunc  nAESetMap (const coeffs src, const coeffs dst)
 {
-        return a;
+  if (src==dst) return ndCopyMap; // UNDEFINED: nAECopyMap; // BUG :(
+  else return NULL;
 }
-*/
 
 void    nAEInpMult       (number &, number, const coeffs)
 {
@@ -285,7 +328,10 @@ BOOLEAN nAEClearDenominators  (number, const coeffs)
         return FALSE;
 }
 
-
+static char * n_AECoeffName(const coeffs r)
+{
+  return (char *)"AE";
+}
 
 //INITIALISIERUNG FÜR SINGULAR
 
@@ -294,8 +340,8 @@ BOOLEAN n_AEInitChar(coeffs r, void *)
 {
     // r->is_field, r->is_domain?
     r->ch = 0;
-    r->cfKillChar=NULL;
-    r->nCoeffIsEqual=ndCoeffIsEqual;
+    //r->cfKillChar = ndKillChar; /* dummy */
+    //r->nCoeffIsEqual=ndCoeffIsEqual;
     r->cfMult  = nAEMult;
     r->cfSub   = nAESub;
     r->cfAdd   = nAEAdd;
@@ -305,6 +351,7 @@ BOOLEAN n_AEInitChar(coeffs r, void *)
     r->cfInit = nAEInit;
     r->cfSize  = nAESize;
     r->cfInt  = nAEInt;
+    r->cfCoeffName = n_AECoeffName;
 #ifdef HAVE_RINGS
     //r->cfDivComp = NULL; // only for ring stuff
     //r->cfIsUnit = NULL; // only for ring stuff
@@ -332,7 +379,9 @@ BOOLEAN n_AEInitChar(coeffs r, void *)
     r->cfGcd  = nAEGcd;
     r->cfLcm  = nAELcm; // ZU BEARBEITEN
     r->cfDelete= nAEDelete;
-    r->cfSetMap = npSetMap;
+
+    r->cfSetMap = nAESetMap;
+
     r->cfInpMult=nAEInpMult; //????
     r->cfCoeffWrite=nAECoeffWrite; //????
 
@@ -345,4 +394,4 @@ BOOLEAN n_AEInitChar(coeffs r, void *)
     r->has_simple_Inverse=TRUE;
     return FALSE;
 }
-
+#endif

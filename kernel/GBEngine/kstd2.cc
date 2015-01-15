@@ -297,19 +297,19 @@ poly kFindZeroPoly(poly input_p, ring leadRing, ring tailRing)
 
   poly p = input_p;
   poly zeroPoly = NULL;
-  NATNUMBER a = (NATNUMBER) pGetCoeff(p);
+  unsigned long a = (unsigned long) pGetCoeff(p);
 
   int k_ind2 = 0;
   int a_ind2 = ind2(a);
 
-  // NATNUMBER k = 1;
+  // unsigned long k = 1;
   // of interest is only k_ind2, special routine for improvement ... TODO OLIVER
   for (int i = 1; i <= leadRing->N; i++)
   {
     k_ind2 = k_ind2 + ind_fact_2(p_GetExp(p, i, leadRing));
   }
 
-  a = (NATNUMBER) pGetCoeff(p);
+  a = (unsigned long) pGetCoeff(p);
 
   number tmp1;
   poly tmp2, tmp3;
@@ -332,7 +332,7 @@ poly kFindZeroPoly(poly input_p, ring leadRing, ring tailRing)
         s_exp = s_exp - 2;
       }
       p_SetExp(lead_mult, i, p_GetExp(p, i,leadRing) - s_exp, tailRing);
-      for (NATNUMBER j = 1; j <= s_exp; j++)
+      for (unsigned long j = 1; j <= s_exp; j++)
       {
         tmp1 = nInit(j);
         tmp2 = p_ISet(1, tailRing);
@@ -361,13 +361,13 @@ poly kFindZeroPoly(poly input_p, ring leadRing, ring tailRing)
     pNext(tmp2) = zeroPoly;
     return tmp2;
   }
-/*  NATNUMBER alpha_k = twoPow(leadRing->ch - k_ind2);
+/*  unsigned long alpha_k = twoPow(leadRing->ch - k_ind2);
   if (1 == 0 && alpha_k <= a)
   {  // Temporarly disabled, reducing coefficients not compatible with std TODO Oliver
     zeroPoly = p_ISet((a / alpha_k)*alpha_k, tailRing);
     for (int i = 1; i <= leadRing->N; i++)
     {
-      for (NATNUMBER j = 1; j <= p_GetExp(p, i, leadRing); j++)
+      for (unsigned long j = 1; j <= p_GetExp(p, i, leadRing); j++)
       {
         tmp1 = nInit(j);
         tmp2 = p_ISet(1, tailRing);
@@ -379,12 +379,12 @@ poly kFindZeroPoly(poly input_p, ring leadRing, ring tailRing)
         }
         else
         {
-          tmp3 = p_ISet((NATNUMBER) tmp1, tailRing);
+          tmp3 = p_ISet((unsigned long) tmp1, tailRing);
           zeroPoly = p_Mult_q(zeroPoly, p_Add_q(tmp2, tmp3, tailRing), tailRing);
         }
       }
     }
-    tmp2 = p_ISet((NATNUMBER) pGetCoeff(zeroPoly), leadRing);
+    tmp2 = p_ISet((unsigned long) pGetCoeff(zeroPoly), leadRing);
     for (int i = 1; i <= leadRing->N; i++)
     {
       pSetExp(tmp2, i, p_GetExp(zeroPoly, i, tailRing));
@@ -452,11 +452,7 @@ int redRing (LObject* h,kStrategy strat)
     pWrite(h->p);
     printf("\nFound j = %i\n",j);pWrite(strat->T[j].p);
     #endif
-    //printf("\nsdjksdjkhsdhasdkfhk\n");pWrite(h->p);pWrite(strat->T[j].p);
-    //printf("\nredring1:\n");idPrint(strat->Shdl);
     ksReducePoly(h, &(strat->T[j]), NULL, NULL, strat); // with debug output
-    //printf("\nredring2:\n");idPrint(strat->Shdl);
-    //#if 1
     #if ADIDEBUG
     printf("\nand after reduce: \n");pWrite(h->p);
     #endif
@@ -1538,7 +1534,6 @@ void kDebugPrint(kStrategy strat);
 
 ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
 {
-    omTestMemory(1);
 #ifdef KDEBUG
   bba_count++;
   int loop_count = 0;
@@ -1619,7 +1614,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     #endif
     printf("\n   list   L\n");
     int iii;
-    #if 1
+    #if 0
     for(iii = 0; iii<= strat->Ll; iii++)
     {
         printf("L[%i]:",iii);
@@ -1629,8 +1624,17 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
         
                                 
     }
-    //getchar();
+    #else
+    {
+        printf("L[%i]:",strat->Ll);
+        p_Write(strat->L[strat->Ll].p, strat->tailRing);
+        p_Write(strat->L[strat->Ll].p1, strat->tailRing);
+        p_Write(strat->L[strat->Ll].p2, strat->tailRing);
+        
+                                
+    }
     #endif
+    getchar();
     #endif
     #ifdef KDEBUG
       loop_count++;
@@ -1789,6 +1793,7 @@ messageADI(red_result);
       {
         enterT(strat->P, strat);
         omTestMemory(1);
+        kTest_TS(strat);
 #ifdef HAVE_RINGS
         if (rField_is_Ring(currRing))
           superenterpairs(strat->P.p,strat->sl,strat->P.ecart,pos,strat, strat->tl);
@@ -1796,6 +1801,7 @@ messageADI(red_result);
 #endif
           enterpairs(strat->P.p,strat->sl,strat->P.ecart,pos,strat, strat->tl);
           omTestMemory(1);
+          kTest_TS(strat);
         // posInS only depends on the leading term
         //#if 1
         #if ADIDEBUG
@@ -1883,7 +1889,6 @@ messageADI(red_result);
 #endif /* KDEBUG */
     kTest_TS(strat);
   }
-omTestMemory(1);
 #if 0
 //#ifdef HAVE_RINGS
   if(nCoeff_is_Ring_Z(currRing->cf))
@@ -1917,7 +1922,6 @@ omTestMemory(1);
         }
     }
   }
-  omTestMemory(1);
   /* complete reduction of the standard basis--------- */
   if (TEST_OPT_REDSB)
   {
@@ -1934,18 +1938,14 @@ omTestMemory(1);
       completeReduce(strat);
     }
 #endif
-omTestMemory(1);
-#ifdef HAVE_RINGS
-  if(nCoeff_is_Ring_Z(currRing->cf))
-    finalReduceByMon(strat);
-#endif
+    #ifdef HAVE_RINGS
+    if(nCoeff_is_Ring_Z(currRing->cf))
+      finalReduceByMon(strat);
+    #endif
   }
   else if (TEST_OPT_PROT) PrintLn();
-omTestMemory(1);
   /* release temp data-------------------------------- */
-  omTestMemory(1);
   exitBuchMora(strat);
-  omTestMemory(1);
 //  if (TEST_OPT_WEIGHTM)
 //  {
 //    pRestoreDegProcs(currRing,pFDegOld, pLDegOld);
@@ -1969,7 +1969,7 @@ messageADI(413);
 #endif
 #ifdef HAVE_RINGS
 if(rField_is_Ring(currRing))
-printf("\n--- size: %i\n",strat->sl);
+printf("\n--- size: %i\n",strat->sl+1);
 #endif
   idTest(strat->Shdl);
   omTestMemory(1);
@@ -2185,6 +2185,8 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
 #endif
       // initialize new syzygy rules for the next iteration step
       initSyzRules(strat);
+      if(strat->Ll < 0)
+        break;
       kTest_TS(strat);
 
     }

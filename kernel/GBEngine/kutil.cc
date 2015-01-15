@@ -339,8 +339,8 @@ void cancelunit (LObject* L,BOOLEAN inNF)
   poly p = L->GetLmTailRing();
 
 #ifdef HAVE_RINGS
-    if (rField_is_Ring(currRing) && (currRing->OrdSgn == -1))
-                  lc = p_GetCoeff(p,r);
+    if (rField_is_Ring(r) /*&& (rHasLocalOrMixedOrdering(r))*/)
+      lc = p_GetCoeff(p,r);
 #endif
 
 #ifdef HAVE_RINGS_LOC
@@ -363,16 +363,23 @@ void cancelunit (LObject* L,BOOLEAN inNF)
       p_Delete(&pNext(p), r);
       if (!inNF)
       {
-             number eins;
-              #ifdef HAVE_RINGS
-              if (rField_is_Ring(currRing) && (currRing->OrdSgn == -1))
-                              eins = nCopy(lc);
-                    else
-                     #endif
-              eins=nInit(1);
-              if (L->p != NULL)  pSetCoeff(L->p,eins);
-        else if (L->t_p != NULL) nDelete(&pGetCoeff(L->t_p));
-        if (L->t_p != NULL) pSetCoeff0(L->t_p,eins);
+        number eins;
+#ifdef HAVE_RINGS
+        if (rField_is_Ring(r) /*&& (rHasLocalOrMixedOrdering(r))*/)
+          eins = nCopy(lc);
+        else
+#endif
+          eins=nInit(1);
+        if (L->p != NULL)
+        {
+          pSetCoeff(L->p,eins);
+          if (L->t_p != NULL)
+            pSetCoeff0(L->t_p,eins);
+        }
+        else
+          pSetCoeff(L->t_p,eins);
+        /* p and t_p share the same coeff, if both are !=NULL */
+        /* p==NULL==t_p cannot happen here */
       }
       L->ecart = 0;
       L->length = 1;
@@ -381,7 +388,7 @@ void cancelunit (LObject* L,BOOLEAN inNF)
       L->max = NULL;
 
       if (L->t_p != NULL && pNext(L->t_p) != NULL)
-        pNext(L->t_p) = NULL;
+        p_Delete(&pNext(L->t_p),r);
       if (L->p != NULL && pNext(L->p) != NULL)
         pNext(L->p) = NULL;
 
@@ -395,9 +402,9 @@ void cancelunit (LObject* L,BOOLEAN inNF)
       #ifdef HAVE_RINGS
       // Note: As long as qring j forbidden if j contains integer (i.e. ground rings are
       //       domains), no zerodivisor test needed  CAUTION
-      if (rField_is_Ring(currRing) && currRing->OrdSgn == -1)
-              if(n_DivBy(p_GetCoeff(h,r->cf),lc,r->cf) == 0)
-                      return;
+      if (rField_is_Ring(r) /*&&(rHasLocalOrMixedOrdering(r)) */)
+        if(n_DivBy(p_GetCoeff(h,r->cf),lc,r->cf) == 0)
+          return;
       #endif
       if (i == r->N) break; // does divide, try next monom
     }
@@ -1066,10 +1073,10 @@ void deleteInL (LSet set, int *length, int j,kStrategy strat)
     else
     {
       // search p in T, if it is there, do not delete it
-      if (currRing->OrdSgn != -1 || kFindInT(set[j].p, strat) < 0)
+      if (rHasGlobalOrdering(currRing) || (kFindInT(set[j].p, strat) < 0))
       {
         // assure that for global orderings kFindInT fails
-        assume(currRing->OrdSgn == -1 || kFindInT(set[j].p, strat) < 0);
+        //assume((rHasLocalOrMixedOrdering(currRing)) && (kFindInT(set[j].p, strat) >= 0));
         set[j].Delete();
       }
     }
@@ -1116,7 +1123,7 @@ void enterL (LSet *set,int *length, int *LSetmax, LObject p,int at)
 * computes the normal ecart;
 * used in mora case and if pLexOrder & sugar in bba case
 */
-void initEcartNormal (LObject* h)
+void initEcartNormal (TObject* h)
 {
   h->FDeg = h->pFDeg();
   h->ecart = h->pLDeg() - h->FDeg;
@@ -1124,7 +1131,7 @@ void initEcartNormal (LObject* h)
   h->length=h->pLength=pLength(h->p);
 }
 
-void initEcartBBA (LObject* h)
+void initEcartBBA (TObject* h)
 {
   h->FDeg = h->pFDeg();
   (*h).ecart = 0;
@@ -1160,272 +1167,32 @@ static inline BOOLEAN sugarDivisibleBy(int ecart1, int ecart2)
 */
 void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int atR = -1)
 {
-  #if 0
-  assume(i<=strat->sl);
-    int      l,j,compare,compareCoeff;
-    LObject  Lp;
-  omTestMemory(1);
-    if (strat->interred_flag) return;
-  #ifdef KDEBUG
-    Lp.ecart=0; Lp.length=0;
-  #endif
-    /*- computes the lcm(s[i],p) -*/
-    Lp.lcm = pInit();
-    pSetCoeff0(Lp.lcm, n_Lcm(pGetCoeff(p), pGetCoeff(strat->S[i]), currRing->cf));
-  
-    // Lp.lcm == 0
-    if (nIsZero(pGetCoeff(Lp.lcm)))
-    {
-  #ifdef KDEBUG
-        if (TEST_OPT_DEBUG)
-        {
-          PrintS("--- Lp.lcm == 0\n");
-          PrintS("p:");
-          wrp(p);
-          Print("  strat->S[%d]:", i);
-          wrp(strat->S[i]);
-          PrintLn();
-        }
-  #endif
-        strat->cp++;
-        pLmDelete(Lp.lcm);
-        return;
-    }
-    omTestMemory(1);
-    // basic product criterion
-    pLcm(p,strat->S[i],Lp.lcm);
-  
-    pSetm(Lp.lcm);
-    assume(!strat->sugarCrit);
-    if (pHasNotCF(p,strat->S[i]) && n_IsUnit(pGetCoeff(p),currRing->cf)
-        && n_IsUnit(pGetCoeff(strat->S[i]),currRing->cf))
-    {
-  #ifdef KDEBUG
-        if (TEST_OPT_DEBUG)
-        {
-          PrintS("--- product criterion func enterOnePairRing type 1\n");
-          PrintS("p:");
-          wrp(p);
-          Print("  strat->S[%d]:", i);
-          wrp(strat->S[i]);
-          PrintLn();
-        }
-  #endif
-        strat->cp++;
-        pLmDelete(Lp.lcm);
-        return;
-    }
-    assume(!strat->fromT);
-    omTestMemory(1);
-    /*
-    *the set B collects the pairs of type (S[j],p)
-    *suppose (r,p) is in B and (s,p) is the new pair and lcm(s,p) != lcm(r,p)
-    *if the leading term of s devides lcm(r,p) then (r,p) will be canceled
-    *if the leading term of r devides lcm(s,p) then (s,p) will not enter B
-    */
-    for(j = strat->Bl;j>=0;j--)
-    {
-      compare=pDivCompRing(strat->B[j].lcm,Lp.lcm);
-      compareCoeff = n_DivComp(pGetCoeff(strat->B[j].lcm), pGetCoeff(Lp.lcm), currRing->cf);
-      if ((compareCoeff == pDivComp_EQUAL) || (compare == compareCoeff))
-      {
-        if (compare == 1)
-        {
-          strat->c3++;
-  #ifdef KDEBUG
-          if (TEST_OPT_DEBUG)
-          {
-            PrintS("--- chain criterion type 1\n");
-            PrintS("strat->B[j]:");
-            wrp(strat->B[j].lcm);
-            PrintS("  Lp.lcm:");
-            wrp(Lp.lcm);
-            PrintLn();
-          }
-  #endif
-          if ((strat->fromQ==NULL) || (isFromQ==0) || (strat->fromQ[i]==0))
-          {
-            pLmDelete(Lp.lcm);
-            return;
-          }
-          break;
-        }
-        else
-        if (compare == -1)
-        {
-  #ifdef KDEBUG
-          if (TEST_OPT_DEBUG)
-          {
-            PrintS("--- chain criterion type 2\n");
-            Print("strat->B[%d].lcm:",j);
-            wrp(strat->B[j].lcm);
-            PrintS("  Lp.lcm:");
-            wrp(Lp.lcm);
-            PrintLn();
-          }
-  #endif
-          deleteInL(strat->B,&strat->Bl,j,strat);
-          strat->c3++;
-        }
-      }
-      if ((compare == pDivComp_EQUAL) && (compareCoeff != 2))
-      {
-        if (compareCoeff == pDivComp_LESS)
-        {
-  #ifdef KDEBUG
-          if (TEST_OPT_DEBUG)
-          {
-            PrintS("--- chain criterion type 3\n");
-            Print("strat->B[%d].lcm:", j);
-            wrp(strat->B[j].lcm);
-            PrintS("  Lp.lcm:");
-            wrp(Lp.lcm);
-            PrintLn();
-          }
-  #endif
-          strat->c3++;
-          if ((strat->fromQ==NULL) || (isFromQ==0) || (strat->fromQ[i]==0))
-          {
-            pLmDelete(Lp.lcm);
-            return;
-          }
-          break;
-        }
-        else
-        // Add hint for same LM and LC (later) (TODO Oliver)
-        // if (compareCoeff == pDivComp_GREATER)
-        {
-  #ifdef KDEBUG
-          if (TEST_OPT_DEBUG)
-          {
-            PrintS("--- chain criterion type 4\n");
-            Print("strat->B[%d].lcm:", j);
-            wrp(strat->B[j].lcm);
-            PrintS("  Lp.lcm:");
-            wrp(Lp.lcm);
-            PrintLn();
-          }
-  #endif
-          deleteInL(strat->B,&strat->Bl,j,strat);
-          strat->c3++;
-        }
-      }
-    }
-    omTestMemory(1);
-    /*
-    *the pair (S[i],p) enters B if the spoly != 0
-    */
-    /*-  compute the short s-polynomial -*/
-    if ((strat->S[i]==NULL) || (p==NULL))
-    {
-  #ifdef KDEBUG
-      if (TEST_OPT_DEBUG)
-      {
-        PrintS("--- spoly = NULL\n");
-      }
-  #endif
-      pLmDelete(Lp.lcm);
-      return;
-    }
-    if ((strat->fromQ!=NULL) && (isFromQ!=0) && (strat->fromQ[i]!=0))
-    {
-      // Is from a previous computed GB, therefore we know that spoly will
-      // reduce to zero. Oliver.
-      WarnS("Could we come here? 8738947389");
-      Lp.p=NULL;
-    }
-    else
-    {
-      Lp.p = ksCreateShortSpoly(strat->S[i], p, strat->tailRing);
-    }
-    omTestMemory(1);
-    if (Lp.p == NULL)
-    {
-  #ifdef KDEBUG
-      if (TEST_OPT_DEBUG)
-      {
-        PrintS("--- spoly = NULL\n");
-      }
-  #endif
-      /*- the case that the s-poly is 0 -*/
-      if (strat->pairtest==NULL) initPairtest(strat);
-      strat->pairtest[i] = TRUE;/*- hint for spoly(S^[i],p)=0 -*/
-      strat->pairtest[strat->sl+1] = TRUE;
-      /*hint for spoly(S[i],p) == 0 for some i,0 <= i <= sl*/
-      /*
-      *suppose we have (s,r),(r,p),(s,p) and spoly(s,p) == 0 and (r,p) is
-      *still in B (i.e. lcm(r,p) == lcm(s,p) or the leading term of s does not
-      *devide lcm(r,p)). In the last case (s,r) can be canceled if the leading
-      *term of p devides the lcm(s,r)
-      *(this canceling should be done here because
-      *the case lcm(s,p) == lcm(s,r) is not covered in chainCrit)
-      *the first case is handeled in chainCrit
-      */
-      pLmDelete(Lp.lcm);
-      printf("\nsdkjhggh\n");
-    }
-    else
-    {
-      /*- the pair (S[i],p) enters B -*/
-      Lp.p1 = strat->S[i];
-      Lp.p2 = p;
-  
-      pNext(Lp.p) = strat->tail;
-  
-      if (atR >= 0)
-      {
-        Lp.i_r2 = atR;
-        Lp.i_r1 = strat->S_2_R[i];
-      }
-      omTestMemory(1);
-      strat->initEcartPair(&Lp,strat->S[i],p,strat->ecartS[i],ecart);
-      omTestMemory(1);
-      l = strat->posInL(strat->L,strat->Ll,&Lp,strat);
-      omTestMemory(1);
-      enterL(&strat->L,&strat->Ll,&strat->Lmax,Lp,l);
-      omTestMemory(1);
-      printf("\nJust printed and retuirned:\n");
-    }
-  #else
   number s, t;
   assume(i<=strat->sl);
   assume(atR >= 0);
   poly m1, m2, gcd;
-  //printf("\nTrying to add spair S[%i] und p\n",i);pWrite(strat->S[i]);pWrite(p);
+  #if 1
+  //#if ADIDEBUG
+  printf("\nTrying to add spair S[%i] und p\n",i);pWrite(strat->S[i]);pWrite(p);
+  #endif
   s = pGetCoeff(strat->S[i]);
   t = pGetCoeff(p);
   k_GetLeadTerms(p,strat->S[i],currRing,m1,m2,currRing);
   ksCheckCoeff(&s, &t, currRing->cf);
-  //p_Test(m1,strat->tailRing);
-  //p_Test(m2,strat->tailRing);
   pSetCoeff0(m1, s);
   pSetCoeff0(m2, t);
   pNeg(m2);
   p_Test(m1,strat->tailRing);
   p_Test(m2,strat->tailRing);
-  
-//#if 1
-#ifdef KDEBUG
-  if (TEST_OPT_DEBUG)
-  {
-    PrintS("m1 = ");
-    p_wrp(m1, strat->tailRing);
-    PrintS(" ; m2 = ");
-    p_wrp(m2, strat->tailRing);
-    PrintS(" ; gcd = ");
-    wrp(gcd);
-    PrintS("\n--- create s-poly: ");
-    Print("\n p: ", i);
-    wrp(p);
-    Print("\n strat->S[%d]: ", i);
-    wrp(strat->S[i]);
-    PrintS(" ---> ");
-  }
-#endif
-  gcd = p_Add_q(pp_Mult_mm(pNext(p), m1, strat->tailRing), pp_Mult_mm(pNext(strat->S[i]), m2, strat->tailRing), strat->tailRing);
+  poly si = pCopy(strat->S[i]);
+  poly pm1 = pp_Mult_mm(pNext(p), m1, strat->tailRing);
+  poly sim2 = pp_Mult_mm(pNext(si), m2, strat->tailRing);
+  printf("\ndfgdfgd = %i\n",pGetComp(pm1));
+  pSetComp(sim2, pGetComp(pm1));
+  pWrite(pm1);pWrite(sim2);
+  gcd = p_Add_q(pm1, sim2, strat->tailRing);
   p_LmDelete(m1, strat->tailRing);
   p_LmDelete(m2, strat->tailRing);
-
 #ifdef KDEBUG
   if (TEST_OPT_DEBUG)
   {
@@ -1433,7 +1200,6 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
     PrintLn();
   }
 #endif
-
   LObject h;
   h.p = gcd;
   h.i_r = -1;
@@ -1445,6 +1211,11 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
   //printf("\nThis is our new achieved polynomial:\n");pWrite(gcd);
   if(h.p == NULL)
     return;
+  pSetm(h.p);
+  #if 1
+  //#if ADIDEBUG
+  pWrite(h.p);
+  #endif
   h.i_r1 = -1;h.i_r2 = -1;
   strat->initEcart(&h);
   #if 1
@@ -1469,7 +1240,7 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
   printf("\nThis s-poly was added to L:\n");pWrite(h.p);pWrite(h.p1);pWrite(h.p2);printf("\ni_r1 = %i, i_r2 = %i\n",h.i_r1, h.i_r2);pWrite(strat->T[h.i_r1].p);pWrite(strat->T[h.i_r2].p);
   #endif
   enterL(&strat->L,&strat->Ll,&strat->Lmax,h,posx);
-  #endif
+  kTest_TS(strat);
 }
 
 
@@ -1817,6 +1588,11 @@ void enterOnePairNormal (int i,poly p,int ecart, int isFromQ,kStrategy strat, in
 
       }
   }
+#if MYTEST
+        PrintS("enterOnePairNormal::\n strat->S[i]: "); pWrite(strat->S[i]);
+        PrintS("p: "); pWrite(p);
+        PrintS("commutative SPoly: "); pWrite(Lp.p);
+#endif
   if (Lp.p == NULL)
   {
     /*- the case that the s-poly is 0 -*/
@@ -1861,7 +1637,11 @@ void enterOnePairNormal (int i,poly p,int ecart, int isFromQ,kStrategy strat, in
       Lp.i_r2 = -1;
     }
     strat->initEcartPair(&Lp,strat->S[i],p,strat->ecartS[i],ecart);
-
+#if ADIDEBUG
+        PrintS("enterOnePairNormal::\n strat->S[i]: "); pWrite(strat->S[i]);
+        PrintS("p: "); pWrite(p);
+        PrintS("commutative SPoly: "); pWrite(Lp.p);
+#endif
     if (TEST_OPT_INTSTRATEGY)
     {
       if (!rIsPluralRing(currRing))
@@ -1993,7 +1773,7 @@ printf("\nIn Spoly: m1, m2:\n");pWrite(m1);pWrite(m2);
   #endif
 //#if 1
 #if DEBUGF5
-  printf("IN PAIR GENERATION - COMPARING SIGS: %d\n",sigCmp);
+  Print("IN PAIR GENERATION - COMPARING SIGS: %d\n",sigCmp);
   pWrite(pSigMult);
   pWrite(sSigMult);
 #endif
@@ -2221,7 +2001,7 @@ printf("\nIn Spoly: m1, m2:\n");pWrite(m1);pWrite(m2);
     pDelete (&m1);
     pDelete (&m2);
 #if DEBUGF5
-    printf("SIGNATURE OF PAIR:  ");
+    PrintS("SIGNATURE OF PAIR:  ");
     pWrite(Lp.sig);
 #endif
     /*- the pair (S[i],p) enters B -*/
@@ -2403,11 +2183,13 @@ printf("\nCheck This:\n");
   poly pSS = pCopy(pS);
   poly sSS = pCopy(sS);
   Lp.sig = p_Add_q(pS, sS, currRing);
+  #if ADIDEBUG  
   if((pLmCmp(Lp.sig, pSS) == -1) && (pLmCmp(Lp.sig, sSS) == -1)) 
   {
     printf("\n!!!!!!!!!!!!! Sig cancelled in strong:\n");pWrite(Lp.sig);printf("\npS head=\n");pWrite(pHead(pSS));printf("\nsS head=\n");pWrite(pHead(sSS));printf("\nThis is an example where the signature drops!\n");
     //getchar();
   }
+  #endif
   Lp.sevSig=p_GetShortExpVector(pHead(Lp.sig),currRing);
   Lp.strong = TRUE;
   if  ( strat->syzCrit(pHead(Lp.sig),~Lp.sevSig,strat) //||
@@ -2813,7 +2595,7 @@ void chainCritNormal (poly p,int ecart,kStrategy strat)
       for (j=strat->Ll; j>=0; j--)
       {
         if (sugarDivisibleBy(ecart,strat->L[j].ecart)
-        && ((pNext(strat->L[j].p) == strat->tail) || (currRing->OrdSgn==1))
+        && ((pNext(strat->L[j].p) == strat->tail) || (rHasGlobalOrdering(currRing)))
         && pCompareChain(p,strat->L[j].p1,strat->L[j].p2,strat->L[j].lcm))
         {
           if (strat->L[j].p == strat->tail)
@@ -2866,7 +2648,7 @@ void chainCritNormal (poly p,int ecart,kStrategy strat)
       {
         if (pCompareChain(p,strat->L[j].p1,strat->L[j].p2,strat->L[j].lcm))
         {
-          if ((pNext(strat->L[j].p) == strat->tail)||(currRing->OrdSgn==1))
+          if ((pNext(strat->L[j].p) == strat->tail)||(rHasGlobalOrdering(currRing)))
           {
             deleteInL(strat->L,&strat->Ll,j,strat);
             strat->c3++;
@@ -2905,7 +2687,7 @@ void chainCritNormal (poly p,int ecart,kStrategy strat)
     {
       if (pCompareChain(p,strat->L[j].p1,strat->L[j].p2,strat->L[j].lcm))
       {
-        if ((pNext(strat->L[j].p) == strat->tail)||(currRing->OrdSgn==1))
+        if ((pNext(strat->L[j].p) == strat->tail)||(rHasGlobalOrdering(currRing)))
         {
           deleteInL(strat->L,&strat->Ll,j,strat);
           strat->c3++;
@@ -3104,7 +2886,7 @@ void chainCritPart (poly p,int ecart,kStrategy strat)
       for (j=strat->Ll; j>=0; j--)
       {
         if (sugarDivisibleBy(ecart,strat->L[j].ecart)
-        && ((pNext(strat->L[j].p) == strat->tail) || (currRing->OrdSgn==1))
+        && ((pNext(strat->L[j].p) == strat->tail) || (rHasGlobalOrdering(currRing)))
         && pCompareChainPart(p,strat->L[j].p1,strat->L[j].p2,strat->L[j].lcm))
         {
           if (strat->L[j].p == strat->tail)
@@ -3181,7 +2963,7 @@ void chainCritPart (poly p,int ecart,kStrategy strat)
       {
         if (pCompareChainPart(p,strat->L[j].p1,strat->L[j].p2,strat->L[j].lcm))
         {
-          if ((pNext(strat->L[j].p) == strat->tail)||(currRing->OrdSgn==1))
+          if ((pNext(strat->L[j].p) == strat->tail)||(rHasGlobalOrdering(currRing)))
           {
               if(TEST_OPT_DEBUG)
               {
@@ -3234,7 +3016,7 @@ void chainCritPart (poly p,int ecart,kStrategy strat)
     {
       if (pCompareChainPart(p,strat->L[j].p1,strat->L[j].p2,strat->L[j].lcm))
       {
-        if ((pNext(strat->L[j].p) == strat->tail)||(currRing->OrdSgn==1))
+        if ((pNext(strat->L[j].p) == strat->tail)||(rHasGlobalOrdering(currRing)))
         {
               if(TEST_OPT_DEBUG)
               {
@@ -3371,7 +3153,12 @@ void initenterpairs (poly h,int k,int ecart,int isFromQ,kStrategy strat, int atR
         new_pair=TRUE;
         for (j=0; j<=k; j++)
         {
-            strat->enterOnePair(j,h,ecart,isFromQ,strat, atR);
+          #if ADIDEBUG
+          PrintS("\n initenterpairs: \n");
+          PrintS("                ");p_Write(h, strat->tailRing);
+          PrintS("                ");p_Write(strat->S[j],strat->tailRing);
+          #endif
+          strat->enterOnePair(j,h,ecart,isFromQ,strat, atR);
           //Print("j:%d, Ll:%d\n",j,strat->Ll);
         }
       }
@@ -3389,22 +3176,15 @@ void initenterpairs (poly h,int k,int ecart,int isFromQ,kStrategy strat, int atR
         }
       }
     }
-    //Comented because of the following example: 
-    //ring rng = (integer),(x,y,z),dp;
-    //ideal i = -5*z^2-y*z^2, x^3*y*z-z^2+1, y^2*z^2+5*x^2*y*z;
-    //ideal gI =  std(i);
-    //ideal ggI =  std(gI);
-#if 0
     if (new_pair)
     {
-#ifdef HAVE_RATGRING
+    #ifdef HAVE_RATGRING
       if (currRing->real_var_start>0)
         chainCritPart(h,ecart,strat);
       else
-#endif
+    #endif
       strat->chainCrit(h,ecart,strat);
     }
-#endif
   }
 }
 
@@ -3583,7 +3363,7 @@ void chainCritRing (poly p,int, kStrategy strat)
     {
       if (pCompareChain(p,strat->L[j].p1,strat->L[j].p2,strat->L[j].lcm))
       {
-        if ((pNext(strat->L[j].p) == strat->tail) || (currRing->OrdSgn==1))
+        if ((pNext(strat->L[j].p) == strat->tail) || (rHasGlobalOrdering(currRing)))
         {
           deleteInL(strat->L,&strat->Ll,j,strat);
           strat->c3++;
@@ -4424,9 +4204,7 @@ void superenterpairs (poly h,int k,int ecart,int pos,kStrategy strat, int atR)
   #if 0
   int i = strat->Ll;
   #endif
-  omTestMemory(1);
   initenterpairs(h, k, ecart, 0, strat, atR);
-  omTestMemory(1);
   #if 0
   //#if ADIDEBUG
   if(i != strat->Ll)
@@ -4441,9 +4219,7 @@ void superenterpairs (poly h,int k,int ecart,int pos,kStrategy strat, int atR)
     pWrite(strat->L[i].p2);
   }
   #endif
-  omTestMemory(1);
   initenterstrongPairs(h, k, ecart, 0, strat, atR);
-  omTestMemory(1);
   #if 0
   //#if ADIDEBUG
   if(i != strat->Ll)
@@ -4459,9 +4235,7 @@ void superenterpairs (poly h,int k,int ecart,int pos,kStrategy strat, int atR)
   }
   getchar();
   #endif
- omTestMemory(1);
   clearSbatch(h, k, pos, strat);
-  omTestMemory(1);
 }
 
 /*2
@@ -4478,7 +4252,7 @@ void superenterpairsSig (poly h,poly hSig,int hFrom,int k,int ecart,int pos,kStr
   int i;
   i = strat->Ll;
   initenterpairsSig(h, hSig, hFrom, k, ecart, pos, strat, atR);
-  #if 0
+#if ADIDEBUG
   if(i != strat->Ll)
     printf("\ninitenterpairsSig changed L :)\n");
   else
@@ -4525,8 +4299,30 @@ void enterpairs (poly h,int k,int ecart,int pos,kStrategy strat, int atR)
 #ifdef HAVE_RINGS
   assume (!rField_is_Ring(currRing));
 #endif
+  #if ADIDEBUG
+        Print("\n    Vor initenterpairs: The new pair list L -- after superenterpairs in loop\n");
+        for(int iii=0;iii<=strat->Ll;iii++)
+        {
+          printf("\n    L[%d]:\n",iii);
+          PrintS("         ");p_Write(strat->L[iii].p,strat->tailRing);
+          PrintS("         ");p_Write(strat->L[iii].p1,strat->tailRing);
+          PrintS("         ");p_Write(strat->L[iii].p2,strat->tailRing);
+        }
+        #endif
 
   initenterpairs(h,k,ecart,0,strat, atR);
+
+      #if ADIDEBUG
+        Print("\n    Nach initenterpairs: The new pair list L -- after superenterpairs in loop \n");
+        for(int iii=0;iii<=strat->Ll;iii++)
+        {
+          printf("\n    L[%d]:\n",iii);
+          PrintS("         ");p_Write(strat->L[iii].p,strat->tailRing);
+          PrintS("         ");p_Write(strat->L[iii].p1,strat->tailRing);
+          PrintS("         ");p_Write(strat->L[iii].p2,strat->tailRing);
+        }
+        #endif
+
   if ( (!strat->fromT)
   && ((strat->syzComp==0)
     ||(pGetComp(h)<=strat->syzComp)))
@@ -6312,7 +6108,7 @@ BOOLEAN syzCriterion(poly sig, unsigned long not_sevSig, kStrategy strat)
     {
 //#if 1
 #ifdef DEBUGF5
-      printf("DELETE!\n");
+      PrintS("DELETE!\n");
 #endif
       //printf("- T -\n\n");
       return TRUE;
@@ -6355,7 +6151,7 @@ BOOLEAN syzCriterionInc(poly sig, unsigned long not_sevSig, kStrategy strat)
     {
 //#if 1
 #ifdef F5DEBUG
-      printf("COMP %d/%d - MIN %d - MAX %d - SYZL %ld\n",comp,strat->currIdx,min,max,strat->syzl);
+      Print("COMP %d/%d - MIN %d - MAX %d - SYZL %ld\n",comp,strat->currIdx,min,max,strat->syzl);
       Print("checking with: %d --  ",k);
       pWrite(pHead(strat->syz[k]));
 #endif
@@ -6389,7 +6185,7 @@ BOOLEAN faugereRewCriterion(poly sig, unsigned long not_sevSig, poly /*lm*/, kSt
   //printf("                    Faugere Rewritten Criterion\n");
 //#if 1
 #ifdef DEBUGF5
-  printf("rewritten criterion checks:  ");
+  PrintS("rewritten criterion checks:  ");
   pWrite(sig);
 #endif
 //printf("\nFaugere: sig till k = %i\n",start);pWrite(sig);pWrite(strat->sig[start]);
@@ -6415,7 +6211,7 @@ BOOLEAN faugereRewCriterion(poly sig, unsigned long not_sevSig, poly /*lm*/, kSt
     {
 //#if 1
 #ifdef DEBUGF5
-      printf("DELETE!\n");
+      PrintS("DELETE!\n");
 #endif
     #if ADIDEBUG
     printf("\nRewriten Delete:\n since of Shdl[%i], to delete signature\n",k);pWrite(strat->S[k]);pWrite(strat->sig[k]);pWrite(sig);
@@ -6569,7 +6365,7 @@ kFindDivisibleByInS(kStrategy strat, int pos, LObject* L, TObject *T,
     {
       if (j > pos) return NULL;
 #if defined(PDEBUG) || defined(PDIV_DEBUG)
-      if (p_LmShortDivisibleBy(strat->S[j], sev[j], p, not_sev, r) &&
+      if (strat->S[j]!= NULL && p_LmShortDivisibleBy(strat->S[j], sev[j], p, not_sev, r) &&
           (ecart== LONG_MAX || ecart>= strat->ecartS[j]))
         {
 #ifdef HAVE_RINGS
@@ -6886,8 +6682,17 @@ poly redtailBba_Z (LObject* L, int pos, kStrategy strat )
         }
         else
         {
-          if (Ln.p!=NULL) Ln.p=pAdd(Ln.p,mm);
-          else if (Ln.t_p!=NULL)  Ln.t_p=p_Add_q(Ln.t_p,mm,strat->tailRing);
+          if ((Ln.t_p!=NULL)&&(Ln.p==NULL))
+            Ln.GetP();
+          if (Ln.p!=NULL)
+          {
+            Ln.p=pAdd(Ln.p,mm);
+            if (Ln.t_p!=NULL)
+            {
+              pNext(Ln.t_p)=NULL;
+              p_LmDelete(Ln.t_p,strat->tailRing);
+            }
+          }
         }
       }
       else
@@ -7090,7 +6895,7 @@ void initS (ideal F, ideal Q, kStrategy strat)
         {
           h.pNorm();
         }
-        if (currRing->OrdSgn==-1)
+        if (rHasLocalOrMixedOrdering(currRing))
         {
           deleteHC(&h, strat);
         }
@@ -7116,7 +6921,7 @@ void initS (ideal F, ideal Q, kStrategy strat)
     {
       LObject h;
       h.p = pCopy(F->m[i]);
-      if (currRing->OrdSgn==-1)
+      if (rHasLocalOrMixedOrdering(currRing))
       {
                     /*#ifdef HAVE_RINGS
                           if (rField_is_Ring(currRing))
@@ -7184,7 +6989,7 @@ void initSL (ideal F, ideal Q,kStrategy strat)
       {
         LObject h;
         h.p = pCopy(Q->m[i]);
-        if (currRing->OrdSgn==-1)
+        if (rHasLocalOrMixedOrdering(currRing))
         {
           deleteHC(&h,strat);
         }
@@ -7221,7 +7026,7 @@ void initSL (ideal F, ideal Q,kStrategy strat)
       h.p = pCopy(F->m[i]);
       if (h.p!=NULL)
       {
-        if (currRing->OrdSgn==-1)
+        if (rHasLocalOrMixedOrdering(currRing))
         {
           cancelunit(&h);  /*- tries to cancel a unit -*/
           deleteHC(&h, strat);
@@ -7291,7 +7096,7 @@ void initSLSba (ideal F, ideal Q,kStrategy strat)
       {
         LObject h;
         h.p = pCopy(Q->m[i]);
-        if (currRing->OrdSgn==-1)
+        if (rHasLocalOrMixedOrdering(currRing))
         {
           deleteHC(&h,strat);
         }
@@ -7354,7 +7159,7 @@ void initSLSba (ideal F, ideal Q,kStrategy strat)
 #endif
       if (h.p!=NULL)
       {
-        if (currRing->OrdSgn==-1)
+        if (rHasLocalOrMixedOrdering(currRing))
         {
           cancelunit(&h);  /*- tries to cancel a unit -*/
           deleteHC(&h, strat);
@@ -7452,7 +7257,7 @@ void initSyzRules (kStrategy strat)
     strat->syzl       = 0;
     strat->syzidxmax  = comp;
 #if defined(DEBUGF5) || defined(DEBUGF51)
-    printf("------------- GENERATING SYZ RULES NEW ---------------\n");
+    PrintS("------------- GENERATING SYZ RULES NEW ---------------\n");
 #endif
     i = 1;
     j = 0;
@@ -7588,23 +7393,22 @@ void initSyzRules (kStrategy strat)
     }
 //#if 1
 #ifdef DEBUGF5
-    Print("Principal syzygies:\n");
-    printf("syzl   %d\n",strat->syzl);
-    printf("syzmax %d\n",strat->syzmax);
-    printf("ps     %d\n",ps);
-    Print("--------------------------------\n");
+    PrintS("Principal syzygies:\n");
+    Print("syzl   %d\n",strat->syzl);
+    Print("syzmax %d\n",strat->syzmax);
+    Print("ps     %d\n",ps);
+    PrintS("--------------------------------\n");
     for(i=0;i<=strat->syzl-1;i++)
     {
-      printf("%d - ",i);
+      Print("%d - ",i);
       pWrite(strat->syz[i]);
     }
     for(i=0;i<strat->currIdx;i++)
     {
-      printf("%d - %d\n",i,strat->syzIdx[i]);
+      Print("%d - %d\n",i,strat->syzIdx[i]);
     }
-    Print("--------------------------------\n");
+    PrintS("--------------------------------\n");
 #endif
-
   }
 }
 
@@ -7647,7 +7451,7 @@ void initSSpecial (ideal F, ideal Q, ideal P,kStrategy strat)
         //{
         //  h.pNorm();
         //}
-        if (currRing->OrdSgn==-1)
+        if (rHasLocalOrMixedOrdering(currRing))
         {
           deleteHC(&h,strat);
         }
@@ -7675,7 +7479,7 @@ void initSSpecial (ideal F, ideal Q, ideal P,kStrategy strat)
     {
       LObject h;
       h.p = pCopy(F->m[i]);
-      if (currRing->OrdSgn==-1)
+      if (rHasLocalOrMixedOrdering(currRing))
       {
         deleteHC(&h,strat);
       }
@@ -7712,7 +7516,7 @@ void initSSpecial (ideal F, ideal Q, ideal P,kStrategy strat)
       }
       if(strat->sl>=0)
       {
-        if (currRing->OrdSgn==1)
+        if (rHasGlobalOrdering(currRing))
         {
           h.p=redBba(h.p,strat->sl,strat);
           if (h.p!=NULL)
@@ -7792,7 +7596,7 @@ void initSSpecialSba (ideal F, ideal Q, ideal P,kStrategy strat)
         //{
         //  h.pNorm();
         //}
-        if (currRing->OrdSgn==-1)
+        if (rHasLocalOrMixedOrdering(currRing))
         {
           deleteHC(&h,strat);
         }
@@ -7820,7 +7624,7 @@ void initSSpecialSba (ideal F, ideal Q, ideal P,kStrategy strat)
     {
       LObject h;
       h.p = pCopy(F->m[i]);
-      if (currRing->OrdSgn==-1)
+      if (rHasLocalOrMixedOrdering(currRing))
       {
         deleteHC(&h,strat);
       }
@@ -7857,7 +7661,7 @@ void initSSpecialSba (ideal F, ideal Q, ideal P,kStrategy strat)
       }
       if(strat->sl>=0)
       {
-        if (currRing->OrdSgn==1)
+        if (rHasGlobalOrdering(currRing))
         {
           h.p=redBba(h.p,strat->sl,strat);
           if (h.p!=NULL)
@@ -8087,7 +7891,7 @@ void updateS(BOOLEAN toT,kStrategy strat)
 //  }
 //  Print("currRing->OrdSgn=%d\n", currRing->OrdSgn);
   any_change=FALSE;
-  if (currRing->OrdSgn==1)
+  if (rHasGlobalOrdering(currRing))
   {
     while (suc != -1)
     {
@@ -8678,16 +8482,16 @@ void enterSyz(LObject p, kStrategy strat, int atT)
   #endif
 //#if 1
 #ifdef DEBUGF5
-    Print("--- Syzygies ---\n");
-    printf("syzl   %d\n",strat->syzl);
-    printf("syzmax %d\n",strat->syzmax);
-    Print("--------------------------------\n");
+    PrintS("--- Syzygies ---\n");
+    Print("syzl   %d\n",strat->syzl);
+    Print("syzmax %d\n",strat->syzmax);
+    PrintS("--------------------------------\n");
     for(i=0;i<=strat->syzl-1;i++)
     {
-      printf("%d - ",i);
+      Print("%d - ",i);
       pWrite(strat->syz[i]);
     }
-    Print("--------------------------------\n");
+    PrintS("--------------------------------\n");
 #endif
 }
 
@@ -8697,7 +8501,7 @@ void initHilbCrit(ideal/*F*/, ideal /*Q*/, intvec **hilb,kStrategy strat)
 
   //if the ordering is local, then hilb criterion
   //can be used also if tzhe ideal is not homogenous
-  if((currRing->OrdSgn == -1) && (currRing->MixedOrder == 0 ))
+  if((rHasLocalOrMixedOrdering(currRing)) && (currRing->MixedOrder == 0 ))
   #ifdef HAVE_RINGS
   {
   if(rField_is_Ring(currRing))
@@ -8856,7 +8660,7 @@ BOOLEAN kPosInLDependsOnLength(int (*pos_in_l)
 
 void initBuchMoraPos (kStrategy strat)
 {
-  if (currRing->OrdSgn==1)
+  if (rHasGlobalOrdering(currRing))
   {
     if (strat->honey)
     {
@@ -8950,7 +8754,7 @@ void initBuchMora (ideal F,ideal Q,kStrategy strat)
 {
   strat->interpt = BTEST1(OPT_INTERRUPT);
   strat->kHEdge=NULL;
-  if (currRing->OrdSgn==1) strat->kHEdgeFound=FALSE;
+  if (rHasGlobalOrdering(currRing)) strat->kHEdgeFound=FALSE;
   /*- creating temp data structures------------------- -*/
   strat->cp = 0;
   strat->c3 = 0;
@@ -8974,7 +8778,7 @@ void initBuchMora (ideal F,ideal Q,kStrategy strat)
   /*- init local data struct.---------------------------------------- -*/
   strat->P.ecart=0;
   strat->P.length=0;
-  if (currRing->OrdSgn==-1)
+  if (rHasLocalOrMixedOrdering(currRing))
   {
     if (strat->kHEdge!=NULL) pSetComp(strat->kHEdge, strat->ak);
     if (strat->kNoether!=NULL) pSetComp(strat->kNoetherTail(), strat->ak);
@@ -9046,7 +8850,7 @@ void exitBuchMora (kStrategy strat)
 
 void initSbaPos (kStrategy strat)
 {
-  if (currRing->OrdSgn==1)
+  if (rHasGlobalOrdering(currRing))
   {
     if (strat->honey)
     {
@@ -9151,7 +8955,7 @@ void initSbaBuchMora (ideal F,ideal Q,kStrategy strat)
 {
   strat->interpt = BTEST1(OPT_INTERRUPT);
   strat->kHEdge=NULL;
-  if (currRing->OrdSgn==1) strat->kHEdgeFound=FALSE;
+  if (rHasGlobalOrdering(currRing)) strat->kHEdgeFound=FALSE;
   /*- creating temp data structures------------------- -*/
   strat->cp = 0;
   strat->c3 = 0;
@@ -9177,7 +8981,7 @@ void initSbaBuchMora (ideal F,ideal Q,kStrategy strat)
   /*- init local data struct.---------------------------------------- -*/
   strat->P.ecart=0;
   strat->P.length=0;
-  if (currRing->OrdSgn==-1)
+  if (rHasLocalOrMixedOrdering(currRing))
   {
     if (strat->kHEdge!=NULL) pSetComp(strat->kHEdge, strat->ak);
     if (strat->kNoether!=NULL) pSetComp(strat->kNoetherTail(), strat->ak);
@@ -9400,7 +9204,7 @@ void updateResult(ideal r,ideal Q, kStrategy strat)
 void completeReduce (kStrategy strat, BOOLEAN withT)
 {
   int i;
-  int low = (((currRing->OrdSgn==1) && (strat->ak==0)) ? 1 : 0);
+  int low = (((rHasGlobalOrdering(currRing)) && (strat->ak==0)) ? 1 : 0);
   LObject L;
 
 #ifdef KDEBUG
@@ -9436,7 +9240,7 @@ void completeReduce (kStrategy strat, BOOLEAN withT)
         PrintLn();
       }
       #endif
-      if (currRing->OrdSgn == 1)
+      if (rHasGlobalOrdering(currRing))
         strat->S[i] = redtailBba(&L, end_pos, strat, withT);
       else
         strat->S[i] = redtail(&L, strat->sl, strat);
@@ -9471,7 +9275,7 @@ void completeReduce (kStrategy strat, BOOLEAN withT)
         PrintLn();
       }
       #endif
-      if (currRing->OrdSgn == 1)
+      if (rHasGlobalOrdering(currRing))
         strat->S[i] = redtailBba(strat->S[i], end_pos, strat, withT);
       else
         strat->S[i] = redtail(strat->S[i], strat->sl, strat);
@@ -10950,7 +10754,7 @@ void initBuchMoraShift (ideal F,ideal Q,kStrategy strat)
 {
   strat->interpt = BTEST1(OPT_INTERRUPT);
   strat->kHEdge=NULL;
-  if (currRing->OrdSgn==1) strat->kHEdgeFound=FALSE;
+  if (rHasGlobalOrdering(currRing)) strat->kHEdgeFound=FALSE;
   /*- creating temp data structures------------------- -*/
   strat->cp = 0;
   strat->c3 = 0;
@@ -10975,7 +10779,7 @@ void initBuchMoraShift (ideal F,ideal Q,kStrategy strat)
   /*- init local data struct.---------------------------------------- -*/
   strat->P.ecart=0;
   strat->P.length=0;
-  if (currRing->OrdSgn==-1)
+  if (rHasLocalOrMixedOrdering(currRing))
   {
     if (strat->kHEdge!=NULL) pSetComp(strat->kHEdge, strat->ak);
     if (strat->kNoether!=NULL) pSetComp(strat->kNoetherTail(), strat->ak);

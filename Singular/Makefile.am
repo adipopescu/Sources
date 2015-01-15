@@ -1,4 +1,4 @@
-ACLOCAL_AMFLAGS = -I ../m4
+ACLOCAL_AMFLAGS = -I../m4
 
 GIT_VERSION := $(shell $(top_srcdir)/git-version-gen $(top_srcdir)/.tarball-git-version)
 
@@ -11,7 +11,7 @@ BUILTIN_FLAGS = ${BUILTIN_LIBS}
 
 ########################### libSingular* #########################
 
-libSingular_LTLIBRARIES = libSingular.la 
+libSingular_LTLIBRARIES = libSingular.la
 libSingulardir = $(libdir)
 
 libSingular_la_CPPFLAGS = ${AM_CPPFLAGS} -DLIBSINGULAR ${PTHREAD_CFLAGS}
@@ -54,7 +54,6 @@ SOURCES = \
    sdb.cc\
    links/silink.cc\
    links/sing_dbm.cc\
-   sing_win.cc\
    links/slInit_Static.cc\
    links/ssiLink.cc\
    links/semaphore.c\
@@ -107,7 +106,6 @@ SingularHEADERS = \
    sdb.h \
    links/silink.h \
    links/sing_dbm.h \
-   sing_win.h \
    links/slInit.h \
    links/ssiLink.h \
    links/simpleipc.h \
@@ -119,10 +117,10 @@ SingularHEADERS = \
    fevoices.h
 
 
-# -DMAKE_DISTRIBUTION 
+# -DMAKE_DISTRIBUTION
 
 # plural_cmd.inc
-nodist_libSingular_la_SOURCES = feOpt.inc iparith.inc 
+nodist_libSingular_la_SOURCES = feOpt.inc iparith.inc
 
 libSingular_la_LDFLAGS    =${USEPPROCSDYNAMICLDFLAGS} ${USEPPROCSDYNAMICLD} -release ${PACKAGE_VERSION} ${PTHREAD_LDFLAGS}
 libSingular_la_LIBADD     =${USEPPROCSDYNAMICLDFLAGS} ${USEPPROCSDYNAMICLD} ${BUILTIN_FLAGS} ${top_builddir}/kernel/libkernel.la ${PTHREAD_LIBS}
@@ -153,10 +151,11 @@ EXTRA_PROGRAMS =  libparse Singulard
 
 # the "optional_programs" variable should be defined in the configure
 # script, and listed in an AC_SUBST macro
-optional_Singular_programs = 
+optional_Singular_programs =
 
 bin_PROGRAMS = Singular ESingular TSingular $(optional_Singular_programs)
 
+# the following dependency leads to Singular relinking upon a library update!
 Singular ESingular TSingular $(optional_Singular_programs): ${abs_builddir}/LIB
 
 Singular_SOURCES = tesths.cc mmalloc.cc fegetopt.c fegetopt.h utils.cc  utils.h
@@ -230,7 +229,7 @@ TESTS=test
 check_PROGRAMS=$(TESTS)
 
 test_SOURCES = test.cc
-test_LDADD = libSingular.la 
+test_LDADD = libSingular.la
 
 #########################################################
 ### plural_cmd.inc
@@ -270,8 +269,8 @@ ${abs_builddir}/LIB: ${srcdir}/LIB
 	  ln -snf ${abs_srcdir}/LIB ${abs_builddir}/; \
 	fi
 
-MOD: 
+MOD:
 	if [ -d "${top_builddir}/libpolys/polys/.libs" ]; then \
 	  ln -snf ${top_builddir}/libpolys/polys/.libs/ ${abs_builddir}/MOD; \
-	fi 	  
+	fi
 

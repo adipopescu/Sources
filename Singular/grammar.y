@@ -41,7 +41,6 @@
 #include <polys/monomials/maps.h>
 #include <kernel/GBEngine/syz.h>
 #include <Singular/lists.h>
-#include <coeffs/longrat.h>
 #include <Singular/libparse.h>
 #include <coeffs/bigintmat.h>
 
@@ -676,7 +675,9 @@ elemexpr:
           }
         | CMD_M '(' exprlist ')'
           {
-            if(iiExprArithM(&$$,&$3,$1)) YYERROR;
+            int b=iiExprArithM(&$$,&$3,$1); // handle branchTo
+            if (b==TRUE) YYERROR;
+            if (b==2) YYACCEPT;
           }
         | mat_cmd '(' expr ',' expr ',' expr ')'
           {
