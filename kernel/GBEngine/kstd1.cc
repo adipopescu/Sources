@@ -1574,7 +1574,6 @@ loop_count = 1;
         #endif
     }
     #endif
-    getchar();
     #endif
     #ifdef KDEBUG
     if (TEST_OPT_DEBUG) messageSets(strat);
@@ -2188,7 +2187,7 @@ omTestMemory(1);
 #ifdef HAVE_RINGS
   if (rField_is_Ring(currRing))
     {
-#if 1        
+#if 1     
         if(nCoeff_is_Ring_Z(currRing->cf))
         {
             ideal FCopy = idCopy(F);

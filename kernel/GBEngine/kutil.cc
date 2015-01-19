@@ -1170,9 +1170,83 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
   number s, t;
   assume(i<=strat->sl);
   assume(atR >= 0);
+  assume(i<=strat->sl);
+  int      l,j,compare,compareCoeff;
+  LObject  h;
+
+  if (strat->interred_flag) return;
+  /*- computes the lcm(s[i],p) -*/
+  h.lcm = pInit();
+  pSetCoeff0(h.lcm, n_Lcm(pGetCoeff(p), pGetCoeff(strat->S[i]), currRing->cf));
+
+  if (nIsZero(pGetCoeff(h.lcm)))
+  {
+      strat->cp++;
+      pLmDelete(h.lcm);
+      return;
+  }
+  // basic product criterion
+  pLcm(p,strat->S[i],h.lcm);
+  pSetm(h.lcm);
+    /*
+  *the set B collects the pairs of type (S[j],p)
+  *suppose (r,p) is in B and (s,p) is the new pair and lcm(s,p) != lcm(r,p)
+  *if the leading term of s devides lcm(r,p) then (r,p) will be canceled
+  *if the leading term of r devides lcm(s,p) then (s,p) will not enter B
+  */
+  #if 0
+  idPrint(strat->Shdl);
+  for(int ii=0; ii<=strat->Ll; ii++)
+  {printf("\nL[%i]\n",ii);pWrite(strat->L[ii].p);pWrite(strat->L[ii].p1);pWrite(strat->L[ii].p2);pWrite(strat->L[ii].lcm);}
+  for(int ii=0; ii<=strat->Bl; ii++)
+  {printf("\nB[%i]\n",ii);pWrite(strat->B[ii].p);pWrite(strat->B[ii].p1);pWrite(strat->B[ii].p2);pWrite(strat->B[ii].lcm);}
+  #endif
+  for(j = strat->Bl;j>=0;j--)
+  {
+    compare=pDivCompRing(strat->B[j].lcm,h.lcm);
+    compareCoeff = n_DivComp(pGetCoeff(strat->B[j].lcm), pGetCoeff(h.lcm), currRing->cf);
+    if ((compareCoeff == pDivComp_EQUAL) || (compare == compareCoeff))
+    {
+      if (compare == 1)
+      {
+        strat->c3++;
+        if ((strat->fromQ==NULL) || (isFromQ==0) || (strat->fromQ[i]==0))
+        {
+          pLmDelete(h.lcm);
+          return;
+        }
+        break;
+      }
+      else if (compare == -1)
+      {
+        deleteInL(strat->B,&strat->Bl,j,strat);
+        strat->c3++;
+      }
+    }
+    if ((compare == pDivComp_EQUAL) && (compareCoeff != 2))
+    {
+      if (compareCoeff == pDivComp_LESS)
+      {
+        strat->c3++;
+        if ((strat->fromQ==NULL) || (isFromQ==0) || (strat->fromQ[i]==0))
+        {
+          pLmDelete(h.lcm);
+          return;
+        }
+        break;
+      }
+      else
+      // Add hint for same LM and LC (later) (TODO Oliver)
+      // if (compareCoeff == pDivComp_GREATER)
+      {
+        deleteInL(strat->B,&strat->Bl,j,strat);
+        strat->c3++;
+      }
+    }
+  }
   poly m1, m2, gcd;
-  #if 1
-  //#if ADIDEBUG
+  //#if 1
+  #if ADIDEBUG
   printf("\nTrying to add spair S[%i] und p\n",i);pWrite(strat->S[i]);pWrite(p);
   #endif
   s = pGetCoeff(strat->S[i]);
@@ -1187,10 +1261,14 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
   poly si = pCopy(strat->S[i]);
   poly pm1 = pp_Mult_mm(pNext(p), m1, strat->tailRing);
   poly sim2 = pp_Mult_mm(pNext(si), m2, strat->tailRing);
-  printf("\ndfgdfgd = %i\n",pGetComp(pm1));
-  pSetComp(sim2, pGetComp(pm1));
-  pWrite(pm1);pWrite(sim2);
+  if(pGetComp(strat->S[i]) != pGetComp(p))
+  {
+    p_SetCompP(sim2, pGetComp(pm1), strat->tailRing);
+    pSetmComp(sim2);
+  }
+  //p_Write(pm1,strat->tailRing);p_Write(sim2,strat->tailRing);
   gcd = p_Add_q(pm1, sim2, strat->tailRing);
+  p_Test(gcd, strat->tailRing);
   p_LmDelete(m1, strat->tailRing);
   p_LmDelete(m2, strat->tailRing);
 #ifdef KDEBUG
@@ -1200,7 +1278,7 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
     PrintLn();
   }
 #endif
-  LObject h;
+  //LObject h;
   h.p = gcd;
   h.i_r = -1;
   if(h.p == NULL)
@@ -1212,8 +1290,9 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
   if(h.p == NULL)
     return;
   pSetm(h.p);
-  #if 1
-  //#if ADIDEBUG
+  //#if 1
+  #if ADIDEBUG
+  printf("\nThis is afterwards:\n");
   pWrite(h.p);
   #endif
   h.i_r1 = -1;h.i_r2 = -1;
@@ -1229,17 +1308,17 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
         h.i_r2 = strat->S_2_R[i];
       }
   #endif
-  if (strat->Ll==-1)
+  if (strat->Bl==-1)
     posx =0;
   else
-    posx = strat->posInL(strat->L,strat->Ll,&h,strat);
+    posx = strat->posInL(strat->B,strat->Bl,&h,strat);
   h.sev = pGetShortExpVector(h.p);
   if (currRing!=strat->tailRing)
     h.t_p = k_LmInit_currRing_2_tailRing(h.p, strat->tailRing);
   #if ADIDEBUG
   printf("\nThis s-poly was added to L:\n");pWrite(h.p);pWrite(h.p1);pWrite(h.p2);printf("\ni_r1 = %i, i_r2 = %i\n",h.i_r1, h.i_r2);pWrite(strat->T[h.i_r1].p);pWrite(strat->T[h.i_r2].p);
   #endif
-  enterL(&strat->L,&strat->Ll,&strat->Lmax,h,posx);
+  enterL(&strat->B,&strat->Bl,&strat->Bmax,h,posx);
   kTest_TS(strat);
 }
 
@@ -3154,7 +3233,7 @@ void initenterpairs (poly h,int k,int ecart,int isFromQ,kStrategy strat, int atR
         for (j=0; j<=k; j++)
         {
           #if ADIDEBUG
-          PrintS("\n initenterpairs: \n");
+          PrintS("\n Trying to add spoly : \n");
           PrintS("                ");p_Write(h, strat->tailRing);
           PrintS("                ");p_Write(strat->S[j],strat->tailRing);
           #endif
@@ -5637,10 +5716,10 @@ int posInL11Ring (const LSet set, const int length,
 {
   if (length < 0) return 0;
   if(pIsConstant(pHead(p->p))) return length+1;
-  if (set[length].FDeg > p->FDeg)
-        return length+1;
-  if (set[0].FDeg < p->FDeg)
-        return 0;
+  if (pLmCmp(set[length].p, p->p) == 1)
+      return length+1;
+  if (pLmCmp(set[0].p, p->p) == -1)
+      return 0;
   
   int i;
   int an = 0;
@@ -5661,13 +5740,13 @@ int posInL11Ring (const LSet set, const int length,
   {
     //printf("\nisFromF\n");
     i = 0;
-    while(set[i].FDeg > p->FDeg)
+    while(pLmCmp(set[i].p, p->p)==1)
       i++;
-    while(((set[i].p1 != NULL) || (set[i].p2 != NULL)) && (set[i].FDeg == p->FDeg))
+    while(((set[i].p1 != NULL) || (set[i].p2 != NULL)) && (pLmCmp(set[i].p, p->p) == 0))
       i++;
     an = i;
     i = length;
-    while(set[i].FDeg < p->FDeg)
+    while(pLmCmp(set[i].p, p->p) == -1)
       i--;
     en = i+1;
   }
@@ -5675,16 +5754,16 @@ int posInL11Ring (const LSet set, const int length,
   {
     //printf("\nis not FromF\n");
     i = 0;
-    while(set[i].FDeg > p->FDeg)
+    while(pLmCmp(set[i].p, p->p) == 1)
       i++;
     an = i;
     //printf("\nan = %i\n",an);
     i = length;
     //printf("\ni = %i\n", i);
-    while(set[i].FDeg < p->FDeg)
+    while(pLmCmp(set[i].p, p->p)==-1)
       i--;
     //printf("\ni2 = %i\n", i);
-    while(((set[i].p1 == NULL) && (set[i].p2 == NULL)) && (set[i].FDeg == p->FDeg) && (i > an))
+    while(((set[i].p1 == NULL) && (set[i].p2 == NULL)) && (pLmCmp(set[i].p,p->p) == 0) && (i > an))
       i--;
     en = i+1;
     //printf("\nen = %i\n",en);

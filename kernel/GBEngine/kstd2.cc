@@ -1614,7 +1614,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     #endif
     printf("\n   list   L\n");
     int iii;
-    #if 0
+    #if 1
     for(iii = 0; iii<= strat->Ll; iii++)
     {
         printf("L[%i]:",iii);
@@ -1630,6 +1630,17 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
         p_Write(strat->L[strat->Ll].p, strat->tailRing);
         p_Write(strat->L[strat->Ll].p1, strat->tailRing);
         p_Write(strat->L[strat->Ll].p2, strat->tailRing);
+        
+                                
+    }
+    #endif
+    #if 1
+    for(iii = 0; iii<= strat->Bl; iii++)
+    {
+        printf("B[%i]:",iii);
+        p_Write(strat->B[iii].p, /*strat->tailRing*/currRing);
+        p_Write(strat->B[iii].p1, /*strat->tailRing*/currRing);
+        p_Write(strat->B[iii].p2, strat->tailRing);
         
                                 
     }
