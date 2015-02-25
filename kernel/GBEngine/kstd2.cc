@@ -1645,7 +1645,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
                                 
     }
     #endif
-    getchar();
+    //getchar();
     #endif
     #ifdef KDEBUG
       loop_count++;
@@ -2141,7 +2141,7 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
         pWrite(strat->syz[iii]);
     }
     #endif
-    //getchar();
+    getchar();
     #endif
     #if 1
     for(int iii = 0; iii < strat->Ll; iii++)

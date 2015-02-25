@@ -1185,7 +1185,8 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
       pLmDelete(h.lcm);
       return;
   }
-  // basic product criterion
+  #if 1
+  // basic chain criterion
   pLcm(p,strat->S[i],h.lcm);
   pSetm(h.lcm);
     /*
@@ -1210,7 +1211,13 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
       if (compare == 1)
       {
         strat->c3++;
-        if ((strat->fromQ==NULL) || (isFromQ==0) || (strat->fromQ[i]==0))
+        /*PrintS("--- chain criterion type 1\n");
+          PrintS("strat->B[j]:");
+          wrp(strat->B[j].lcm);
+          PrintS("  h.lcm:");
+          wrp(h.lcm);
+          PrintLn();*/
+        if ((n_DivBy(h.lcm->coef,strat->B[j].lcm->coef,  currRing->cf) == 0) && ((strat->fromQ==NULL) || (isFromQ==0) || (strat->fromQ[i]==0)))
         {
           pLmDelete(h.lcm);
           return;
@@ -1219,16 +1226,32 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
       }
       else if (compare == -1)
       {
-        deleteInL(strat->B,&strat->Bl,j,strat);
-        strat->c3++;
+          /*
+          PrintS("--- chain criterion type 2\n");
+          Print("strat->B[%d].lcm:",j);
+          wrp(strat->B[j].lcm);
+          PrintS("  h.lcm:");
+          wrp(h.lcm);
+          PrintLn();*/
+          if(n_DivBy(strat->B[j].lcm->coef, h.lcm->coef, currRing->cf) == 0)
+          {
+            deleteInL(strat->B,&strat->Bl,j,strat);
+            strat->c3++;
+          }
       }
     }
     if ((compare == pDivComp_EQUAL) && (compareCoeff != 2))
     {
       if (compareCoeff == pDivComp_LESS)
       {
+        /*PrintS("--- chain criterion type 3\n");
+          Print("strat->B[%d].lcm:", j);
+          wrp(strat->B[j].lcm);
+          PrintS("  h.lcm:");
+          wrp(h.lcm);
+          PrintLn();*/
         strat->c3++;
-        if ((strat->fromQ==NULL) || (isFromQ==0) || (strat->fromQ[i]==0))
+        if ((n_DivBy(h.lcm->coef,strat->B[j].lcm->coef,  currRing->cf) == 0) && (strat->fromQ==NULL) || (isFromQ==0) || (strat->fromQ[i]==0))
         {
           pLmDelete(h.lcm);
           return;
@@ -1239,11 +1262,22 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
       // Add hint for same LM and LC (later) (TODO Oliver)
       // if (compareCoeff == pDivComp_GREATER)
       {
-        deleteInL(strat->B,&strat->Bl,j,strat);
-        strat->c3++;
+        /*PrintS("--- chain criterion type 4\n");
+          Print("strat->B[%d].lcm:", j);
+          wrp(strat->B[j].lcm);
+          PrintS("  h.lcm:");
+          wrp(h.lcm);
+          PrintLn();
+          printf("\ndivby = %i\n", n_DivBy(strat->B[j].lcm->coef, h.lcm->coef, currRing->cf));*/
+        if(n_DivBy(strat->B[j].lcm->coef, h.lcm->coef, currRing->cf) == 0)
+        {
+          deleteInL(strat->B,&strat->Bl,j,strat);
+          strat->c3++;
+        }
       }
     }
   }
+  #endif
   poly m1, m2, gcd;
   //#if 1
   #if ADIDEBUG
@@ -5726,27 +5760,29 @@ int posInL11Ring (const LSet set, const int length,
   int en = length+1;
   bool isFromF = (p->p1 == NULL) && (p->p2 == NULL);
   #if 0
-  //printf("\nThis is L:\n");
-  /*for(int ii=0; ii<=strat->Ll; ii++)
+  printf("\nThis is L:\n");
+  for(int ii=0; ii<=strat->Ll; ii++)
   {
         printf("\nL[%i]: grad  = %i, length = %i\n", ii,set[ii].FDeg,set[ii].length);
         pWrite(set[ii].p);
         pWrite(set[ii].p1);
         pWrite(set[ii].p2);
-  }*/
+        pWrite(pHead(set[ii].p));
+        printf("\nlmcmp = %i\n",pLmCmp(pHead(set[ii].p), pHead(p->p)));
+  }
   printf("\nThis is P:\n");pWrite(p->p);pWrite(p->p1);pWrite(p->p2);
   #endif
   if(isFromF)
   {
     //printf("\nisFromF\n");
     i = 0;
-    while(pLmCmp(set[i].p, p->p)==1)
+    while(i<=length && pLmCmp(set[i].p, p->p)==1)
       i++;
-    while(((set[i].p1 != NULL) || (set[i].p2 != NULL)) && (pLmCmp(set[i].p, p->p) == 0))
+    while((i<=length) && ((set[i].p1 != NULL) || (set[i].p2 != NULL)) && (pLmCmp(set[i].p, p->p) == 0))
       i++;
     an = i;
     i = length;
-    while(pLmCmp(set[i].p, p->p) == -1)
+    while(i>=0 && pLmCmp(set[i].p, p->p) == -1)
       i--;
     en = i+1;
   }
@@ -5754,16 +5790,16 @@ int posInL11Ring (const LSet set, const int length,
   {
     //printf("\nis not FromF\n");
     i = 0;
-    while(pLmCmp(set[i].p, p->p) == 1)
+    while(i<= length && pLmCmp(set[i].p, p->p) == 1)
       i++;
     an = i;
     //printf("\nan = %i\n",an);
     i = length;
     //printf("\ni = %i\n", i);
-    while(pLmCmp(set[i].p, p->p)==-1)
+    while(i>=0 && pLmCmp(set[i].p, p->p)==-1)
       i--;
     //printf("\ni2 = %i\n", i);
-    while(((set[i].p1 == NULL) && (set[i].p2 == NULL)) && (pLmCmp(set[i].p,p->p) == 0) && (i > an))
+    while(i<= length && ((set[i].p1 == NULL) && (set[i].p2 == NULL)) && (pLmCmp(set[i].p,p->p) == 0) && (i > an))
       i--;
     en = i+1;
     //printf("\nen = %i\n",en);
