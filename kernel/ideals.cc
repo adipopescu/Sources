@@ -1614,9 +1614,9 @@ ideal idElimination (ideal h1,poly delVar,intvec *hilb)
   //Print("h: %d gen, rk=%d\n",IDELEMS(h),h->rank);
   //extern char * showOption();
   //Print("%s\n",showOption());
-  idPrint(h);
+  //idPrint(h);
   hh = kStd(h,NULL,hom,&w,hilb);
-  idPrint(hh);
+  //idPrint(hh);
   //SI_RESTORE_OPT1(save1);
   idDelete(&h);
 #else

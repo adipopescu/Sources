@@ -1978,9 +1978,11 @@ messageADI(red_result);
 #if ADIDEBUG_COUNT
 messageADI(413);
 #endif
+#if 0
 #ifdef HAVE_RINGS
 if(rField_is_Ring(currRing))
 printf("\n--- size: %i\n",strat->sl+1);
+#endif
 #endif
   idTest(strat->Shdl);
   omTestMemory(1);

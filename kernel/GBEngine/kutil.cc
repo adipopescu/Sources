@@ -1295,9 +1295,9 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
   poly si = pCopy(strat->S[i]);
   poly pm1 = pp_Mult_mm(pNext(p), m1, strat->tailRing);
   poly sim2 = pp_Mult_mm(pNext(si), m2, strat->tailRing);
-  if(pGetComp(strat->S[i]) != pGetComp(p))
+  if((pGetComp(strat->S[i]) == 0) && (0 != pGetComp(p)))
   {
-    p_SetCompP(sim2, pGetComp(pm1), strat->tailRing);
+    p_SetCompP(sim2, pGetComp(p), strat->tailRing);
     pSetmComp(sim2);
   }
   //p_Write(pm1,strat->tailRing);p_Write(sim2,strat->tailRing);
