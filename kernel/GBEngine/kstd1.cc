@@ -13,9 +13,8 @@
 
 #define MYTEST 0
 
-#define ADIDEBUG 1
+#define ADIDEBUG 0
 #define ADIDEBUG_NF 0
-
 #include <kernel/mod2.h>
 
 #include <omalloc/omalloc.h>
@@ -1583,7 +1582,7 @@ loop_count = 1;
         #endif
     }
     #endif
-    //getchar();
+    getchar();
     #endif
     #ifdef KDEBUG
     if (TEST_OPT_DEBUG) messageSets(strat);
