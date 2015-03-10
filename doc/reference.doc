@@ -53,6 +53,7 @@ and @code{LIB} no brackets are allowed.
 @*List of all supported kernel functions.
 @end ifinfo
 @menu
+* align::
 * attrib::
 * bareiss::
 * betti::
@@ -220,7 +221,29 @@ and @code{LIB} no brackets are allowed.
 * write::
 @end menu
 @c ---------------------------------------
-@node attrib, bareiss, Functions, Functions
+@node align, attrib, Functions, Functions
+@subsection align
+@cindex align
+@table @code
+@item @strong{Syntax:}
+@code{align (} vector_expression, int_expression @code{)}
+@*@code{align (} module_expression, int_expression @code{)}
+@item @strong{Type:}
+type of the first argument
+@item @strong{Purpose:}
+maps module generators @code{gen(i)} to @code{gen(i+s)} for all i.
+@item @strong{Example:}
+@smallexample
+@c example
+  ring r=0,(x,y,z),(c,dp);
+  align([1,2,3],3);
+  align([0,0,1,2,3],-1);
+  align(freemodule(2),1);
+@c example
+@end smallexample
+@end table
+@c ---------------------------------------
+@node attrib, bareiss, align, Functions
 @subsection attrib
 @cindex attrib
 @table @code
@@ -4231,6 +4254,9 @@ and cachedM the total number of cached monomials (counted over all cached
 polynomials). If, for algorithm = @code{C/cache} cachedP and cachedM are
 not provided by the user, the values 200 and 100000, respectively, will
 be used as defaults.
+@item @strong{Note:}
+If @code{mSize} is larger than the given matrix, @code{minor} returns 0,
+if @code{mSize} is smaller than 1, @code{minor} returns 1.
 @item @strong{Example:}
 @smallexample
 @c example
@@ -5039,8 +5065,8 @@ See @ref{option(warn)}.
 @c ---------
 @item @code{returnSB}
 @cindex returnSB, option
-the functions @code{syz}, @code{intersect} (2 arguments), @code{quotient},
-@code{modulo} return a standard base instead of a generating set if
+the functions @code{syz}, @code{intersect} (2 arguments), @code{quotient}
+return a standard base instead of a generating set if
 @code{returnSB} is set. This option should not be used for @code{lift}.
 @c ---------
 @item @code{fastHC}
@@ -5129,18 +5155,24 @@ computes a reduced standard basis in any standard basis computation.
 reduction of the tails of polynomials during standard basis
 computations. This option is ring dependent. By default, it is set for
 rings with global degree orderings and not set for all other rings.
+This option changes the reduction strategy and may decrease/increase time
+and memory consumption - it does not ensure tail reduction on the result - use redSB for that.
 @c ---------
 @item @code{redThrough}
 @cindex redThrough, option
 for inhomogenous input, polynomial reductions during standard basis
 computations are never postponed, but always finished through. This option
-is ring   dependent. By default, it is set for rings with global degree
+is ring dependent. By default, it is set for rings with global degree
 orderings and not set for all other rings.
+This option changes the reduction strategy and may decrease/increase time
+and memory consumption.
 @c ---------
 @item @code{sugarCrit}
 @cindex sugarCrit, option
 uses criteria similar to the homogeneous case to keep more pairs which would be
 excluded by other criteria but which may be useful for downstream computations.
+This option changes the strategy for criteria and selection and may decrease/increase time
+and memory consumption.
 @c ---------
 @item @code{weightM}
 @cindex weightM, option
@@ -7236,6 +7268,13 @@ returns names of people who contributed to the @sc{Singular} kernel as string.
 returns the number of cpus as int (for creating multiple threads/processes).
 (see @code{system("--cpus")}).
 @c ..........................
+@item @code{system("denom_list")}
+@cindex denom_list
+@cindex system, denom_list
+returns the list of denominators (number) which occured in the latest std
+computationi(s).
+Is reset to the empty list at ring changes or by this system call.
+@c ..........................
 @item @code{system("eigenvals",} matrix @code{)}
 @cindex system, eigenvals
 returns the list of the eigenvalues of the matrix (as ideal, intvec).
@@ -8275,15 +8314,18 @@ The first argument must be of type
 @c @code{module},
 @c @code{matrix},
 or @code{list}.
-The result will be of the same type as the first argument.
+The result will be an expression list,
+its type and format will be set by the following assign.
 The function must be a kernel command or a procedure which takes one
-argument and returns a type which can be an element of the result.
+argument and returns a a value.
 @item @strong{Example:}
 @smallexample
 @c example
 proc p(int x) {return(x^2);}
 intvec v=1,2,3;
 apply(v,p);
+intvec vv=apply(v,p);vv;
+list ll=apply(v,p);ll;
 @c example
 @end smallexample
 @end table

@@ -148,7 +148,7 @@ static int doRed (LObject* h, TObject* with,BOOLEAN intoT,kStrategy strat)
     LObject L= *h;
     L.Copy();
     h->GetP();
-    h->SetLength(strat->length_pLength);
+    h->length=h->pLength=pLength(h->p);
     ret = ksReducePoly(&L, with, strat->kNoetherTail(), NULL, strat);
     if (ret)
     {
@@ -1365,7 +1365,7 @@ void initSba(ideal F,kStrategy strat)
     strat->LazyPass *=4;
     strat->red2 = redHomog;
   }
-#if defined(HAVE_RINGS) || defined(HAVE_RINGS_LOC)  //TODO Oliver
+#if defined(HAVE_RINGS)
   if (rField_is_Ring(currRing))
   {
 if(rHasLocalOrMixedOrdering(currRing))
@@ -1729,7 +1729,7 @@ loop_count = 1;
 
       // clear strat->P
       if (strat->P.lcm!=NULL)
-#if defined(HAVE_RINGS) || defined(HAVE_RINGS_LOC)
+#if defined(HAVE_RINGS)
         pLmDelete(strat->P.lcm);
 #else
         pLmFree(strat->P.lcm);
@@ -3010,7 +3010,7 @@ ideal kInterRedBba (ideal F, ideal Q, int &need_retry)
         message(strat->P.pFDeg(),
                 &olddeg,&reduc,strat, red_result);
 
-      /* reduction of the element choosen from L */
+      /* reduction of the element chosen from L */
       red_result = strat->red(&strat->P,strat);
     }
 

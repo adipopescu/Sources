@@ -475,7 +475,7 @@ static ideal idPrepare (ideal  h1, tHomog hom, int syzcomp, intvec **w)
   i = IDELEMS(h2)-1;
   if (k == 0)
   {
-    for (j=0; j<=i; j++) p_Shift(&(h2->m[j]),1,currRing);
+    id_Shift(h2,1,currRing);
     k = 1;
   }
   if (syzcomp<k)
@@ -574,13 +574,6 @@ ideal idSyzygies (ideal  h1, tHomog h,intvec **w, BOOLEAN setSyzComp,
   if (idIs0(h1))
   {
     ideal result=idFreeModule(idElemens_h1/*IDELEMS(h1)*/);
-    int curr_syz_limit=rGetCurrSyzLimit(currRing);
-    if (curr_syz_limit>0)
-    for (ii=0;ii<idElemens_h1/*IDELEMS(h1)*/;ii++)
-    {
-      if (h1->m[ii]!=NULL)
-        p_Shift(&h1->m[ii],curr_syz_limit,currRing);
-    }
     return result;
   }
   int slength=(int)id_RankFreeModule(h1,currRing);
@@ -771,13 +764,6 @@ ideal idLiftStd (ideal  h1, matrix* ma, tHomog hi, ideal * syz)
     if (lift3)
     {
       *syz=idFreeModule(IDELEMS(h1));
-      int curr_syz_limit=rGetCurrSyzLimit(currRing);
-      if (curr_syz_limit>0)
-      for (int ii=0;ii<IDELEMS(h1);ii++)
-      {
-        if (h1->m[ii]!=NULL)
-          p_Shift(&h1->m[ii],curr_syz_limit,currRing);
-      }
     }
     return idInit(1,h1->rank);
   }
@@ -1016,11 +1002,7 @@ ideal idLift(ideal mod, ideal submod,ideal *rest, BOOLEAN goodShape,
   idSkipZeroes(s_h3);
   if (lsmod==0)
   {
-    for (j=IDELEMS(s_temp);j>0;j--)
-    {
-      if (s_temp->m[j-1]!=NULL)
-        p_Shift(&(s_temp->m[j-1]),1,currRing);
-    }
+    id_Shift(s_temp,1,currRing);
   }
   if (unit!=NULL)
   {
@@ -1268,7 +1250,7 @@ static ideal idInitializeQuot (ideal  h1, ideal h2, BOOLEAN h1IsStb, BOOLEAN *ad
       if (h4->m[i-1]!=NULL)
       {
         p = p_Copy_noCheck(h4->m[i-1], currRing); p_Shift(&p,1,currRing);
-	// pTest(p);
+        // pTest(p);
         h4->m[i] = p;
       }
     }
@@ -2082,7 +2064,7 @@ ideal idModulo (ideal h2,ideal h1, tHomog hom, intvec ** w)
       if (slength==0) p_Shift(&(temp->m[i]),1,currRing);
       p = temp->m[i];
       while (pNext(p)!=NULL) pIter(p);
-      pNext(p) = q;
+      pNext(p) = q; // will be sorted later correctly
     }
     else
       temp->m[i]=q;
@@ -2105,9 +2087,12 @@ ideal idModulo (ideal h2,ideal h1, tHomog hom, intvec ** w)
 
   ring orig_ring=currRing;
   ring syz_ring=rAssure_SyzComp(orig_ring, TRUE); rChangeCurrRing(syz_ring);
-  if (TEST_OPT_RETURN_SB)
-    rSetSyzComp(id_RankFreeModule(temp,orig_ring), syz_ring);
-  else
+  // we can use OPT_RETURN_SB only, if syz_ring==orig_ring,
+  // therefore we disable OPT_RETURN_SB for modulo:
+  // (see tr. #701)
+  //if (TEST_OPT_RETURN_SB)
+  //  rSetSyzComp(IDELEMS(h2)+length, syz_ring);
+  //else
     rSetSyzComp(length, syz_ring);
   ideal s_temp;
 

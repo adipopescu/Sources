@@ -356,7 +356,6 @@ static ideal sySchreyersSyzygiesFM(ideal arg,intvec ** modcomp)
           }
           if (p==NULL)
           {
-            WerrorS("ideal not a standard basis");//no polynom for reduction
             pDelete(&toRed);
             for(k=j;k<Fl;k++) pDelete(&(pairs[k]));
             omFreeSize((ADDRESS)pairs,Fl*sizeof(poly));
@@ -368,6 +367,7 @@ static ideal sySchreyersSyzygiesFM(ideal arg,intvec ** modcomp)
             omFreeSize((ADDRESS)ecartS,Fl*sizeof(int));
             omFreeSize((ADDRESS)totalS,Fl*sizeof(int));
             for(k=0;k<IDELEMS(result);k++) pDelete(&((*Shdl)[k]));
+            WerrorS("ideal not a standard basis");//no polynom for reduction
             return result;
           }
           else
@@ -659,15 +659,20 @@ static ideal sySchreyersSyzygiesFB(ideal arg,intvec ** modcomp,ideal mW,BOOLEAN 
             }
             else
             {
-              //no polynom for reduction
-              WerrorS("ideal not a standard basis");
-              pDelete(&toRed);
+              pDelete(&toRed); 
+              
               pDelete(&syz);
               for(k=j;k<Fl;k++) pDelete(&(pairs[k]));
               omFreeSize((ADDRESS)pairs,(Fl + gencQ)*sizeof(poly));
+
+              
               for(k=0;k<IDELEMS(result);k++) pDelete(&((*Shdl)[k]));
 
-	      kBucketDestroy(&(sy0buck));
+              kBucketDestroy(&(sy0buck));
+
+              //no polynom for reduction
+              WerrorS("ideal not a standard basis");
+              
               return result;
             }
           }
@@ -840,16 +845,6 @@ BOOLEAN syTestOrder(ideal M)
   return FALSE;
 }
 
-static void idShift(ideal arg,int index)
-{
-  int i,j=rGetMaxSyzComp(index, currRing);
-  for (i=0;i<IDELEMS(arg);i++)
-  {
-    if (arg->m[i]!=NULL)
-      p_Shift(&arg->m[i],-j,currRing);
-  }
-}
-
 #if 0 /*debug only */
 static void syPrintResolution(resolvente res,int start,int length)
 {
@@ -906,6 +901,13 @@ resolvente sySchreyerResolvente(ideal arg, int maxlength, int * length,
       else
         res[syzIndex+1] = sySchreyersSyzygiesFB(res[syzIndex],&modcomp,mW);
 
+      if (errorreported)
+      {        
+        for (j=0;j<*length;j++) idDelete( &res[j] );
+        omFreeSize((ADDRESS)res,*length*sizeof(ideal));
+        return NULL;
+      }
+
       mW = res[syzIndex];
     }
 //idPrint(res[syzIndex+1]);
@@ -917,7 +919,7 @@ resolvente sySchreyerResolvente(ideal arg, int maxlength, int * length,
         syRing = rAssure_CompLastBlock(origR, TRUE);
         if (syRing != origR)
         {
-	  rChangeCurrRing(syRing);
+          rChangeCurrRing(syRing);
           for (i=0; i<IDELEMS(res[1]); i++)
           {
             res[1]->m[i] = prMoveR( res[1]->m[i], origR, syRing);
@@ -930,7 +932,7 @@ resolvente sySchreyerResolvente(ideal arg, int maxlength, int * length,
         syRing = rAssure_SyzComp_CompLastBlock(origR, TRUE);
         if (syRing != origR)
         {
-	  rChangeCurrRing(syRing);
+          rChangeCurrRing(syRing);
           for (i=0; i<IDELEMS(res[0]); i++)
           {
             res[0]->m[i] = prMoveR( res[0]->m[i], origR, syRing);
@@ -943,6 +945,12 @@ resolvente sySchreyerResolvente(ideal arg, int maxlength, int * length,
     {
       if (syzIndex==0) syInitSort(res[0],&modcomp);
       res[syzIndex+1] = sySchreyersSyzygiesFM(res[syzIndex],&modcomp);
+      if (errorreported)
+      {        
+        for (j=0;j<*length;j++) idDelete( &res[j] );
+        omFreeSize((ADDRESS)res,*length*sizeof(ideal));
+        return NULL;
+      }
     }
     syzIndex++;
     if (TEST_OPT_PROT) Print("[%d]\n",syzIndex);
@@ -953,7 +961,7 @@ resolvente sySchreyerResolvente(ideal arg, int maxlength, int * length,
     syzIndex = 1;
     while ((syzIndex < *length) && (!idIs0(res[syzIndex])))
     {
-      idShift(res[syzIndex],syzIndex);
+      id_Shift(res[syzIndex],-rGetMaxSyzComp(syzIndex, currRing),currRing);
       syzIndex++;
     }
   }

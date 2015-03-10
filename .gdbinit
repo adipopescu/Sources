@@ -1,6 +1,7 @@
 break dErrorBreak
-break omReportError
-break dPolyReportError
+
+#break omReportError # use in case of problems with omaloc
+#break dPolyReportError # use in case of problems with polynomial arithmetic
 
 
 

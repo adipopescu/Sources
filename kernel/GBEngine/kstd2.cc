@@ -3317,7 +3317,7 @@ void f5c (kStrategy strat, int& olddeg, int& minimcnt, int& hilbeledeg,
       Print("Poly before red: ");
       pWrite(strat->P.p);
 #endif
-      /* complete reduction of the element choosen from L */
+      /* complete reduction of the element chosen from L */
       red_result = strat->red2(&strat->P,strat);
       if (errorreported)  break;
     }
@@ -3673,7 +3673,7 @@ ideal bbaShift(ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int upto
         message((strat->honey ? strat->P.ecart : 0) + strat->P.pFDeg(),
                 &olddeg,&reduc,strat, red_result);
 
-      /* reduction of the element choosen from L */
+      /* reduction of the element chosen from L */
       red_result = strat->red(&strat->P,strat);
     }
 
