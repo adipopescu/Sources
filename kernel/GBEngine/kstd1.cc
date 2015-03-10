@@ -13,7 +13,7 @@
 
 #define MYTEST 0
 
-#define ADIDEBUG 0
+#define ADIDEBUG 1
 #define ADIDEBUG_NF 0
 
 #include <kernel/mod2.h>
@@ -163,7 +163,9 @@ static int doRed (LObject* h, TObject* with,BOOLEAN intoT,kStrategy strat)
     *h = L;
   }
   else
+  {
     ret = ksReducePoly(h, with, strat->kNoetherTail(), NULL, strat);
+  }
 #ifdef KDEBUG
   if (TEST_OPT_DEBUG)
   {
@@ -368,13 +370,15 @@ int redRiloc (LObject* h,kStrategy strat)
   PrintLn();
   PrintS("    The actual reducer T is: ");
   if(strat->tl<0)
-    {PrintS(" Empty.\n");
+    {PrintS(" Empty.\n");}
   else
-  for (iii=0;iii<=strat->tl;iii++)
   {
-    PrintLn();
-    Print("      T[%i] = ",iii);p_Write(strat->T[iii].p,strat->tailRing);
-    PrintLn();
+    for (iii=0;iii<=strat->tl;iii++)
+    {
+      PrintLn();
+      Print("      T[%i] = ",iii);p_Write(strat->T[iii].p,strat->tailRing);
+      PrintLn();
+    }
   }
 #endif /* ADIDEBUG_NF */
 
@@ -402,10 +406,11 @@ int redRiloc (LObject* h,kStrategy strat)
 #endif
     if (j < 0)
     {
+      //printf("\nOut here 1: \n");
       if (strat->honey) h->SetLength(strat->length_pLength);
       // over ZZ: cleanup coefficients by complete reduction with monomials
       postReduceByMon(h, strat);
-      if(nIsZero(pGetCoeff(h->p))) return 2;
+      if(nIsZero(pGetCoeff(h->p)) || h->p == NULL) return 2;
       if(strat->tl >= 0)
           h->i_r1 = strat->tl;
       else
@@ -440,7 +445,7 @@ int redRiloc (LObject* h,kStrategy strat)
         if ((strat->T[i].ecart < ei || (strat->T[i].ecart == ei &&
                                         strat->T[i].length < li))
             &&
-            p_LmShortDivisibleBy(strat->T[i].GetLmTailRing(), strat->sevT[i], h->GetLmTailRing(), ~h->sev, strat->tailRing))
+            p_LmShortDivisibleBy(strat->T[i].GetLmTailRing(), strat->sevT[i], h->GetLmTailRing(), ~h->sev, strat->tailRing) && n_DivBy(h->p->coef,strat->T[i].p->coef,strat->tailRing))
 #else
           j = kFindDivisibleByInT(strat->T, strat->sevT, strat->tl, h, i);
         if (j < 0) break;
@@ -470,10 +475,10 @@ int redRiloc (LObject* h,kStrategy strat)
       }
 #endif
     }
-
     // end of search: have to reduce with pi
     if (ei > h->ecart)
     {
+      //printf("\nOut here 2: \n");
       // It is not possible to reduce h with smaller ecart;
       // if possible h goes to the lazy-set L,i.e
       // if its position in L would be not the last one
@@ -485,7 +490,7 @@ int redRiloc (LObject* h,kStrategy strat)
           h->SetLength(strat->length_pLength);
         assume(h->FDeg == h->pFDeg());
         at = strat->posInL(strat->L,strat->Ll,h,strat);
-        if (at <= strat->Ll)
+        if (at <= strat->Ll && pLmCmp(h->p, strat->L[strat->Ll].p) != 0 && !nEqual(h->p->coef, strat->L[strat->Ll].p->coef))
         {
           /*- h will not become the next element to reduce -*/
           enterL(&strat->L,&strat->Ll,&strat->Lmax,*h,at);
@@ -498,7 +503,6 @@ int redRiloc (LObject* h,kStrategy strat)
         }
       }
     }
-
     // now we finally can reduce
     doRed(h,&(strat->T[ii]),strat->fromT,strat);
     #if ADIDEBUG_NF
@@ -508,6 +512,7 @@ int redRiloc (LObject* h,kStrategy strat)
     strat->fromT=FALSE;
 
     // are we done ???
+    //printf("\nOut here 3: \n");
     if (h->IsNull())
     {
       if (h->lcm!=NULL) pLmDelete(h->lcm);
@@ -540,6 +545,7 @@ int redRiloc (LObject* h,kStrategy strat)
     if (!TEST_OPT_REDTHROUGH && (strat->Ll >= 0)
         && ((d >= reddeg) || (pass > strat->LazyPass)))
     {
+    //printf("\nOut here 4: \n");
       h->SetLmCurrRing();
       if (strat->honey && strat->posInLDependsOnLength)
         h->SetLength(strat->length_pLength);
@@ -554,6 +560,7 @@ int redRiloc (LObject* h,kStrategy strat)
             h->SetLength(strat->length_pLength);
           return 1;
         }
+        //printf("\nThis is what you search\n");pWrite(h->p);
         enterL(&strat->L,&strat->Ll,&strat->Lmax,*h,at);
 #ifdef KDEBUG
         if (TEST_OPT_DEBUG) Print(" degree jumped; ->L%d\n",at);
@@ -564,6 +571,7 @@ int redRiloc (LObject* h,kStrategy strat)
     }
     else if ((TEST_OPT_PROT) && (strat->Ll < 0) && (d >= reddeg))
     {
+    //printf("\nOut here 5: \n");
       Print(".%ld",d);mflush();
       reddeg = d+1;
       if (h->pTotalDeg()+h->ecart >= strat->tailRing->bitmask)
@@ -1548,6 +1556,7 @@ loop_count = 1;
 #ifdef HAVE_ASSUME
     //mora_loop_count++;
 #endif
+    //#if 1
     #if ADIDEBUG
     printf("\n      ------------------------NEW LOOP\n");
     printf("\nShdl = \n");
@@ -1559,7 +1568,7 @@ loop_count = 1;
     }
     printf("\n   list   L has %i\n", strat->Ll);
     int iii;
-    #if 1
+    #if ADIDEBUG
     for(iii = 0; iii<= strat->Ll; iii++)
     {
         printf("L[%i]:",iii);
@@ -1574,6 +1583,7 @@ loop_count = 1;
         #endif
     }
     #endif
+    //getchar();
     #endif
     #ifdef KDEBUG
     if (TEST_OPT_DEBUG) messageSets(strat);
@@ -1645,9 +1655,15 @@ loop_count = 1;
       if (TEST_OPT_PROT)
         message(strat->P.ecart+strat->P.GetpFDeg(),&olddeg,&reduc,strat, red_result);
       // reduce
-      //printf("\nThis is P vor red:\n");p_Write(strat->P.p,strat->tailRing);p_Write(strat->P.p1,strat->tailRing);p_Write(strat->P.p2,strat->tailRing);
+      #if ADIDEBUG
+      printf("\nThis is P vor red:\n");p_Write(strat->P.p,strat->tailRing);p_Write(strat->P.p1,strat->tailRing);p_Write(strat->P.p2,strat->tailRing);
+      printf("\nBefore Ll = %i\n", strat->Ll);
+      #endif
       red_result = strat->red(&strat->P,strat);
-      //printf("\nThis is P nach red:\n");p_Write(strat->P.p,strat->tailRing);p_Write(strat->P.p1,strat->tailRing);p_Write(strat->P.p2,strat->tailRing);
+      #if ADIDEBUG
+      printf("\nThis is P nach red:\n");p_Write(strat->P.p,strat->tailRing);p_Write(strat->P.p1,strat->tailRing);p_Write(strat->P.p2,strat->tailRing);
+      printf("\nBefore Ll = %i\n", strat->Ll);
+      #endif
     }
 
     if (! strat->P.IsNull())
@@ -1696,6 +1712,12 @@ loop_count = 1;
       strat->enterS(strat->P,
                     posInS(strat,strat->sl,strat->P.p, strat->P.ecart),
                     strat, strat->tl);
+      #if ADIDEBUG
+      printf("\nThis pair has been added to S:\n");
+      pWrite(strat->P.p);
+      pWrite(strat->P.p1);
+      pWrite(strat->P.p2);
+      #endif
 
       // apply hilbert criterion
       if (hilb!=NULL)
@@ -1781,6 +1803,17 @@ loop_count = 1;
 #ifdef HAVE_RINGS
   if(nCoeff_is_Ring_Z(currRing->cf))
     finalReduceByMon(strat);
+  LObject adi;
+  for(int iii = 0; iii<=strat->sl; iii++)
+  {
+    if(strat->S[iii] != NULL)
+    {
+      adi.p = strat->S[iii];
+      cancelunit(&adi);
+      strat->S[iii] = adi.p;
+    }
+  }
+  
 #endif
   if (Q!=NULL) updateResult(strat->Shdl,Q,strat);
   SI_RESTORE_OPT1(save1);
@@ -2187,7 +2220,7 @@ omTestMemory(1);
 #ifdef HAVE_RINGS
   if (rField_is_Ring(currRing))
     {
-#if 0     
+#if 0    
         if(nCoeff_is_Ring_Z(currRing->cf))
         {
             ideal FCopy = idCopy(F);

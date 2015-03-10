@@ -337,7 +337,6 @@ void cancelunit (LObject* L,BOOLEAN inNF)
 
   ring r = L->tailRing;
   poly p = L->GetLmTailRing();
-
 #ifdef HAVE_RINGS
     if (rField_is_Ring(r) /*&& (rHasLocalOrMixedOrdering(r))*/)
       lc = p_GetCoeff(p,r);
@@ -5748,8 +5747,9 @@ int posInL11 (const LSet set, const int length,
 int posInL11Ring (const LSet set, const int length,
               LObject* p,const kStrategy strat)
 {
+#if 0
   if (length < 0) return 0;
-  if(pIsConstant(pHead(p->p))) return length+1;
+  //if(pIsConstant(pHead(p->p))) return length+1;
   if (pLmCmp(set[length].p, p->p) == 1)
       return length+1;
   if (pLmCmp(set[0].p, p->p) == -1)
@@ -5839,7 +5839,101 @@ int posInL11Ring (const LSet set, const int length,
         en = i;
     }                                  
   }
+  #else
+ if (length < 0) return 0;
+ if(pIsConstant(pHead(p->p))) return length+1;
+ int i;
+ if (set[length].FDeg > p->FDeg)
+ return length+1;
+ if (set[0].FDeg < p->FDeg)
+ return 0;
+int i;
+
+int an = 0;
+int en = length+1;
+bool isFromF = (p->p1 == NULL) && (p->p2 == NULL);
+#if 0
+//printf("\nThis is L:\n");
+/*for(int ii=0; ii<=strat->Ll; ii++)
+{
+printf("\nL[%i]: grad = %i, length = %i\n", ii,set[ii].FDeg,set[ii].length);
+pWrite(set[ii].p);
+pWrite(set[ii].p1);
+pWrite(set[ii].p2);
+}*/
+printf("\nThis is P:\n");pWrite(p->p);pWrite(p->p1);pWrite(p->p2);
+#endif
+if(isFromF)
+{
+//printf("\nisFromF\n");
+i = 0;
+ while(set[i].FDeg > p->FDeg)
+i++;
+ while(((set[i].p1 != NULL) || (set[i].p2 != NULL)) && (set[i].FDeg == p->FDeg))
+i++;
+an = i;
+i = length;
+ while(set[i].FDeg < p->FDeg)
+i--;
+en = i+1;
 }
+else
+{
+//printf("\nis not FromF\n");
+i = 0;
+ while(set[i].FDeg > p->FDeg)
+i++;
+an = i;
+//printf("\nan = %i\n",an);
+i = length;
+//printf("\ni = %i\n", i);
+ while(set[i].FDeg < p->FDeg)
+i--;
+//printf("\ni2 = %i\n", i);
+ while(((set[i].p1 == NULL) && (set[i].p2 == NULL)) && (set[i].FDeg == p->FDeg) && (i > an))
+i--;
+en = i+1;
+//printf("\nen = %i\n",en);
+}
+//printf("\nan = %i\n en = %i\n",an,en);
+//getchar();
+loop
+{
+if(an > length)
+return length+1;
+if (an >= en-1)
+{
+if(an == en)
+return en;
+if (pLmCmp(set[an].p, p->p) == 1)
+return en;
+if (pLmCmp(set[an].p, p->p) == -1)
+return an;
+if (pLmCmp(set[i].p, p->p) == 0)
+{
+if(nGreater(set[an].p->coef, p->p->coef))
+return en;
+else
+return an;
+}
+}
+i=(an+en) / 2;
+if (pLmCmp(set[i].p, p->p) == 1)
+an=i;
+if (pLmCmp(set[i].p, p->p) == -1)
+en=i;
+if (pLmCmp(set[i].p, p->p) == 0)
+{
+if(nGreater(set[i].p->coef, p->p->coef))
+an = i;
+else
+en = i;
+}
+}
+#endif
+}
+
+
 
 
 /*2 Position for rings L: Here I am
@@ -9856,15 +9950,27 @@ void postReduceByMon(LObject* h, kStrategy strat)
   poly pH = h->GetP();
   poly p,pp;
   p = pH;
-  bool deleted = FALSE;
+  bool deleted = FALSE, ok = FALSE;
   for(int i = 0; i<=strat->sl; i++)
   {
     p = pH;
     if(pNext(strat->S[i]) == NULL)
     {
-      if(pLmDivisibleBy(strat->S[i], p))
+      while(ok == FALSE)
       {
-        p->coef = currRing->cf->cfIntMod(p->coef, strat->S[i]->coef, currRing->cf);
+        if(pLmDivisibleBy(strat->S[i], p))
+        {
+          p->coef = currRing->cf->cfIntMod(p->coef, strat->S[i]->coef, currRing->cf);
+        }
+        if(nIsZero(p->coef))
+        {
+          pLmDelete(&pNext(p));
+          deleted = TRUE;
+        }
+        else
+        {
+          ok = TRUE;
+        }  
       }
       pp = pNext(p);
       while(pp != NULL)

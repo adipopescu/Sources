@@ -57,7 +57,6 @@ int ksReducePoly(LObject* PR,
   ring tailRing = PR->tailRing;
   kTest_L(PR);
   kTest_T(PW);
-
   poly p1 = PR->GetLmTailRing();   // p2 | p1
   poly p2 = PW->GetLmTailRing();   // i.e. will reduce p1 with p2; lm = LT(p1) / LM(p2)
   poly t2 = pNext(p2), lm = p1;    // t2 = p2 - LT(p2); really compute P = LC(p2)*p1 - LT(p1)/LM(p2)*p2
@@ -118,7 +117,6 @@ int ksReducePoly(LObject* PR,
       ret = 1;
     }
   }
-
   // take care of coef buisness
   if (! n_IsOne(pGetCoeff(p2), tailRing))
   {
@@ -141,7 +139,6 @@ int ksReducePoly(LObject* PR,
   PR->Tail_Minus_mm_Mult_qq(lm, t2, PW->GetpLength() - 1, spNoether);
   assume(PW->GetpLength() == pLength(PW->p != NULL ? PW->p : PW->t_p));
   PR->LmDeleteAndIter();
-
   // the following is commented out: shrinking
 #ifdef HAVE_SHIFTBBA_NONEXISTENT
   if ( (currRing->isLPring) && (!strat->homog) )
