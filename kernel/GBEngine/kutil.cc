@@ -5840,17 +5840,22 @@ int posInL11Ring (const LSet set, const int length,
     }                                  
   }
   #else
- if (length < 0) return 0;
- if(pIsConstant(pHead(p->p))) return length+1;
- int i;
- if (set[length].FDeg > p->FDeg)
- return length+1;
- if (set[0].FDeg < p->FDeg)
- return 0;
-int i;
+  if (length < 0) return 0;
+  if(pIsConstant(p->p)) return length+1;
+  int i,an,en;
+  if(pIsConstant(set[length].p))
+  {   
+    if (set[length-1].FDeg > p->FDeg)
+      return length;
+  }
+  else
+  {
+    if (set[length].FDeg > p->FDeg)
+      return length+1;
+  }
+  if (set[0].FDeg < p->FDeg)
+  return 0;
 
-int an = 0;
-int en = length+1;
 bool isFromF = (p->p1 == NULL) && (p->p2 == NULL);
 #if 0
 //printf("\nThis is L:\n");
@@ -5867,12 +5872,15 @@ if(isFromF)
 {
 //printf("\nisFromF\n");
 i = 0;
- while(set[i].FDeg > p->FDeg)
+ while(set[i].FDeg > p->FDeg && !pIsConstant(set[i].p))
 i++;
- while(((set[i].p1 != NULL) || (set[i].p2 != NULL)) && (set[i].FDeg == p->FDeg))
+ while(((set[i].p1 != NULL) || (set[i].p2 != NULL)) && (set[i].FDeg == p->FDeg) && !pIsConstant(set[i].p))
 i++;
 an = i;
-i = length;
+if(pIsConstant(set[length].p))
+  i = length-1;
+else
+  i = length;
  while(set[i].FDeg < p->FDeg)
 i--;
 en = i+1;
@@ -5881,11 +5889,14 @@ else
 {
 //printf("\nis not FromF\n");
 i = 0;
- while(set[i].FDeg > p->FDeg)
+ while(set[i].FDeg > p->FDeg && !pIsConstant(set[i].p))
 i++;
 an = i;
 //printf("\nan = %i\n",an);
-i = length;
+if(pIsConstant(set[length].p))
+  i = length-1;
+else
+  i = length;
 //printf("\ni = %i\n", i);
  while(set[i].FDeg < p->FDeg)
 i--;
