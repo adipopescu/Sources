@@ -237,7 +237,6 @@ int trial = 0;
 system("random", 1181381080);
 ideal I = 124*x^2+99*x*y,58*x*y+31*y+120*z,65*x^2*z+54*y^2*z+58*y*z+95*y;
 ideal J = 52*x*y^3*z+102*y^2,4*x*y^2*z+19*y^3*z-103*y-30;
-1+1;
        ideal gI =  std(I);
        ideal ggI = std(gI);
     size(gI);size(ggI); 
@@ -266,6 +265,114 @@ qring qr = Q;
  aJJ;
 
 option(redSB);
+
+//segfaults
+
+
+//# segfaults
+
+//ok mit neue posinL11Ring
+
+ring rng = (integer),(x(1),x(2),x(3)),(ls(3),C);
+short = 0 ;
+minpoly = 0;
+intvec op = 67108864,16787537;
+ option(set, op) ;
+ option() ;
+ // option() ;//options: intStrategy redefine loadLib usage prompt warn
+int trial = 96;
+system("random", 970755877);
+ideal I = -3*x(1)-10*x(1)*x(3);
+ideal J = -9*x(2)+9*x(1)*x(2),-3*x(2)*x(3)^2+10*x(1)*x(3)^2+10*x(1)^2*x(2);
+       ideal gI =  std(I);
+       ideal ggI =  std(gI);
+       ideal gJ =  std(J);
+       ideal ggJ =  std(gJ);
+
+
+//ok now
+ring rng = (integer),(x(1),x(2)),(ls(2),C);
+short = 0 ;
+minpoly = 0;
+intvec op = 67108864,16787537;
+ option(set, op) ;
+ option() ;
+ // option() ;//options: intStrategy redefine loadLib usage prompt warn
+int trial = 4;
+system("random", 960625435);
+ideal I = -41*x(1)-10*x(1)^3*x(2),-22*x(2)^2-12*x(1)^3;
+ideal J = 14,35*x(1)*x(2)+12*x(1)*x(2)^3;
+       ideal gI =  std(I);
+       ideal ggI =  std(gI);
+       ideal gJ =  std(J);
+
+//ok now
+
+ring rng = (integer),(x(1),x(2)),(ls(2),C);
+short = 0 ;
+minpoly = 0;
+intvec op = 67108864,16787537;
+ option(set, op) ;
+ option() ;
+ // option() ;//options: intStrategy redefine loadLib usage prompt warn
+int trial = 29;
+system("random", 550741380);
+ideal I = -22-24*x(1)^3,4*x(1)*x(2)^2-19*x(1)^2*x(2);
+ideal J = 16*x(1)*x(2),12-31*x(1)-43*x(1)*x(2);
+       ideal gI =  std(I);
+       ideal ggI =  std(gI);
+       ideal gJ =  std(J);
+
+//in the new posinL11Ring works smooth, in the opther one takes forever
+
+ring rng = (integer),(x(1),x(2)),(ls(2),C);
+short = 0 ;
+minpoly = 0;
+intvec op = 67108864,16787537;
+ option(set, op) ;
+ option() ;
+ // option() ;//options: intStrategy redefine loadLib usage prompt warn
+int trial = 15;
+system("random", 1976068534);
+ideal I = -11*x(2),3*x(2)^2+8*x(1)*x(2)+3*x(1)*x(2)^2+12*x(1)^3,8*x(1)*x(2)^2-15*x(1)^3;
+ideal J = -2*x(1)-11*x(1)^2+10*x(1)^2*x(2),-13*x(1)*x(2)-10*x(1)^3;
+       ideal gI =  std(I);
+
+//ok now
+
+ring rng = (integer),(x(1),x(2)),(ls(2),C);
+short = 0 ;
+minpoly = 0;
+intvec op = 67108864,16787537;
+ option(set, op) ;
+ option() ;
+ // option() ;//options: intStrategy redefine loadLib usage prompt warn
+int trial = 68;
+system("random", 1702067426);
+ideal I = -10,15*x(1)*x(2)+8*x(1)*x(2)^2;
+ideal J = 2*x(1)^2*x(2),-3+2*x(1)*x(2);
+       ideal gI =  std(I);
+
+
+//ok now
+
+ring rng = (integer),(x(1)),(ls(1),C);
+short = 0 ;
+minpoly = 0;
+intvec op = 67108864,16787537;
+ option(set, op) ;
+ option() ;
+ // option() ;//options: intStrategy redefine loadLib usage prompt warn
+int trial = 65;
+system("random", 907801360);
+ideal I = -12+2*x(1)^2;
+ideal J = -6*x(1)^2+11*x(1)^4,-15;
+       ideal gI =  std(I);
+       ideal ggI =  std(gI);
+       ideal gJ =  std(J);
+
+
+
 
 
 
