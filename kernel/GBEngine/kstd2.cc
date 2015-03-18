@@ -2210,10 +2210,11 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     /* picks the last element from the lazyset L */
     strat->P = strat->L[strat->Ll];
     strat->Ll--;
+    /* reduction of the element choosen from L */
 #if ADIDEBUG
 printf("\nThis is the new P:\n");pWrite(strat->P.p);pWrite(strat->P.p1);pWrite(strat->P.p2);pWrite(strat->P.sig);
 #endif
-    /* reduction of the element chosen from L */
+
 //Do not allow the same signature
       #if 0
       if(   (strat->sl >= 1) && 
