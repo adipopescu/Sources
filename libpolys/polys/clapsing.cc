@@ -153,15 +153,13 @@ poly singclap_gcd_and_divide ( poly& f, poly& g, const ring r)
 
   if (g == NULL)
   {
-    res= p_Copy (f,r);
-    p_Delete (&f, r);
+    res= f;
     f=p_One (r);
     return res;
   }
   if (f==NULL)
   {
-    res= p_Copy (g,r);
-    p_Delete (&g, r);
+    res= g;
     g=p_One (r);
     return res;
   }
@@ -1638,7 +1636,6 @@ number singclap_det_bi( bigintmat * m, const coeffs cf)
 }
 
 #ifdef HAVE_NTL
-#if 1
 matrix singntl_HNF(matrix  m, const ring s )
 {
   int r=m->rows();
@@ -1838,6 +1835,36 @@ ideal singclap_absFactorize ( poly f, ideal & mipos, intvec ** exps, int & numFa
   return res;
 }
 
-#endif
+#else
+matrix singntl_HNF(matrix  m, const ring s )
+{
+  WerrorS("NTL missing");
+  return NULL;
+}
+
+intvec* singntl_HNF(intvec*  m)
+{
+  WerrorS("NTL missing");
+  return NULL;
+}
+
+matrix singntl_LLL(matrix  m, const ring s )
+{
+  WerrorS("NTL missing");
+  return NULL;
+}
+
+intvec* singntl_LLL(intvec*  m)
+{
+  WerrorS("NTL missing");
+  return NULL;
+}
+
+ideal singclap_absFactorize ( poly f, ideal & mipos, intvec ** exps, int & numFactors, const ring r)
+{
+  WerrorS("NTL missing");
+  return NULL;
+}
+
 #endif /* HAVE_NTL */
 

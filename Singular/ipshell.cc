@@ -43,6 +43,7 @@
 
 #include <kernel/GBEngine/syz.h>
 #include <kernel/GBEngine/kstd1.h>
+#include <kernel/GBEngine/kutil.h> // denominator_list
 
 #include <kernel/combinatorics/stairc.h>
 #include <kernel/combinatorics/hutil.h>
@@ -684,38 +685,27 @@ leftv iiMap(map theMap, const char * what)
   }
   if ((r!=NULL) && ((r->typ == RING_CMD) || (r->typ== QRING_CMD)))
   {
-    //if ((nMap=nSetMap(rInternalChar(IDRING(r)),
-    //             IDRING(r)->parameter,
-    //             rPar(IDRING(r)),
-    //             IDRING(r)->minpoly)))
-    if ((nMap=n_SetMap(IDRING(r)->cf, currRing->cf))==NULL)
+    ring src_ring=IDRING(r);
+    if ((nMap=n_SetMap(src_ring->cf, currRing->cf))==NULL)
     {
-////////// WTF?
-//      if (rEqual(IDRING(r),currRing))
-//      {
-//        nMap = n_SetMap(currRing->cf, currRing->cf);
-//      }
-//      else
-//      {
-        Werror("can not map from ground field of %s to current ground field",
+      Werror("can not map from ground field of %s to current ground field",
           theMap->preimage);
-        return NULL;
-//      }
+      return NULL;
     }
-    if (IDELEMS(theMap)<IDRING(r)->N)
+    if (IDELEMS(theMap)<src_ring->N)
     {
       theMap->m=(polyset)omReallocSize((ADDRESS)theMap->m,
                                  IDELEMS(theMap)*sizeof(poly),
-                                 (IDRING(r)->N)*sizeof(poly));
-      for(i=IDELEMS(theMap);i<IDRING(r)->N;i++)
+                                 (src_ring->N)*sizeof(poly));
+      for(i=IDELEMS(theMap);i<src_ring->N;i++)
         theMap->m[i]=NULL;
-      IDELEMS(theMap)=IDRING(r)->N;
+      IDELEMS(theMap)=src_ring->N;
     }
     if (what==NULL)
     {
       WerrorS("argument of a map must have a name");
     }
-    else if ((w=IDRING(r)->idroot->get(what,myynest))!=NULL)
+    else if ((w=src_ring->idroot->get(what,myynest))!=NULL)
     {
       char *save_r=NULL;
       v=(leftv)omAlloc0Bin(sleftv_bin);
@@ -729,6 +719,50 @@ leftv iiMap(map theMap, const char * what)
         IDMAP(w)->preimage=0;
       }
       tmpW.data=IDDATA(w);
+      // check overflow
+      BOOLEAN overflow=FALSE;
+      if ((tmpW.rtyp==IDEAL_CMD)
+        || (tmpW.rtyp==MODUL_CMD)
+        || (tmpW.rtyp==MAP_CMD))
+      {
+        ideal id=(ideal)tmpW.data;
+        for(int j=IDELEMS(theMap)-1;j>=0 && !overflow;j--)
+        {
+          if (theMap->m[j]!=NULL)
+          {
+            long deg_monexp=pTotaldegree(theMap->m[j]);
+            for(int i=IDELEMS(id)-1;i>=0;i--)
+            {
+              poly p=id->m[i];
+              if ((p!=NULL) && (p_Totaldegree(p,src_ring)!=0) &&
+              ((unsigned long)deg_monexp > (currRing->bitmask / (unsigned long)p_Totaldegree(p,src_ring)/2)))
+              {
+                overflow=TRUE;
+                break;
+              }
+            }
+          }
+        }
+      }
+      else if (tmpW.rtyp==POLY_CMD)
+      {
+        for(int j=IDELEMS(theMap)-1;j>=0 && !overflow;j--)
+        {
+          if (theMap->m[j]!=NULL)
+          {
+            long deg_monexp=pTotaldegree(theMap->m[j]);
+            poly p=(poly)tmpW.data;
+            if ((p!=NULL) && (p_Totaldegree(p,src_ring)!=0) &&
+            ((unsigned long)deg_monexp > (currRing->bitmask / (unsigned long)p_Totaldegree(p,src_ring)/2)))
+            {
+              overflow=TRUE;
+              break;
+            }
+          }
+        }
+      }
+      if (overflow)
+        Warn("possible OVERFLOW in map, max exponent is %ld",currRing->bitmask/2);
 #if 0
       if (((tmpW.rtyp==IDEAL_CMD)||(tmpW.rtyp==MODUL_CMD)) && idIs0(IDIDEAL(w)))
       {
@@ -746,11 +780,11 @@ leftv iiMap(map theMap, const char * what)
         )
         {
           v->rtyp=IDEAL_CMD;
-          v->data=fast_map(IDIDEAL(w), IDRING(r), (ideal)theMap, currRing);
+          v->data=fast_map(IDIDEAL(w), src_ring, (ideal)theMap, currRing);
         }
         else
 #endif
-        if (maApplyFetch(MAP_CMD,theMap,v,&tmpW,IDRING(r),NULL,NULL,0,nMap))
+        if (maApplyFetch(MAP_CMD,theMap,v,&tmpW,src_ring,NULL,NULL,0,nMap))
         {
           Werror("cannot map %s(%d)",Tok2Cmdname(w->typ),w->typ);
           omFreeBin((ADDRESS)v, sleftv_bin);
@@ -1136,10 +1170,14 @@ int iiDeclCommand(leftv sy, leftv name, int lev,int t, idhdl* root,BOOLEAN isrin
   }
   else
   {
-    //if (name->rtyp!=0)
-    //{
-    //  Warn("`%s` is already in use",name->name);
-    //}
+    if (TEST_V_ALLWARN
+    && (name->rtyp!=0)
+    && (name->rtyp!=IDHDL)
+    && (currRingHdl!=NULL) && (IDLEV(currRingHdl)==myynest))
+    {
+      Warn("`%s` is %s in %s:%d:%s",name->name,Tok2Cmdname(name->rtyp),
+      currentVoice->filename,yylineno,my_yylinebuf);
+    }
     {
       sy->data = (char *)enterid(id,lev,t,root,init_b);
     }
@@ -1208,7 +1246,7 @@ BOOLEAN iiBranchTo(leftv r, leftv args)
   if (h->Typ()!=PROC_CMD)
   {
     omFree(t);
-    Werror("last arg is not a proc",i);
+    Werror("last arg (%d) is not a proc",i);
     return TRUE;
   }
   b=iiCheckTypes(iiCurrArgs,t,0);
@@ -1218,7 +1256,20 @@ BOOLEAN iiBranchTo(leftv r, leftv args)
     BOOLEAN err;
     //Print("branchTo: %s\n",h->Name());
     iiCurrProc=(idhdl)h->data;
-    err=iiAllStart(IDPROC(iiCurrProc),IDPROC(iiCurrProc)->data.s.body,BT_proc,IDPROC(iiCurrProc)->data.s.body_lineno-(iiCurrArgs==NULL));
+    procinfo * pi=IDPROC(iiCurrProc);
+    if( pi->data.s.body==NULL )
+    {
+      iiGetLibProcBuffer(pi);
+      if (pi->data.s.body==NULL) return TRUE;
+    }
+    if ((pi->pack!=NULL)&&(currPack!=pi->pack))
+    {
+      currPack=pi->pack;
+      iiCheckPack(currPack);
+      currPackHdl=packFindHdl(currPack);
+      //Print("set pack=%s\n",IDID(currPackHdl));
+    }
+    err=iiAllStart(pi,pi->data.s.body,BT_proc,pi->data.s.body_lineno-(iiCurrArgs==NULL));
     exitBuffer(BT_proc);
     if (iiCurrArgs!=NULL)
     {
@@ -4788,6 +4839,23 @@ void rSetHdl(idhdl h)
     memset(&sLastPrinted,0,sizeof(sleftv));
   }
 
+  if ((rg!=currRing)&&(currRing!=NULL))
+  {
+    denominator_list dd=DENOMINATOR_LIST;
+    if (DENOMINATOR_LIST!=NULL)
+    {
+      if (TEST_V_ALLWARN)
+        Warn("deleting denom_list for ring change to %s",IDID(h));
+      do
+      {
+        n_Delete(&(dd->n),currRing->cf);
+        dd=dd->next;
+        omFree(DENOMINATOR_LIST);
+        DENOMINATOR_LIST=dd;
+      } while(DENOMINATOR_LIST!=NULL);
+    }
+  }
+
   // test for valid "currRing":
   if ((rg!=NULL) && (rg->idroot==NULL))
   {
@@ -4804,9 +4872,122 @@ void rSetHdl(idhdl h)
   currRingHdl = h;
 }
 
+static leftv rOptimizeOrdAsSleftv(leftv ord)
+{
+  // change some bad orderings/combination into better ones
+  leftv h=ord;
+  while(h!=NULL)
+  {
+    BOOLEAN change=FALSE;
+    intvec *iv = (intvec *)(h->data);
+ // ws(-i) -> wp(i)
+    if ((*iv)[1]==ringorder_ws)
+    {
+      BOOLEAN neg=TRUE;
+      for(int i=2;i<iv->length();i++)
+        if((*iv)[i]>=0) { neg=FALSE; break; }
+      if (neg)
+      {
+        (*iv)[1]=ringorder_wp;
+        for(int i=2;i<iv->length();i++)
+          (*iv)[i]= - (*iv)[i];
+        change=TRUE;
+      }
+    }
+ // Ws(-i) -> Wp(i)
+    if ((*iv)[1]==ringorder_Ws)
+    {
+      BOOLEAN neg=TRUE;
+      for(int i=2;i<iv->length();i++)
+        if((*iv)[i]>=0) { neg=FALSE; break; }
+      if (neg)
+      {
+        (*iv)[1]=ringorder_Wp;
+        for(int i=2;i<iv->length();i++)
+          (*iv)[i]= -(*iv)[i];
+        change=TRUE;
+      }
+    }
+ // wp(1) -> dp
+    if ((*iv)[1]==ringorder_wp)
+    {
+      BOOLEAN all_one=TRUE;
+      for(int i=2;i<iv->length();i++)
+        if((*iv)[i]!=1) { all_one=FALSE; break; }
+      if (all_one)
+      {
+        intvec *iv2=new intvec(3);
+        (*iv2)[0]=1;
+        (*iv2)[1]=ringorder_dp;
+        (*iv2)[2]=iv->length()-2;
+        delete iv;
+        iv=iv2;
+        h->data=iv2;
+        change=TRUE;
+      }
+    }
+ // Wp(1) -> Dp
+    if ((*iv)[1]==ringorder_Wp)
+    {
+      BOOLEAN all_one=TRUE;
+      for(int i=2;i<iv->length();i++)
+        if((*iv)[i]!=1) { all_one=FALSE; break; }
+      if (all_one)
+      {
+        intvec *iv2=new intvec(3);
+        (*iv2)[0]=1;
+        (*iv2)[1]=ringorder_Dp;
+        (*iv2)[2]=iv->length()-2;
+        delete iv;
+        iv=iv2;
+        h->data=iv2;
+        change=TRUE;
+      }
+    }
+ // dp(1)/Dp(1)/rp(1) -> lp(1)
+    if (((*iv)[1]==ringorder_dp)
+    || ((*iv)[1]==ringorder_Dp)
+    || ((*iv)[1]==ringorder_rp))
+    {
+      if (iv->length()==3)
+      {
+        if ((*iv)[2]==1)
+        {
+          (*iv)[1]=ringorder_lp;
+          change=TRUE;
+        }
+      }
+    }
+ // lp(i),lp(j) -> lp(i+j)
+    if(((*iv)[1]==ringorder_lp)
+    && (h->next!=NULL))
+    {
+      intvec *iv2 = (intvec *)(h->next->data);
+      if ((*iv2)[1]==ringorder_lp)
+      {
+        leftv hh=h->next;
+        h->next=hh->next;
+        hh->next=NULL;
+        if ((*iv2)[0]==1)
+          (*iv)[2] += 1; // last block unspecified, at least 1
+        else
+          (*iv)[2] += (*iv2)[2];
+        hh->CleanUp();
+        omFree(hh);
+        change=TRUE;
+      }
+    }
+   // -------------------
+    if (!change) h=h->next;
+ }
+ return ord;
+}
+
+
 BOOLEAN rSleftvOrdering2Ordering(sleftv *ord, ring R)
 {
   int last = 0, o=0, n = 1, i=0, typ = 1, j;
+  ord=rOptimizeOrdAsSleftv(ord);
   sleftv *sl = ord;
 
   // determine nBlocks
@@ -5317,7 +5498,7 @@ ring rInit(sleftv* pn, sleftv* rv, sleftv* ord)
            depending on the size of a long on the respective platform */
         //ringtype = 1;       // Use Z/2^ch
         cf=nInitChar(n_Z2m,(void*)(long)modExponent);
-	mpz_clear(modBase);
+        mpz_clear(modBase);
         omFreeSize (modBase, sizeof (mpz_t));
       }
       else
@@ -5854,9 +6035,9 @@ void paPrint(const char *n,package p)
 BOOLEAN iiApplyINTVEC(leftv res, leftv a, int op, leftv proc)
 {
   intvec *aa=(intvec*)a->Data();
-  intvec *r=ivCopy(aa);
   sleftv tmp_out;
   sleftv tmp_in;
+  leftv curr=res;
   BOOLEAN bo=FALSE;
   for(int i=0;i<aa->length(); i++)
   {
@@ -5867,15 +6048,20 @@ BOOLEAN iiApplyINTVEC(leftv res, leftv a, int op, leftv proc)
       bo=iiExprArith1(&tmp_out,&tmp_in,op);
     else
       bo=jjPROC(&tmp_out,proc,&tmp_in);
-    if (bo || (tmp_out.rtyp!=INT_CMD))
+    if (bo)
     {
-      if (r!=NULL) delete r;
+      res->CleanUp(currRing);
       Werror("apply fails at index %d",i+1);
       return TRUE;
     }
-    (*r)[i]=(int)(long)tmp_out.data;
+    if (i==0) { memcpy(res,&tmp_out,sizeof(tmp_out)); }
+    else
+    {
+      curr->next=(leftv)omAllocBin(sleftv_bin);
+      curr=curr->next;
+      memcpy(curr,&tmp_out,sizeof(tmp_out));
+    }
   }
-  res->data=(void*)r;
   return FALSE;
 }
 BOOLEAN iiApplyBIGINTMAT(leftv res, leftv a, int op, leftv proc)
@@ -5891,9 +6077,9 @@ BOOLEAN iiApplyIDEAL(leftv res, leftv a, int op, leftv proc)
 BOOLEAN iiApplyLIST(leftv res, leftv a, int op, leftv proc)
 {
   lists aa=(lists)a->Data();
-  lists r=(lists)omAlloc0Bin(slists_bin); r->Init(aa->nr+1);
   sleftv tmp_out;
   sleftv tmp_in;
+  leftv curr=res;
   BOOLEAN bo=FALSE;
   for(int i=0;i<=aa->nr; i++)
   {
@@ -5906,13 +6092,18 @@ BOOLEAN iiApplyLIST(leftv res, leftv a, int op, leftv proc)
     tmp_in.CleanUp();
     if (bo)
     {
-      if (r!=NULL) r->Clean();
+      res->CleanUp(currRing);
       Werror("apply fails at index %d",i+1);
       return TRUE;
     }
-    memcpy(&(r->m[i]),&tmp_out,sizeof(sleftv));
+    if (i==0) { memcpy(res,&tmp_out,sizeof(tmp_out)); }
+    else
+    {
+      curr->next=(leftv)omAllocBin(sleftv_bin);
+      curr=curr->next;
+      memcpy(curr,&tmp_out,sizeof(tmp_out));
+    }
   }
-  res->data=(void*)r;
   return FALSE;
 }
 BOOLEAN iiApply(leftv res, leftv a, int op, leftv proc)
