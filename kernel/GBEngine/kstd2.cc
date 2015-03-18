@@ -435,17 +435,21 @@ int redRing (LObject* h,kStrategy strat)
         // over ZZ: cleanup coefficients by complete reduction with monomials
         postReduceByMon(h, strat);
         if(nIsZero(pGetCoeff(h->p))) return 2;
-        if(strat->tl >= 0)
-            h->i_r1 = strat->tl;
-        else
-            h->i_r1 = -1;
-        if (h->GetLmTailRing() == NULL)
+        j = kFindDivisibleByInT(strat->T, strat->sevT, strat->tl, h);
+        if(j < 0)
         {
-          if (h->lcm!=NULL) pLmDelete(h->lcm);
-          h->Clear();
-          return 0;
+          if(strat->tl >= 0)
+              h->i_r1 = strat->tl;
+          else
+              h->i_r1 = -1;
+          if (h->GetLmTailRing() == NULL)
+          {
+            if (h->lcm!=NULL) pLmDelete(h->lcm);
+            h->Clear();
+            return 0;
+          }
+          return 1;
         }
-        return 1;
     }
     //#if 1
     #if ADIDEBUG
@@ -1900,7 +1904,7 @@ messageADI(red_result);
 #endif /* KDEBUG */
     kTest_TS(strat);
   }
-#if 0
+#if 1
 //#ifdef HAVE_RINGS
   if(nCoeff_is_Ring_Z(currRing->cf))
     finalReduceByMon(strat);

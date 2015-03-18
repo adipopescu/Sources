@@ -1188,7 +1188,7 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
       pLmDelete(h.lcm);
       return;
   }
-  #if 1
+  #if 0
   // basic chain criterion
   pLcm(p,strat->S[i],h.lcm);
   pSetm(h.lcm);
@@ -1356,6 +1356,15 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
   printf("\nThis s-poly was added to L:\n");pWrite(h.p);pWrite(h.p1);pWrite(h.p2);printf("\ni_r1 = %i, i_r2 = %i\n",h.i_r1, h.i_r2);pWrite(strat->T[h.i_r1].p);pWrite(strat->T[h.i_r2].p);
   #endif
   enterL(&strat->B,&strat->Bl,&strat->Bmax,h,posx);
+  #if 0
+  for(int i=0; i<=strat->Bl; i++)
+  {
+    printf("\n    B[%i]\n",i);
+    p_Write(strat->B[i].p, strat->B[i].tailRing);
+    p_Write(strat->B[i].p1, strat->B[i].tailRing);
+    p_Write(strat->B[i].p2, strat->B[i].tailRing);
+  }
+  #endif
   kTest_TS(strat);
 }
 
@@ -3295,6 +3304,7 @@ void initenterpairs (poly h,int k,int ecart,int isFromQ,kStrategy strat, int atR
         }
       }
     }
+    #if 1
     if (new_pair)
     {
     #ifdef HAVE_RATGRING
@@ -3304,6 +3314,27 @@ void initenterpairs (poly h,int k,int ecart,int isFromQ,kStrategy strat, int atR
     #endif
       strat->chainCrit(h,ecart,strat);
     }
+    #else
+    printf("\nFinal B nach superenterpairs\n");
+    for(int i=0; i<=strat->Bl; i++)
+  {
+    printf("\n    B[%i]\n",i);
+    p_Write(strat->B[i].p, strat->B[i].tailRing);
+    p_Write(strat->B[i].p1, strat->B[i].tailRing);
+    p_Write(strat->B[i].p2, strat->B[i].tailRing);
+  }
+    kMergeBintoL(strat);
+    #if ADIDEBUG
+  printf("\nL list nach superenterpairs\n");
+  for(int i=0; i<=strat->Ll; i++)
+  {
+    printf("\n    L[%i]\n",i);
+    pWrite(strat->L[i].p);
+    pWrite(strat->L[i].p1);
+    pWrite(strat->L[i].p2);
+  }
+  #endif
+    #endif
   }
 }
 
