@@ -3483,7 +3483,7 @@ void chainCritRing (poly p,int, kStrategy strat)
         {
           for (i=strat->Bl; i>=0; i--)
           {
-            if (pDivisibleBy(strat->S[j],strat->B[i].lcm))
+            if (pDivisibleBy(strat->S[j],strat->B[i].lcm) && n_DivBy(strat->B[i].lcm->coef, strat->S[j]->coef,currRing))
             {
 #ifdef KDEBUG
               if (TEST_OPT_DEBUG)
@@ -5910,16 +5910,16 @@ if(isFromF)
 {
 //printf("\nisFromF\n");
 i = 0;
- while(set[i].FDeg > p->FDeg && !pIsConstant(set[i].p))
+ while(i<= length && set[i].FDeg > p->FDeg && !pIsConstant(set[i].p))
 i++;
- while(((set[i].p1 != NULL) || (set[i].p2 != NULL)) && (set[i].FDeg == p->FDeg) && !pIsConstant(set[i].p))
+ while(i<= length && ((set[i].p1 != NULL) || (set[i].p2 != NULL)) && (set[i].FDeg == p->FDeg) && !pIsConstant(set[i].p))
 i++;
 an = i;
 if(pIsConstant(set[length].p))
   i = length-1;
 else
   i = length;
- while(set[i].FDeg < p->FDeg)
+ while(i>=0 && set[i].FDeg < p->FDeg)
 i--;
 en = i+1;
 }
@@ -5927,7 +5927,7 @@ else
 {
 //printf("\nis not FromF\n");
 i = 0;
- while(set[i].FDeg > p->FDeg && !pIsConstant(set[i].p))
+ while(i<= length && set[i].FDeg > p->FDeg && !pIsConstant(set[i].p))
 i++;
 an = i;
 //printf("\nan = %i\n",an);
@@ -5936,10 +5936,10 @@ if(pIsConstant(set[length].p))
 else
   i = length;
 //printf("\ni = %i\n", i);
- while(set[i].FDeg < p->FDeg)
+ while(i>= 0 && set[i].FDeg < p->FDeg)
 i--;
 //printf("\ni2 = %i\n", i);
- while(((set[i].p1 == NULL) && (set[i].p2 == NULL)) && (set[i].FDeg == p->FDeg) && (i > an))
+ while(i>=0 && ((set[i].p1 == NULL) && (set[i].p2 == NULL)) && (set[i].FDeg == p->FDeg) && (i > an))
 i--;
 en = i+1;
 //printf("\nen = %i\n",en);
