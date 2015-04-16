@@ -13,8 +13,8 @@
 
 #define MYTEST 0
 
-#define ADIDEBUG 0
-#define ADIDEBUG_NF 0
+#define ADIDEBUG 1
+#define ADIDEBUG_NF 1
 #include <kernel/mod2.h>
 
 #include <omalloc/omalloc.h>
@@ -747,7 +747,8 @@ static poly redMoraNF (poly h,kStrategy strat, int flag)
       if (kModDeg(H.p)>Kstd1_deg) pLmDelete(&H.p);
       if (H.p==NULL) return NULL;
     }
-    if (p_LmShortDivisibleBy(strat->T[j].GetLmTailRing(), strat->sevT[j], H.GetLmTailRing(), not_sev, strat->tailRing))
+    if (p_LmShortDivisibleBy(strat->T[j].GetLmTailRing(), strat->sevT[j], H.GetLmTailRing(), not_sev, strat->tailRing)
+        && n_DivBy(H.p->coef, strat->T[j].p->coef,strat->tailRing))
     {
       /*- remember the found T-poly -*/
       // poly pi = strat->T[j].p;
@@ -768,7 +769,8 @@ static poly redMoraNF (poly h,kStrategy strat, int flag)
         if (((strat->T[j].ecart < ei)
           || ((strat->T[j].ecart == ei)
         && (strat->T[j].length < li)))
-        && pLmShortDivisibleBy(strat->T[j].p,strat->sevT[j], H.p, not_sev))
+        && pLmShortDivisibleBy(strat->T[j].p,strat->sevT[j], H.p, not_sev) 
+        && n_DivBy(H.p->coef, strat->T[j].p->coef,strat->tailRing))
         {
           /*
           * the polynomial to reduce with is now;
