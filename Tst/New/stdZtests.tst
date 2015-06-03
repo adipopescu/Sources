@@ -232,17 +232,7 @@ std(reduce (I,gI )  );
 std(reduce (J,gJ )  );
 size(gJ)== size(ggJ );
    
-ring rng = (integer),(x,y,z),(lp(2),lp(1),C);
-int trial = 0;
-system("random", 1181381080);
-ideal I = 124*x^2+99*x*y,58*x*y+31*y+120*z,65*x^2*z+54*y^2*z+58*y*z+95*y;
-ideal J = 52*x*y^3*z+102*y^2,4*x*y^2*z+19*y^3*z-103*y-30;
-       ideal gI =  std(I);
-       ideal ggI = std(gI);
-    size(gI);size(ggI); 
-    ideal gJ =  std(J);
-       ideal ggJ = std(gJ);
-    size(gJ);size(ggJ);   
+
 
 
 
@@ -373,6 +363,32 @@ ideal J = -6*x(1)^2+11*x(1)^4,-15;
 
 
 
+//Github Adi #47
+
+ring R = integer,x,dp;
+reduce(x,std(2*x));
+
+ring S = integer,x,ls;
+reduce(x,std(2*x));
+
+
+
+//Github Adi #46
+
+ring rng = integer,x,ds;
+short = 0 ;
+ideal J = -7, -3-15*x^2, -6+18*x-x^2;
+ideal gJ =  std(J);
+
+//Github Adi #49
+
+ring rng = (integer),(x,y,z),(dp(3),C);
+ideal Q = x,yz2+5;
+qring QR = std(Q);
+poly a = z;
+ideal J = 5,z,x;
+ideal aJJ =  quotient( a*J, J );
+aJJ;
 
 
 
