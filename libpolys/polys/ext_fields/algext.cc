@@ -96,8 +96,8 @@ number   naMult(number a, number b, const coeffs cf);
 number   naDiv(number a, number b, const coeffs cf);
 void     naPower(number a, int exp, number *b, const coeffs cf);
 number   naCopy(number a, const coeffs cf);
-void     naWriteLong(number &a, const coeffs cf);
-void     naWriteShort(number &a, const coeffs cf);
+void     naWriteLong(number a, const coeffs cf);
+void     naWriteShort(number a, const coeffs cf);
 number   naGetDenom(number &a, const coeffs cf);
 number   naGetNumerator(number &a, const coeffs cf);
 number   naGcd(number a, number b, const coeffs cf);
@@ -581,7 +581,7 @@ void heuristicReduce(poly &p, poly reducer, const coeffs cf)
     definiteReduce(p, reducer, cf);
 }
 
-void naWriteLong(number &a, const coeffs cf)
+void naWriteLong(number a, const coeffs cf)
 {
   naTest(a);
   if (a == NULL)
@@ -599,7 +599,7 @@ void naWriteLong(number &a, const coeffs cf)
   }
 }
 
-void naWriteShort(number &a, const coeffs cf)
+void naWriteShort(number a, const coeffs cf)
 {
   naTest(a);
   if (a == NULL)
@@ -1053,7 +1053,7 @@ nMapFunc naSetMap(const coeffs src, const coeffs dst)
       return naMapZ0;                            /// Z     -->  Q(a)
     if (nCoeff_is_Zp(src) && nCoeff_is_Q(bDst))
       return naMapP0;                            /// Z/p   -->  Q(a)
-    if (nCoeff_is_Q(src) && nCoeff_is_Zp(bDst))
+    if (nCoeff_is_Q_or_BI(src) && nCoeff_is_Zp(bDst))
       return naMap0P;                            /// Q      --> Z/p(a)
     if ((src->rep==n_rep_gap_gmp) && nCoeff_is_Zp(bDst))
       return naMapZ0;                            /// Z     -->  Z/p(a)
@@ -1065,7 +1065,7 @@ nMapFunc naSetMap(const coeffs src, const coeffs dst)
   }
   if (h != 1) return NULL;
   if ((!nCoeff_is_Zp(bDst)) && (!nCoeff_is_Q(bDst))) return NULL;
-  if ((!nCoeff_is_Zp(bSrc)) && (!nCoeff_is_Q(bSrc))) return NULL;
+  if ((!nCoeff_is_Zp(bSrc)) && (!nCoeff_is_Q_or_BI(bSrc))) return NULL;
 
   nMapFunc nMap=n_SetMap(src->extRing->cf,dst->extRing->cf);
   if (rSamePolyRep(src->extRing, dst->extRing) && (strcmp(rRingVar(0, src->extRing), rRingVar(0, dst->extRing)) == 0))
@@ -1366,13 +1366,13 @@ char* naCoeffString(const coeffs r) // currently also for tranext.
   return s;
 }
 
-number  naChineseRemainder(number *x, number *q,int rl, BOOLEAN sym,const coeffs cf)
+number  naChineseRemainder(number *x, number *q,int rl, BOOLEAN sym,CFArray &inv_cache,const coeffs cf)
 {
   poly *P=(poly*)omAlloc(rl*sizeof(poly*));
   number *X=(number *)omAlloc(rl*sizeof(number));
   int i;
   for(i=0;i<rl;i++) P[i]=p_Copy((poly)(x[i]),cf->extRing);
-  poly result=p_ChineseRemainder(P,X,q,rl,cf->extRing);
+  poly result=p_ChineseRemainder(P,X,q,rl,inv_cache,cf->extRing);
   omFreeSize(X,rl*sizeof(number));
   omFreeSize(P,rl*sizeof(poly*));
   return ((number)result);
@@ -1608,7 +1608,7 @@ BOOLEAN npolyInitChar(coeffs cf, void * infoStruct)
   cf->cfIsMOne       = naIsMOne;
   cf->cfInit         = naInit;
   cf->cfFarey        = naFarey;
-  cf->cfChineseRemainder= naChineseRemainder;
+  cf->cfChineseRemainderSym= naChineseRemainder;
   cf->cfInt          = naInt;
   cf->cfInpNeg       = naNeg;
   cf->cfAdd          = naAdd;

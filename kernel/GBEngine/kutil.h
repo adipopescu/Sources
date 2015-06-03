@@ -11,6 +11,7 @@
 #include <string.h>
 
 #include <omalloc/omalloc.h>
+#include <omalloc/omallocClass.h>
 #include <misc/mylimits.h>
 
 
@@ -18,6 +19,7 @@
 #include <polys/operations/pShallowCopyDelete.h>
 
 #include <kernel/structs.h>
+#include <kernel/GBEngine/kstd1.h>   /* for s_poly_proc_t */
 
 // define if tailrings should be used
 #define HAVE_TAIL_RING
@@ -182,7 +184,13 @@ class sLObject : public sTObject
 
 public:
   unsigned long sev;
-  unsigned long checked; // this is the index of S up to which
+  poly  p1,p2; /*- the pair p comes from,
+                 lm(pi) in currRing, tail(pi) in tailring -*/
+
+  poly  lcm;   /*- the lcm of p1,p2 -*/
+  kBucket_pt bucket;
+  int   i_r1, i_r2;
+  unsigned checked; // this is the index of S up to which
                       // the corresponding LObject was already checked in
                       // critical pair creation => when entering the
                       // reduction process it is enough to start a second
@@ -191,12 +199,7 @@ public:
                       // NOTE: If prod_crit = TRUE then the corresponding pair is
                       // detected by Buchberger's Product Criterion and can be
                       // deleted
-  poly  p1,p2; /*- the pair p comes from,
-                 lm(pi) in currRing, tail(pi) in tailring -*/
 
-  poly  lcm;   /*- the lcm of p1,p2 -*/
-  kBucket_pt bucket;
-  int   i_r1, i_r2;
   bool strong;
 
   // initialization
@@ -269,9 +272,7 @@ public:
 
 extern int HCord;
 
-class skStrategy;
-typedef skStrategy * kStrategy;
-class skStrategy
+class skStrategy : public omallocClass
 {
 public:
   kStrategy next;
@@ -283,7 +284,7 @@ public:
                 LObject* L,const kStrategy strat);
   int (*posInL)(const LSet set, const int length,
                 LObject* L,const kStrategy strat);
-  void (*enterS)(LObject h, int pos,kStrategy strat, int atR/* =-1*/ );
+  void (*enterS)(LObject &h, int pos,kStrategy strat, int atR/* =-1*/ );
   void (*initEcartPair)(LObject * h, poly f, poly g, int ecartF, int ecartG);
   int (*posInLOld)(const LSet Ls,const int Ll,
                    LObject* Lo,const kStrategy strat);
@@ -297,6 +298,7 @@ public:
   pLDegProc pOrigLDeg;
   pFDegProc pOrigFDeg_TailRing;
   pLDegProc pOrigLDeg_TailRing;
+  s_poly_proc_t s_poly;
 
   LObject P;
   ideal Shdl;
@@ -313,7 +315,7 @@ public:
                 // syzygy of component i comes up
                 // important for signature-based algorithms
   unsigned sbaOrder;
-  unsigned long currIdx;
+  int currIdx;
   int max_lower_index;
   intset lenS;
   wlen_set lenSw; /* for tgb.ccc */
@@ -376,7 +378,6 @@ public:
   BOOLEAN update;
   BOOLEAN posInLOldFlag;
   BOOLEAN use_buckets;
-  BOOLEAN interred_flag;
   // if set, pLDeg(p, l) == (pFDeg(pLast(p), pLength)
   BOOLEAN LDegLast;
   // if set, then L.length == L.pLength
@@ -418,8 +419,8 @@ static inline LSet initL (int nr=setmaxL)
 { return (LSet)omAlloc(nr*sizeof(LObject)); }
 void deleteInL(LSet set, int *length, int j,kStrategy strat);
 void enterL (LSet *set,int *length, int *LSetmax, LObject p,int at);
-void enterSBba (LObject p,int atS,kStrategy strat, int atR = -1);
-void enterSSba (LObject p,int atS,kStrategy strat, int atR = -1);
+void enterSBba (LObject &p,int atS,kStrategy strat, int atR = -1);
+void enterSSba (LObject &p,int atS,kStrategy strat, int atR = -1);
 void initEcartPairBba (LObject* Lp,poly f,poly g,int ecartF,int ecartG);
 void initEcartPairMora (LObject* Lp,poly f,poly g,int ecartF,int ecartG);
 int posInS (const kStrategy strat, const int length, const poly p,
@@ -532,8 +533,8 @@ void initSLSba (ideal F, ideal Q,kStrategy strat);
  ***********************************************/
 void initSyzRules (kStrategy strat);
 void updateS(BOOLEAN toT,kStrategy strat);
-void enterSyz (LObject p,kStrategy strat, int atT);
-void enterT (LObject p,kStrategy strat, int atT = -1);
+void enterSyz (LObject &p,kStrategy strat, int atT);
+void enterT (LObject &p,kStrategy strat, int atT = -1);
 void cancelunit (LObject* p,BOOLEAN inNF=FALSE);
 void HEckeTest (poly pp,kStrategy strat);
 void initBuchMoraCrit(kStrategy strat);
@@ -549,6 +550,7 @@ void updateResult(ideal r,ideal Q,kStrategy strat);
 void completeReduce (kStrategy strat, BOOLEAN withT=FALSE);
 void kFreeStrat(kStrategy strat);
 void enterOnePairNormal (int i,poly p,int ecart, int isFromQ,kStrategy strat, int atR);
+void enterOnePairLift (int i,poly p,int ecart, int isFromQ,kStrategy strat, int atR);
 void enterOnePairSig (int i,poly p,poly pSig,int ecart, int isFromQ,kStrategy strat, int atR);
 void chainCritNormal (poly p,int ecart,kStrategy strat);
 void chainCritSig (poly p,int ecart,kStrategy strat);
@@ -567,8 +569,7 @@ int kFindInT(poly p, TSet T, int tlength);
 
 /// return -1 if no divisor is found
 ///        number of first divisor in T, otherwise
-int kFindDivisibleByInT(const TSet &T, const unsigned long* sevT,
-                        const int tl, const LObject* L, const int start=0);
+int kFindDivisibleByInT(const kStrategy strat, const LObject* L, const int start=0);
 
 /// return -1 if no divisor is found
 ///        number of first divisor in S, otherwise

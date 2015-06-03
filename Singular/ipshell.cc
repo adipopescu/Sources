@@ -131,7 +131,7 @@ int iiOpsTwoChar(const char *s)
               else           return 0;
     case ':': if (s[1]==':') return COLONCOLON;
               else           return 0;
-    case '-': if (s[1]=='-') return COLONCOLON;
+    case '-': if (s[1]=='-') return MINUSMINUS;
               else           return 0;
     case '+': if (s[1]=='+') return PLUSPLUS;
               else           return 0;
@@ -780,7 +780,11 @@ leftv iiMap(map theMap, const char * what)
         )
         {
           v->rtyp=IDEAL_CMD;
+          char *tmp = theMap->preimage;
+	  theMap->preimage=(char*)1L;
+          // map gets 1 as its rank (as an ideal)
           v->data=fast_map(IDIDEAL(w), src_ring, (ideal)theMap, currRing);
+          theMap->preimage=tmp; // map gets its preimage back
         }
         else
 #endif
@@ -908,7 +912,7 @@ static resolvente iiCopyRes(resolvente r, int l)
   resolvente res=(ideal *)omAlloc0((l+1)*sizeof(ideal));
 
   for (i=0; i<l; i++)
-    res[i]=idCopy(r[i]);
+    if (r[i]!=NULL) res[i]=idCopy(r[i]);
   return res;
 }
 

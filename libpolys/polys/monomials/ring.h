@@ -199,6 +199,12 @@ struct sro_ord
 struct nc_struct;
 typedef struct nc_struct   nc_struct;
 #endif
+class skStrategy;
+typedef skStrategy * kStrategy;
+
+typedef poly (*NF_Proc)(ideal, ideal, poly, int, int, const ring _currRing);
+typedef ideal (*BBA_Proc) (const ideal, const ideal, const intvec *, const intvec *, kStrategy strat, const ring);
+
 
 struct ip_sring
 {
@@ -741,6 +747,7 @@ BOOLEAN rHasSimpleLexOrder(const ring r);
 
 inline BOOLEAN rHasGlobalOrdering(const ring r){ return (r->OrdSgn==1); }
 inline BOOLEAN rHasLocalOrMixedOrdering(const ring r){ return (r->OrdSgn==-1); }
+inline BOOLEAN rHasMixedOrdering(const ring r) { return (r->MixedOrder); }
 
 // #define rHasGlobalOrdering(R) ((R)->OrdSgn==1)
 // #define rHasLocalOrMixedOrdering(R) ((R)->OrdSgn==-1)

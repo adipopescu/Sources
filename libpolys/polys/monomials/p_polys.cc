@@ -91,7 +91,7 @@ poly p_Farey(poly p, number N, const ring r)
 * assume: q[i]!=0
 * destroys xx
 */
-poly p_ChineseRemainder(poly *xx, number *x,number *q, int rl, const ring R)
+poly p_ChineseRemainder(poly *xx, number *x,number *q, int rl, CFArray &inv_cache,const ring R)
 {
   poly r,h,hh;
   int j;
@@ -124,7 +124,7 @@ poly p_ChineseRemainder(poly *xx, number *x,number *q, int rl, const ring R)
       else
         x[j]=n_Init(0, R);
     }
-    number n=n_ChineseRemainderSym(x,q,rl,TRUE,R->cf);
+    number n=n_ChineseRemainderSym(x,q,rl,TRUE,inv_cache,R->cf);
     for(j=rl-1;j>=0;j--)
     {
       x[j]=NULL; // n_Init(0...) takes no memory
@@ -3512,12 +3512,20 @@ void pEnlargeSet(poly* *p, int l, int increment)
 {
   poly* h;
 
-  h=(poly*)omReallocSize((poly*)*p,l*sizeof(poly),(l+increment)*sizeof(poly));
-  if (increment>0)
+  if (*p==NULL)
   {
-    //for (i=l; i<l+increment; i++)
-    //  h[i]=NULL;
-    memset(&(h[l]),0,increment*sizeof(poly));
+    if (increment==0) return;
+    h=(poly*)omAlloc0(increment*sizeof(poly));
+  }
+  else
+  {
+    h=(poly*)omReallocSize((poly*)*p,l*sizeof(poly),(l+increment)*sizeof(poly));
+    if (increment>0)
+    {
+      //for (i=l; i<l+increment; i++)
+      //  h[i]=NULL;
+      memset(&(h[l]),0,increment*sizeof(poly));
+    }
   }
   *p=h;
 }
@@ -4520,8 +4528,8 @@ void p_Shift (poly * p,int i, const ring r)
  ***************************************************************/
 
 
-static inline unsigned long GetBitFields(long e,
-                                         unsigned int s, unsigned int n)
+static inline unsigned long GetBitFields(const long e,
+                                         const unsigned int s, const unsigned int n)
 {
 #define Sy_bit_L(x)     (((unsigned long)1L)<<(x))
   unsigned int i = 0;
@@ -4553,7 +4561,7 @@ static inline unsigned long GetBitFields(long e,
 // This way, we have:
 // exp1 / exp2 ==> (ev1 & ~ev2) == 0, i.e.,
 // if (ev1 & ~ev2) then exp1 does not divide exp2
-unsigned long p_GetShortExpVector(poly p, const ring r)
+unsigned long p_GetShortExpVector(const poly p, const ring r)
 {
   if (p == NULL) return 0;
   assume(p != NULL);

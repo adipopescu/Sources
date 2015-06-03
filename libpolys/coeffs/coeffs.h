@@ -16,6 +16,7 @@
 /* for assume: */
 #include <reporter/reporter.h>
 #include <reporter/s_buff.h>
+#include <factory/factory.h>
 
 #include <coeffs/si_gmp.h>
 #include <coeffs/Enumerator.h>
@@ -199,11 +200,11 @@ struct n_Procs_s
    number  (*cfImPart)(number a, const coeffs r);
 
    /// print a given number (long format)
-   void    (*cfWriteLong)(number &a, const coeffs r);
+   void    (*cfWriteLong)(number a, const coeffs r);
 
    /// print a given number in a shorter way, if possible
    /// e.g. in K(a): a2 instead of a^2
-   void    (*cfWriteShort)(number &a, const coeffs r);
+   void    (*cfWriteShort)(number a, const coeffs r);
 
    // it is legal, but not always useful to have cfRead(s, a, r)
    //   just return s again.
@@ -290,7 +291,7 @@ struct n_Procs_s
    /// returns X with X mod q[i]=x[i], i=0..rl-1
    //CF: by the looks of it: q[i] in Z (coeffs_BIGINT)
    //    strange things happen in naChineseRemainder for example.
-   number  (*cfChineseRemainder)(number *x, number *q,int rl, BOOLEAN sym,const coeffs);
+   number  (*cfChineseRemainder)(number *x, number *q,int rl, BOOLEAN sym,CFArray &inv_cache,const coeffs);
 
    /// degree for coeffcients: -1 for 0, 0 for "constants", ...
    int (*cfParDeg)(number x,const coeffs r);
@@ -777,8 +778,8 @@ static FORCE_INLINE BOOLEAN n_DivBy(number a, number b, const coeffs r)
   return !n_IsZero(b, r);
 }
 
-static FORCE_INLINE number n_ChineseRemainderSym(number *a, number *b, int rl, BOOLEAN sym,const coeffs r)
-{ STATISTIC(n_ChineseRemainderSym); assume(r != NULL); assume(r->cfChineseRemainder != NULL); return r->cfChineseRemainder(a,b,rl,sym,r); }
+static FORCE_INLINE number n_ChineseRemainderSym(number *a, number *b, int rl, BOOLEAN sym,CFArray &inv_cache,const coeffs r)
+{ STATISTIC(n_ChineseRemainderSym); assume(r != NULL); assume(r->cfChineseRemainder != NULL); return r->cfChineseRemainder(a,b,rl,sym,inv_cache,r); }
 
 static FORCE_INLINE number n_Farey(number a, number b, const coeffs r)
 { STATISTIC(n_Farey); assume(r != NULL); assume(r->cfFarey != NULL); return r->cfFarey(a,b,r); }
@@ -821,6 +822,9 @@ static FORCE_INLINE BOOLEAN nCoeff_is_Zp(const coeffs r, int p)
 
 static FORCE_INLINE BOOLEAN nCoeff_is_Q(const coeffs r)
 { assume(r != NULL); return getCoeffType(r)==n_Q && (r->is_field); }
+
+static FORCE_INLINE BOOLEAN nCoeff_is_Q_or_BI(const coeffs r)
+{ assume(r != NULL); return getCoeffType(r)==n_Q; }
 
 static FORCE_INLINE BOOLEAN nCoeff_is_numeric(const coeffs r) /* R, long R, long C */
 { assume(r != NULL);  return (getCoeffType(r)==n_R) || (getCoeffType(r)==n_long_R) || (getCoeffType(r)==n_long_C); }

@@ -186,7 +186,7 @@ int redEcart (LObject* h,kStrategy strat)
   h->SetShortExpVector();
   loop
   {
-    j = kFindDivisibleByInT(strat->T, strat->sevT, strat->tl, h);
+    j = kFindDivisibleByInT(strat, h);
     if (j < 0)
     {
       if (strat->honey) h->SetLength(strat->length_pLength);
@@ -214,7 +214,7 @@ int redEcart (LObject* h,kStrategy strat)
             &&
             p_LmShortDivisibleBy(strat->T[i].GetLmTailRing(), strat->sevT[i], h->GetLmTailRing(), ~h->sev, strat->tailRing))
 #else
-          j = kFindDivisibleByInT(strat->T, strat->sevT, strat->tl, h, i);
+          j = kFindDivisibleByInT(strat, h, i);
         if (j < 0) break;
         i = j;
         if (strat->T[i].ecart < ei || (strat->T[i].ecart == ei &&
@@ -335,7 +335,7 @@ int redEcart (LObject* h,kStrategy strat)
     {
       Print(".%ld",d);mflush();
       reddeg = d+1;
-      if (h->pTotalDeg()+h->ecart >= strat->tailRing->bitmask)
+      if (h->pTotalDeg()+h->ecart >= (int)strat->tailRing->bitmask)
       {
         strat->overflow=TRUE;
         //Print("OVERFLOW in redEcart d=%ld, max=%ld",d,strat->tailRing->bitmask);
@@ -389,7 +389,7 @@ int redRiloc (LObject* h,kStrategy strat)
 #endif
   loop
   {
-    j = kFindDivisibleByInT(strat->T, strat->sevT, strat->tl, h);
+    j = kFindDivisibleByInT(strat, h);
 #if ADIDEBUG_NF
     if(j != -1)
     {
@@ -446,7 +446,7 @@ int redRiloc (LObject* h,kStrategy strat)
             &&
             p_LmShortDivisibleBy(strat->T[i].GetLmTailRing(), strat->sevT[i], h->GetLmTailRing(), ~h->sev, strat->tailRing) && n_DivBy(h->p->coef,strat->T[i].p->coef,strat->tailRing))
 #else
-          j = kFindDivisibleByInT(strat->T, strat->sevT, strat->tl, h, i);
+          j = kFindDivisibleByInT(strat, h, i);
         if (j < 0) break;
         i = j;
         if (strat->T[i].ecart < ei || (strat->T[i].ecart == ei &&
@@ -573,7 +573,7 @@ int redRiloc (LObject* h,kStrategy strat)
     //printf("\nOut here 5: \n");
       Print(".%ld",d);mflush();
       reddeg = d+1;
-      if (h->pTotalDeg()+h->ecart >= strat->tailRing->bitmask)
+      if (h->pTotalDeg()+h->ecart >= (int)strat->tailRing->bitmask)
       {
         strat->overflow=TRUE;
         //Print("OVERFLOW in redEcart d=%ld, max=%ld",d,strat->tailRing->bitmask);
@@ -608,7 +608,7 @@ int redFirst (LObject* h,kStrategy strat)
   h->SetShortExpVector();
   loop
   {
-    j = kFindDivisibleByInT(strat->T, strat->sevT, strat->tl, h);
+    j = kFindDivisibleByInT(strat, h);
     if (j < 0)
     {
       h->SetDegStuffReturnLDeg(strat->LDegLast);
@@ -705,7 +705,7 @@ int redFirst (LObject* h,kStrategy strat)
       {
         reddeg = d+1;
         Print(".%ld",d);mflush();
-        if (h->pTotalDeg()+h->ecart >= strat->tailRing->bitmask)
+        if (h->pTotalDeg()+h->ecart >= (int)strat->tailRing->bitmask)
         {
           strat->overflow=TRUE;
           //Print("OVERFLOW in redFirst d=%ld, max=%ld",d,strat->tailRing->bitmask);
@@ -1232,7 +1232,7 @@ void firstUpdate(kStrategy strat)
 *    and cancels units if possible
 *  - reorders s,L
 */
-void enterSMora (LObject p,int atS,kStrategy strat, int atR = -1)
+void enterSMora (LObject &p,int atS,kStrategy strat, int atR = -1)
 {
   enterSBba(p, atS, strat, atR);
   #ifdef KDEBUG
@@ -1286,7 +1286,7 @@ void enterSMora (LObject p,int atS,kStrategy strat, int atR = -1)
 *  if TRUE
 *  - computes noether
 */
-void enterSMoraNF (LObject p, int atS,kStrategy strat, int atR = -1)
+void enterSMoraNF (LObject &p, int atS,kStrategy strat, int atR = -1)
 {
   enterSBba(p, atS, strat, atR);
   if ((!strat->kHEdgeFound) || (strat->kNoether!=NULL)) HEckeTest(p.p,strat);
@@ -1680,7 +1680,7 @@ loop_count = 1;
       if (strat->P.p==NULL)
       {
         WerrorS("expoent overflow - wrong ordering");
-	return(idInit(1,1));
+        return(idInit(1,1));
       }
       // set ecart -- might have changed because of tail reductions
       if ((!strat->noTailReduction) && (!strat->honey))
@@ -2130,7 +2130,7 @@ long kHomModDeg(poly p, ring r)
 }
 
 ideal kStd(ideal F, ideal Q, tHomog h,intvec ** w, intvec *hilb,int syzComp,
-          int newIdeal, intvec *vw)
+          int newIdeal, intvec *vw, s_poly_proc_t sp)
 {
   if(idIs0(F))
     return idInit(1,F->rank);
@@ -2140,6 +2140,7 @@ omTestMemory(1);
   BOOLEAN delete_w=(w==NULL);
   kStrategy strat=new skStrategy;
 
+  strat->s_poly=sp;
   if(!TEST_OPT_RETURN_SB)
     strat->syzComp = syzComp;
   if (TEST_OPT_SB_1
@@ -2153,8 +2154,6 @@ omTestMemory(1);
   else
     strat->LazyPass=2;
   strat->LazyDegree = 1;
-  strat->enterOnePair=enterOnePairNormal;
-  strat->chainCrit=chainCritNormal;
   strat->ak = id_RankFreeModule(F,currRing);
   strat->kModW=kModW=NULL;
   strat->kHomW=kHomW=NULL;
@@ -2199,7 +2198,7 @@ omTestMemory(1);
   strat->homog=h;
 #ifdef KDEBUG
   idTest(F);
-  idTest(Q);
+  if (Q!=NULL) idTest(Q);
 
 #if MYTEST
   if (TEST_OPT_DEBUG)
@@ -2816,9 +2815,10 @@ ideal kNF(ideal F, ideal Q, ideal p,int syzComp,int lazyReduce)
   return res;
 }
 
-poly kNF (ideal F, ideal Q, poly p,int syzComp, int lazyReduce, const ring _currRing)
+poly k_NF (ideal F, ideal Q, poly p,int syzComp, int lazyReduce, const ring _currRing)
 {
-  const ring save = currRing; if( currRing != _currRing ) rChangeCurrRing(_currRing);
+  const ring save = currRing;
+  if( currRing != _currRing ) rChangeCurrRing(_currRing);
   poly ret = kNF(F, Q, p, syzComp, lazyReduce);
   if( currRing != save )     rChangeCurrRing(save);
   return ret;

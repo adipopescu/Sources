@@ -11,6 +11,8 @@
 
 ideal mora (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat);
 
+typedef BOOLEAN (*s_poly_proc_t)(kStrategy strat);
+
 // lazy_reduce flags: can be combined by |
 #define KSTD_NF_LAZY   1
   // do only a reduction of the leading term
@@ -26,12 +28,12 @@ poly kNF (ideal F, ideal Q, poly p,int syzComp=0, int lazyReduce=0);
 ideal kNF(ideal F, ideal Q, ideal p,int syzComp=0, int lazyReduce=0);
 
 /// NOTE: this is just a wrapper which sets currRing for the actual kNF call
-poly kNF (ideal F, ideal Q, poly p,int syzComp, int lazyReduce, const ring _currRing);
+poly k_NF (ideal F, ideal Q, poly p,int syzComp, int lazyReduce, const ring _currRing);
 ideal kSba(ideal F,ideal Q, tHomog h, intvec ** mw, int incremental=0, int arri=0, intvec *hilb=NULL,
           int syzComp=0,int newIdeal=0, intvec *vw=NULL);
 
 ideal kStd(ideal F, ideal Q, tHomog h, intvec ** mw,intvec *hilb=NULL,
-          int syzComp=0,int newIdeal=0, intvec *vw=NULL);
+          int syzComp=0,int newIdeal=0, intvec *vw=NULL, s_poly_proc_t sp=NULL);
 
 ideal kStdShift(ideal F, ideal Q, tHomog h,intvec ** w, intvec *hilb,int syzComp,
 		int newIdeal, intvec *vw, int uptodeg, int lVblock);

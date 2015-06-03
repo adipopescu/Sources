@@ -372,7 +372,6 @@ static ideal SortByDeg(ideal I)
     {
         return(I);
     }
-    idSkipZeroes(I);
     int i;
     ideal res;
     idSkipZeroes(I);
@@ -427,21 +426,21 @@ ideal idQuotMon(ideal Iorig, ideal p)
         p_Setm(res->m[i], currRing);
         if(DegMon(res->m[i]) == DegMon(I->m[i]))
         {
-            res->m[i] = NULL;
+            res->m[i] = NULL; // pDelete
         }
         else
         {
-            I->m[i] = NULL;
+            I->m[i] = NULL; // pDelete
         }
     }
     idSkipZeroes(res);
     idSkipZeroes(I);
     if(!idIs0(res))
     {
-    for(i = 0; i<=IDELEMS(res)-1; i++)
-    {
+      for(i = 0; i<=IDELEMS(res)-1; i++)
+      {
         I = SortByDeg_p(I,res->m[i]);
-    }
+      }
     }
     //idDegSortTest(I);
     return(I);
@@ -1293,14 +1292,15 @@ static intvec * hSeries(ideal S, intvec *modulweight,
 intvec * hHstdSeries(ideal S, intvec *modulweight, intvec *wdegree, ideal Q, ring tailRing)
 {
   id_TestTail(S, currRing, tailRing);
-  id_TestTail(Q, currRing, tailRing);
+  if (Q!=NULL) id_TestTail(Q, currRing, tailRing);
   return hSeries(S, modulweight, 0, wdegree, Q, tailRing);
 }
 
 intvec * hFirstSeries(ideal S, intvec *modulweight, ideal Q, intvec *wdegree, ring tailRing)
 {
   id_TestTail(S, currRing, tailRing);
-  id_TestTail(Q, currRing, tailRing);
+  if (Q!= NULL) id_TestTail(Q, currRing, tailRing);
+
   return hSeries(S, modulweight, 1, wdegree, Q, tailRing);
 }
 

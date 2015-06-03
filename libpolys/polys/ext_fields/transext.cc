@@ -20,9 +20,7 @@
 *           in the *.h file). Whenever the resulting complexity exceeds a
 *           certain threshold (see constant in the *.h file), then the
 *           cancellation heuristic will call 'factory' to compute the gcd
-*           and cancel it out in the given number. (This definite cancel-
-*           lation will also be performed at the beginning of ntWrite,
-*           ensuring that any output is free of common factors.
+*           and cancel it out in the given number.
 *           For the special case of K = Q (i.e., when computing over the
 *           rationals), this definite cancellation procedure will also take
 *           care of nested fractions: If there are fractional coefficients
@@ -112,8 +110,8 @@ number   ntMult(number a, number b, const coeffs cf);
 number   ntDiv(number a, number b, const coeffs cf);
 void     ntPower(number a, int exp, number *b, const coeffs cf);
 number   ntCopy(number a, const coeffs cf);
-void     ntWriteLong(number &a, const coeffs cf);
-void     ntWriteShort(number &a, const coeffs cf);
+void     ntWriteLong(number a, const coeffs cf);
+void     ntWriteShort(number a, const coeffs cf);
 number   ntRePart(number a, const coeffs cf);
 number   ntImPart(number a, const coeffs cf);
 number   ntGetDenom(number &a, const coeffs cf);
@@ -1321,6 +1319,7 @@ void definiteGcdCancellation(number a, const coeffs cf,
 
   /* here we assume: NUM(f), DEN(f) !=NULL, in Z_a reqp. Z/p_a */
   poly pGcd = singclap_gcd_and_divide(NUM(f), DEN(f), ntRing);
+  //PrintS("gcd= ");p_wrp(pGcd,ntRing);PrintLn();
   if (p_IsConstant(pGcd, ntRing)
   && n_IsOne(p_GetCoeff(pGcd, ntRing), ntCoeffs)
   )
@@ -1389,11 +1388,9 @@ void definiteGcdCancellation(number a, const coeffs cf,
   ntTest(a); // !!!!
 }
 
-// NOTE: modifies a
-void ntWriteLong(number &a, const coeffs cf)
+void ntWriteLong(number a, const coeffs cf)
 {
   ntTest(a);
-  definiteGcdCancellation(a, cf, FALSE);
   if (IS0(a))
     StringAppendS("0");
   else
@@ -1416,11 +1413,9 @@ void ntWriteLong(number &a, const coeffs cf)
   ntTest(a); // !!!!
 }
 
-// NOTE: modifies a
-void ntWriteShort(number &a, const coeffs cf)
+void ntWriteShort(number a, const coeffs cf)
 {
   ntTest(a);
-  definiteGcdCancellation(a, cf, FALSE);
   if (IS0(a))
     StringAppendS("0");
   else
@@ -1456,6 +1451,8 @@ void ntNormalize (number &a, const coeffs cf)
 {
   if ( /*(*/ a!=NULL /*)*/ )
   {
+    //PrintS("num=");p_wrp(NUM(a),ntRing);
+    //PrintS(" den=");p_wrp(DEN(a),ntRing);PrintLn();
     definiteGcdCancellation(a, cf, FALSE);
     if ((DEN(a)!=NULL)
     &&(!n_GreaterZero(pGetCoeff(DEN(a)),ntCoeffs)))
@@ -1958,7 +1955,7 @@ nMapFunc ntSetMap(const coeffs src, const coeffs dst)
       return ntMapZ0;                                 /// Z   -->  K(T)
     if (nCoeff_is_Zp(src) && nCoeff_is_Q(bDst))
       return ntMapP0;                                 /// Z/p     -->  Q(T)
-    if (nCoeff_is_Q(src) && nCoeff_is_Zp(bDst))
+    if (nCoeff_is_Q_or_BI(src) && nCoeff_is_Zp(bDst))
       return ntMap0P;                                 /// Q       --> Z/p(T)
     if (nCoeff_is_Zp(src) && nCoeff_is_Zp(bDst))
     {
@@ -2330,7 +2327,7 @@ static void ntClearDenominators(ICoeffsEnumerator& numberCollectionEnumerator, n
   ntTest(c);
 }
 
-number  ntChineseRemainder(number *x, number *q,int rl, BOOLEAN sym,const coeffs cf)
+number  ntChineseRemainder(number *x, number *q,int rl, BOOLEAN sym,CFArray &inv_cache,const coeffs cf)
 {
   fraction result = (fraction)omAlloc0Bin(fractionObjectBin);
   int i;
@@ -2339,14 +2336,14 @@ number  ntChineseRemainder(number *x, number *q,int rl, BOOLEAN sym,const coeffs
   number *X=(number *)omAlloc(rl*sizeof(number));
 
   for(i=0;i<rl;i++) P[i]=p_Copy(NUM((fraction)(x[i])),cf->extRing);
-  NUM(result)=p_ChineseRemainder(P,X,q,rl,cf->extRing);
+  NUM(result)=p_ChineseRemainder(P,X,q,rl,inv_cache,cf->extRing);
 
   for(i=0;i<rl;i++)
   {
     P[i]=p_Copy(DEN((fraction)(x[i])),cf->extRing);
     if (P[i]==NULL) P[i]=p_One(cf->extRing);
   }
-  DEN(result)=p_ChineseRemainder(P,X,q,rl,cf->extRing);
+  DEN(result)=p_ChineseRemainder(P,X,q,rl,inv_cache,cf->extRing);
 
   omFreeSize(X,rl*sizeof(number));
   omFreeSize(P,rl*sizeof(poly*));

@@ -307,6 +307,7 @@ considerably speed up computations.
 @cindex isSB
 @cindex isHomg
 @cindex rank
+@cindex ring_cf
 @cindex isCI
 @cindex isCM
 @cindex withSB
@@ -314,7 +315,7 @@ considerably speed up computations.
 @cindex withRes
 @cindex withDim
 @cindex withMult
-(isSB, isHomog, rank are used by the kernel, the other are used by libraries)
+(isSB, isHomog, rank, ring_cf are used by the kernel, the other are used by libraries)
 @table @code
 @item isSB
 the standard basis property is set by all commands computing a standard
@@ -329,6 +330,8 @@ complete intersection property
 Cohen-Macaulay property
 @item rank
 set/get the rank of a module (see @ref{nrows})
+@item ring_cf
+the coefficients of the polynomial ring are considered to be a ring
 @item withSB
 value of type ideal, resp.@: module, is std
 @item withHilb
@@ -3054,7 +3057,7 @@ $L(g_i)$
 $\{g_1,\dots,g_{i-1},g_{i+1},\dots,g_s\}$,
 @end tex
 @item
-in the case of a local or mixed ordering (localization of polynomial ring) and @code{option(redSB);}:
+in the case of a local ordering (localization of polynomial ring) and @code{option(redSB);}:
 @* if
 @ifinfo
 L(g_i) | L(g_j) for any i<>j,
@@ -3747,6 +3750,8 @@ basis returned by @code{liftstd}, and @code{T} the transformation matrix
 then @code{matrix(sm)=matrix(m)*T} and @code{sm=ideal(matrix(m)*T)},
 resp.@: @code{sm=module(matrix(m)*T)}.
 @*In an optional third argument the syzygy module will be returned.
+@item @strong{Note:}
+if working in a quotient ring, then @code{matrix(sm)=reduce(matrix(m)*T,0)} and @code{sm=reduce(ideal(matrix(m)*T),0)}.
 @item @strong{Example:}
 @smallexample
 @c example
@@ -5148,7 +5153,9 @@ simplifies modulo the current @code{qring} in all assignments.
 @item @code{redSB}
 @cindex redSB, option
 @cindex reduced standard basis
-computes a reduced standard basis in any standard basis computation.
+computes a reduced standard basis in any standard basis computation
+(in rings with global ior local orderings, See @ref{interred} for the discussion
+of reduced for local orderings))
 @c ---------
 @item @code{redTail}
 @cindex redTail, option
@@ -7043,6 +7050,23 @@ returns (depending on the type of the link and its status)
 @item @code{"exists"}
 returns @code{"yes"} or @code{"no"}: existence of the filename for ASCII/ssi links
 @end table
+@item @strong{Syntax:}
+@code{status (} list_expression@code{,} int_expression @code{)}
+@item @strong{Type:}
+int
+@item @strong{Purpose:}
+the list should be a list L of links, the second argument a timeout in 1/10 seconds.
+Returns
+@table @code
+@item @code{-2}
+select returns an error
+@item @code{-1}
+all links are closed/at eof
+@item{0}
+timeout
+@item{>0}
+(at least) L[i] is ready
+@end table
 @item @strong{Example:}
 @smallexample
 @c example
@@ -8705,6 +8729,7 @@ See
 @table @code
 @item @strong{Syntax:}
 @code{load(} string_expression @code{);}
+@*@code{load(} string_expression @code{,} string_expression @code{);}
 @item @strong{Type:}
 none
 @item @strong{Purpose:}
@@ -8730,6 +8755,8 @@ executable program, and finally some default absolute directories.
 You can view the search path which @sc{Singular} uses to locate its
 libraries, by starting up @sc{Singular} with the option @code{-v},
 or by issuing the command @code{system("with");}.
+
+The second string selections options for loading.
 
 @item @strong{Note:} @code{load(<string_expr>,"with")} is equivalent to
 @code{LIB <string_expr>}.

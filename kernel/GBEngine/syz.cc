@@ -331,9 +331,9 @@ static void syMinStep1(resolvente res, int length)
           while (k<IDELEMS(res[index]))
           {
             p = res[index]->m[k];
-            while ((p!=NULL) && ((!pLmIsConstantComp(p)) || (pGetComp(p)!=(unsigned)j)))
+            while ((p!=NULL) && ((!pLmIsConstantComp(p)) || (pGetComp(p)!=j)))
               pIter(p);
-            if ((p!=NULL) && (pLmIsConstantComp(p)) && (pGetComp(p)==(unsigned)j)) break;
+            if ((p!=NULL) && (pLmIsConstantComp(p)) && (pGetComp(p)==j)) break;
             k++;
           }
           if (k>=IDELEMS(res[index]))
@@ -491,7 +491,7 @@ resolvente syResolvente(ideal arg, int maxlength, int * length,
   }
 
 /*--- the main loop --------------------------------------*/
-  while ((!idIs0(res[syzIndex])) &&
+  while ((res[syzIndex]!=NULL) && (!idIs0(res[syzIndex])) &&
          ((maxlength==-1) || (syzIndex<=maxlength)))
    // (syzIndex<maxlength+(int)minim)))
 /*--- compute one step more for minimizing-----------------*/
@@ -557,7 +557,7 @@ resolvente syResolvente(ideal arg, int maxlength, int * length,
       }
     }
 /*---creating the iterated weights for module components ---------*/
-    if ((hom == isHomog) && (!idIs0(res[syzIndex])))
+    if ((hom == isHomog) && (res[syzIndex]!=NULL) && (!idIs0(res[syzIndex])))
     {
 //Print("die %d Modulegewichte sind:\n",w1->length());
 //w1->show();
@@ -601,7 +601,7 @@ resolvente syResolvente(ideal arg, int maxlength, int * length,
 
   for (i=1; i<=syzIndex; i++)
   {
-    if (! idIs0(res[i]))
+    if ((res[i]!=NULL) && ! idIs0(res[i]))
     {
       id_Shift(res[i],-rGetMaxSyzComp(i, currRing),currRing);
     }
@@ -863,7 +863,7 @@ intvec * syBetti(resolvente res,int length, int * regularity,
     {
       if (res[i]->m[j]!=NULL)
       {
-        if ((pGetComp(res[i]->m[j])>(unsigned)l)
+        if ((pGetComp(res[i]->m[j])>l)
         || ((i>1) && (res[i-1]->m[pGetComp(res[i]->m[j])-1]==NULL)))
         {
           WerrorS("input not a resolvent");

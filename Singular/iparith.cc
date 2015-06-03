@@ -343,7 +343,7 @@ static BOOLEAN jjOP_I_IM(leftv res, leftv u, leftv v)
 static BOOLEAN jjCOLON(leftv res, leftv u, leftv v)
 {
   int l=(int)(long)v->Data();
-  if (l>0)
+  if (l>=0)
   {
     int d=(int)(long)u->Data();
     intvec *vv=new intvec(l);
@@ -351,7 +351,7 @@ static BOOLEAN jjCOLON(leftv res, leftv u, leftv v)
     for(i=l-1;i>=0;i--) { (*vv)[i]=d; }
     res->data=(char *)vv;
   }
-  return (l<=0);
+  return (l<0);
 }
 static BOOLEAN jjDOTDOT(leftv res, leftv u, leftv v)
 {
@@ -1093,7 +1093,7 @@ static BOOLEAN jjTIMES_MA(leftv res, leftv u, leftv v)
   res->data = (char *)mp_Mult(A,B,currRing);
   if (res->data==NULL)
   {
-     Werror("matrix size not compatible(%dx%d, %dx%d)",
+     Werror("matrix size not compatible(%dx%d, %dx%d) in *",
              MATROWS(A),MATCOLS(A),MATROWS(B),MATCOLS(B));
      return TRUE;
   }
@@ -1481,7 +1481,7 @@ static BOOLEAN jjINDEX_V(leftv res, leftv u, leftv v)
   poly p=(poly)u->CopyD(VECTOR_CMD);
   poly r=p; // pointer to the beginning of component i
   poly o=NULL;
-  unsigned i=(unsigned)(long)v->Data();
+  int i=(int)(long)v->Data();
   while (p!=NULL)
   {
     if (pGetComp(p)!=i)
@@ -1669,7 +1669,8 @@ static BOOLEAN jjCHINREM_BI(leftv res, leftv u, leftv v)
     q[i]=n_Init((*p)[i], coeffs_BIGINT);
     x[i]=n_Init((*c)[i], coeffs_BIGINT);
   }
-  number n=n_ChineseRemainderSym(x,q,rl,FALSE,coeffs_BIGINT);
+  CFArray iv(rl);
+  number n=n_ChineseRemainderSym(x,q,rl,FALSE,iv,coeffs_BIGINT);
   for(i=rl-1;i>=0;i--)
   {
     n_Delete(&(q[i]),coeffs_BIGINT);
@@ -1887,7 +1888,8 @@ static BOOLEAN jjCHINREM_ID(leftv res, leftv u, leftv v)
   }
   if (return_type==BIGINT_CMD)
   {
-    number n=n_ChineseRemainderSym(xx,q,rl,TRUE,coeffs_BIGINT);
+    CFArray i_v(rl);
+    number n=n_ChineseRemainderSym(xx,q,rl,TRUE,i_v,coeffs_BIGINT);
     res->data=(char *)n;
   }
   else
@@ -2664,8 +2666,10 @@ static BOOLEAN jjLOAD_E(leftv /*res*/, leftv v, leftv u)
   char * s=(char *)u->Data();
   if(strcmp(s, "with")==0)
     return jjLOAD((char*)v->Data(), TRUE);
+  if (strcmp(s,"try")==0)
+    return jjLOAD_TRY((char*)v->Data());
   WerrorS("invalid second argument");
-  WerrorS("load(\"libname\" [,\"with\"]);");
+  WerrorS("load(\"libname\" [,option]);");
   return TRUE;
 }
 static BOOLEAN jjMODULO(leftv res, leftv u, leftv v)
@@ -3053,15 +3057,18 @@ static BOOLEAN jjREAD2(leftv res, leftv u, leftv v)
 }
 static BOOLEAN jjREDUCE_P(leftv res, leftv u, leftv v)
 {
-  assumeStdFlag(v);
-  res->data = (char *)kNF((ideal)v->Data(),currRing->qideal,(poly)u->Data());
+  ideal vi=(ideal)v->Data();
+  if (currRing->qideal!=NULL || vi->ncols>1 || rIsPluralRing(currRing))
+    assumeStdFlag(v);
+  res->data = (char *)kNF(vi,currRing->qideal,(poly)u->Data());
   return FALSE;
 }
 static BOOLEAN jjREDUCE_ID(leftv res, leftv u, leftv v)
 {
-  assumeStdFlag(v);
   ideal ui=(ideal)u->Data();
   ideal vi=(ideal)v->Data();
+  if (currRing->qideal!=NULL || vi->ncols>1 || rIsPluralRing(currRing))
+    assumeStdFlag(v);
   res->data = (char *)kNF(vi,currRing->qideal,ui);
   return FALSE;
 }
@@ -5323,6 +5330,22 @@ BOOLEAN jjLOAD(const char *s, BOOLEAN autoexport)
 #endif /* HAVE_DYNAMIC_LOADING */
   }
   return TRUE;
+}
+static int WerrorS_dummy_cnt=0;
+static void WerrorS_dummy(const char *)
+{
+  WerrorS_dummy_cnt++;
+}
+BOOLEAN jjLOAD_TRY(const char *s)
+{
+  void (*WerrorS_save)(const char *s) = WerrorS_callback;
+  WerrorS_callback=WerrorS_dummy;
+  WerrorS_dummy_cnt=0;
+  BOOLEAN bo=jjLOAD(s,TRUE);
+  if (bo || (WerrorS_dummy_cnt>0)) Print("loading of >%s< failed\n",s);
+  WerrorS_callback=WerrorS_save;
+  errorreported=0;
+  return FALSE;
 }
 
 static BOOLEAN jjstrlen(leftv res, leftv v)
@@ -8103,7 +8126,6 @@ BOOLEAN iiExprArith2Tab(leftv res, leftv a, int op,
 BOOLEAN iiExprArith2(leftv res, leftv a, int op, leftv b, BOOLEAN proccall)
 {
   memset(res,0,sizeof(sleftv));
-  BOOLEAN call_failed=FALSE;
 
   if (!errorreported)
   {
@@ -8291,7 +8313,6 @@ BOOLEAN iiExprArith1Tab(leftv res, leftv a, int op, struct sValCmd1* dA1, int at
 BOOLEAN iiExprArith1(leftv res, leftv a, int op)
 {
   memset(res,0,sizeof(sleftv));
-  BOOLEAN call_failed=FALSE;
 
   if (!errorreported)
   {
@@ -8311,7 +8332,19 @@ BOOLEAN iiExprArith1(leftv res, leftv a, int op)
 #endif
     int at=a->Typ();
     // handling bb-objects ----------------------------------------------------
-    if (at>MAX_TOK)
+    if(op>MAX_TOK) // explicit type conversion to bb
+    {
+      blackbox *bb=getBlackboxStuff(op);
+      if (bb!=NULL)
+      {
+        res->rtyp=op;
+        res->data=bb->blackbox_Init(bb);
+        if(!bb->blackbox_Assign(res,a)) return FALSE;
+        if (errorreported) return TRUE;
+      }
+      else          return TRUE;
+    }
+    else if (at>MAX_TOK) // argument is of bb-type
     {
       blackbox *bb=getBlackboxStuff(at);
       if (bb!=NULL)
@@ -8323,7 +8356,6 @@ BOOLEAN iiExprArith1(leftv res, leftv a, int op)
       else          return TRUE;
     }
 
-    BOOLEAN failed=FALSE;
     iiOp=op;
     int i=iiTabIndex(dArithTab1,JJTAB1LEN,op);
     return iiExprArith1Tab(res,a,op, dArith1+i,at,dConvertTypes);

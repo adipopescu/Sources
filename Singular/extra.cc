@@ -64,7 +64,7 @@
 #include <polys/prCopy.h>
 #include <polys/weight.h>
 
-
+#include <coeffs/bigintmat.h>
 #include <kernel/fast_mult.h>
 #include <kernel/digitech.h>
 #include <kernel/combinatorics/stairc.h>
@@ -1094,7 +1094,7 @@ BOOLEAN jjSYSTEM(leftv res, leftv args)
       const short t[]={2,POLY_CMD,INT_CMD};
       if (iiCheckTypes(h,t,1))
       {
-        poly p=(poly)h->CopyD();
+        poly p=(poly)h->Data();
         h=h->next;
         int lV=(int)((long)(h->Data()));
         res->rtyp = POLY_CMD;
@@ -3736,6 +3736,39 @@ static BOOLEAN jjEXTENDED_SYSTEM(leftv res, leftv h)
     }
     else
    #endif
+/*==================== n_SwitchChinRem =================*/
+    if(strcmp(sys_cmd,"cache_chinrem")==0)
+    {
+      extern int n_SwitchChinRem;
+      Print("caching inverse in chines remainder:%d\n",n_SwitchChinRem);
+      if ((h!=NULL)&&(h->Typ()==INT_CMD))
+        n_SwitchChinRem=(int)(long)h->Data();
+      return FALSE;
+    }
+    else
+/*==================== LU for bigintmat =================*/
+#ifdef SINGULAR_4_1
+    if(strcmp(sys_cmd,"LU")==0)
+    {
+      if ((h!=NULL) && (h->Typ()==CMATRIX_CMD))
+      {
+        // get the argument:
+        bigintmat *b=(bigintmat *)h->Data();
+        // just for tests: simply transpose
+        bigintmat *bb=b->transpose();
+        // return the result:
+        res->rtyp=CMATRIX_CMD;
+        res->data=(char*)bb;
+        return FALSE;
+      }
+      else
+      {
+        WerrorS("system(\"LU\",<cmatrix>) expected");
+        return TRUE;
+      }
+    }
+    else
+#endif    
 /*==================== Error =================*/
       Werror( "(extended) system(\"%s\",...) %s", sys_cmd, feNotImplemented );
   }
