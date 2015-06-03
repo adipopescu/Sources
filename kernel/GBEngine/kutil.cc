@@ -1177,9 +1177,8 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
   int      l,j,compare,compareCoeff;
   LObject  h;
 
-  if (strat->interred_flag) return;
 #ifdef KDEBUG
-  Lp.ecart=0; Lp.length=0;
+  h.ecart=0; h.length=0;
 #endif
   /*- computes the lcm(s[i],p) -*/
   h.lcm = pInit();
@@ -2407,7 +2406,6 @@ printf("\nAdded! Exit enteronepairSig\n");
 void enterOneStrongPolySig (int i, poly p, poly pSig, int, int ecart, int isFromQ, kStrategy strat, int atR = -1)
 {
   assume(i<=strat->sl);
-  if (strat->interred_flag) return;
 
   int      l;
   poly m1 = NULL,m2 = NULL; // we need the multipliers for the s-polynomial to compute
