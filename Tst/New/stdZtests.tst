@@ -390,6 +390,14 @@ ideal J = 5,z,x;
 ideal aJJ =  quotient( a*J, J );
 aJJ;
 
+//Github Adi #50
+
+ring rng = (integer),(x(1)),(lp(1),C);
+ideal I = 4*x(1)^3+35*x(1)^2+24*x(1),45*x(1),35;
+ideal J = 18*x(1)^3+43*x(1)^2,-7*x(1)-10,-12*x(1)^2-20*x(1)+13;
+ideal I_J =  intersect(I,J);
+size(I_J);
+
 
 
 
