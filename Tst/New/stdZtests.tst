@@ -398,6 +398,51 @@ ideal J = 18*x(1)^3+43*x(1)^2,-7*x(1)-10,-12*x(1)^2-20*x(1)+13;
 ideal I_J =  intersect(I,J);
 size(I_J);
 
+//Github Adi #21
+
+ring r = integer,(a,d,g,h,i,j),ws(-1,-1,-1,-1,-1,-1);
+ideal inI= gh+2i, dh+j, d+2g+aj, d+2g+ai;
+ideal g= std(inI);
+/// 
+ring rng = (integer),(x,y,z),(ws(-1,-1,-1),C);
+ideal I  = 6yz-6,6xy-6yz-8y;
+ideal gI  =std(I);
+///
+ring rng = (integer),(x,y,z),(ws(-1,-1,-1),C);
+ideal I  = -10x+15y,4y-7;
+ideal gI  =std(I);
+///
+ring rng = (integer),(x,y,z),(ws(-1,-1,-1),C);
+ideal I  = 9x-14y,15z-2;
+ideal gI  =std(I);
+///
+ring rng = (integer),(x,y),(ws(-1,-1),C);
+ideal I  = 8x+7,-6x-13y;
+ideal gI  =std(I);
+
+// Singular bug #648
+
+ring r=integer,(t,x(1..4)),ws(1,-1,-11,-3,-19);
+option(prot);
+ideal inJ = 
+ 3,
+ t*x(3)*x(4)+2*t*x(1)*x(2),
+ t*x(1)*x(2)^2+2*t^3*x(1)*x(2)*x(3),
+ x(1)^2*x(2)*x(3)*x(4)+2*t^2*x(1)^3*x(2)*x(3);
+ideal J = 
+ x(1)^2*x(2)*x(3)*x(4)-t*x(1)^2*x(2)^3+5*t*x(1)^2*x(2)*x(3)*x(4)+16*t^3*x(1)*x(2)*x(3)^2*x(4)-2*x(1)^3*x(2)^2-1536*x(1)^3*x(3)*x(4)+32*t^2*x(1)^2*x(3)^2*x(4),
+ t*x(1)*x(2)^2+2*x(1)^2*x(2)+2*t^3*x(1)*x(2)*x(3)-192*x(1)^3+4*t^2*x(1)^2*x(3),
+ t*x(3)*x(4)-3*t^2*x(3)*x(4)-t*x(1)*x(2)-2*x(1)^2,
+ 3-t;
+reduce(inJ,J);
+
+//Github Adi #48
+
+ring rng = integer,x,ds;
+ideal I = -8*x+2*x^2, -16+9*x^2-x^3;
+ideal gI =  std(I);
+gI;
+std(gI);
 
 
 

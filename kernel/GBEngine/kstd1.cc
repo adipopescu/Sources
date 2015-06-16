@@ -1235,6 +1235,10 @@ void firstUpdate(kStrategy strat)
 void enterSMora (LObject &p,int atS,kStrategy strat, int atR = -1)
 {
   enterSBba(p, atS, strat, atR);
+  #ifdef HAVE_RINGS
+    if (rField_is_Ring(currRing))
+      return;
+  #endif
   #ifdef KDEBUG
   if (TEST_OPT_DEBUG)
   {
@@ -1714,7 +1718,6 @@ loop_count = 1;
           PrintS("         ");p_Write(strat->L[iii].p2,strat->tailRing);
         }
         #endif
-
       strat->enterS(strat->P,
                     posInS(strat,strat->sl,strat->P.p, strat->P.ecart),
                     strat, strat->tl);
