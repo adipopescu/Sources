@@ -480,7 +480,18 @@ size(gI)== size(ggI) ;
 gI;
 ggI;
 
+//Github Adi #25
 
+ring r = integer,(a,d,g,h,i,j),ws(-1,-1,-1,-1,-1,-1);
+ideal inI= gh+2i, dh+j, d+2g+aj, d+2g+ai;
+ideal g= std(inI);
+inI;
+g;
+
+ring rng = (integer),(x,y,z),(ws(-1,-1,-1),C);
+ideal I = 6yz-6,6xy-6yz-8y;
+ideal gI =std(I);
+I;gI;
 
 
  

@@ -727,6 +727,16 @@ int redFirst (LObject* h,kStrategy strat)
 */
 static poly redMoraNF (poly h,kStrategy strat, int flag)
 {
+  #if ADIDEBUG_NF
+  printf("\nTrying to reduce 1 with\n");
+  pWrite(h);
+  int ii;
+  for(ii = 0; ii<=strat->tl;ii++)
+  {
+    printf("\n    T[%i]: ",ii);
+    pWrite(strat->T[ii].p);
+  }
+  #endif
   LObject H;
   H.p = h;
   int j = 0;
@@ -747,6 +757,9 @@ static poly redMoraNF (poly h,kStrategy strat, int flag)
       if (kModDeg(H.p)>Kstd1_deg) pLmDelete(&H.p);
       if (H.p==NULL) return NULL;
     }
+    #if ADIDEBUG_NF
+    printf("\nSearching for a reducer...\n");
+    #endif
     if (p_LmShortDivisibleBy(strat->T[j].GetLmTailRing(), strat->sevT[j], H.GetLmTailRing(), not_sev, strat->tailRing)
         && n_DivBy(H.p->coef, strat->T[j].p->coef,strat->tailRing))
     {
@@ -755,6 +768,9 @@ static poly redMoraNF (poly h,kStrategy strat, int flag)
       int ei = strat->T[j].ecart;
       int li = strat->T[j].length;
       int ii = j;
+      #if ADIDEBUG_NF
+      printf("\nFound: j = %i, ecart = %i\nTrying to find a better one...\n",j,ei);pWrite(strat->T[j].p);
+      #endif
       /*
       * the polynomial to reduce with (up to the moment) is;
       * pi with ecart ei and length li
@@ -779,6 +795,10 @@ static poly redMoraNF (poly h,kStrategy strat, int flag)
           ei = strat->T[j].ecart;
           li = strat->T[j].length;
           ii = j;
+          #if ADIDEBUG_NF
+          printf("\nFounda better one: j = %i, ecart = %i\nTrying to find a better one...\n",j,ei);
+          pWrite(strat->T[j].p);
+          #endif
         }
       }
       /*
@@ -809,6 +829,10 @@ static poly redMoraNF (poly h,kStrategy strat, int flag)
         if (H.p == NULL)
           return NULL;
       }
+      #if ADIDEBUG_NF
+      printf("\nAfter the small reduction it looks like this:\n");pWrite(H.p);
+      getchar();
+      #endif
       /*- try to reduce the s-polynomial -*/
       o = H.SetpFDeg();
       if ((flag &2 ) == 0) cancelunit(&H,TRUE);
