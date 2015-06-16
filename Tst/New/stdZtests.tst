@@ -444,6 +444,42 @@ ideal gI =  std(I);
 gI;
 std(gI);
 
+//Github Adi #43
+
+LIB "primdec.lib";
+ring rng = integer,(x),lp;
+short = 0 ;
+ideal J = -10*x^2-9*x,-8*x^2-4;
+       ideal gJ =  std(J);
+       ideal ggJ =  std(gJ);
+ASSUME(0, 0== size( std(reduce (J,gJ ) ))  );
+ASSUME(0, idealsEqual(gJ,ggJ ));
+gJ;
+ggJ;
+
+ring rng = integer,x,lp;
+short = 0 ;
+option(noredSB) ;
+option(noredTail) ;
+ideal I   = -8*x^3+7*x^2-7*x, 8*x^2+10*x-2;
+ideal gI  =  std(I);
+ideal ggI =  std(gI);
+reduce (I,gI ); // <>0 !!
+gI;
+ggI;
+
+LIB("primdec.lib");
+ring rng = integer,x,lp;
+short = 0 ;
+ideal I = 8*x^3-4,-10*x^3+9*x;
+       ideal gI =  std(I);
+       ideal ggI =  std(gI);
+ASSUME(0, 0== size( std(reduce (I,gI ) ))  );
+ASSUME(0, idealsEqual(gI,ggI ));
+size(gI)== size(ggI) ;
+gI;
+ggI;
+
 
 
 
