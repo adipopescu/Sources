@@ -6121,7 +6121,7 @@ int posInL11Ring (const LSet set, const int length,
   if (length < 0) return 0;
   if(pIsConstant(p->p)) return length+1;
   int i,an,en;
-  if(pIsConstant(set[length].p))
+  if(pIsConstant(set[length].p) && length > 0)
   {   
     if (set[length-1].FDeg > p->FDeg)
       return length;
@@ -6188,36 +6188,36 @@ en = i+1;
 //getchar();
 loop
 {
-if(an > length)
-return length+1;
-if (an >= en-1)
-{
-if(an == en)
-return en;
-if (pLmCmp(set[an].p, p->p) == 1)
-return en;
-if (pLmCmp(set[an].p, p->p) == -1)
-return an;
-if (pLmCmp(set[i].p, p->p) == 0)
-{
-if(nGreater(set[an].p->coef, p->p->coef))
-return en;
-else
-return an;
-}
-}
-i=(an+en) / 2;
-if (pLmCmp(set[i].p, p->p) == 1)
-an=i;
-if (pLmCmp(set[i].p, p->p) == -1)
-en=i;
-if (pLmCmp(set[i].p, p->p) == 0)
-{
-if(nGreater(set[i].p->coef, p->p->coef))
-an = i;
-else
-en = i;
-}
+  if(an > length)
+    return length+1;
+  if (an >= en-1)
+  {
+    if(an == en)
+      return en;
+    if (pLmCmp(set[an].p, p->p) == 1)
+      return en;
+    if (pLmCmp(set[an].p, p->p) == -1)
+      return an;
+    if (pLmCmp(set[i].p, p->p) == 0)
+    {
+      if(nGreater(set[an].p->coef, p->p->coef))
+        return en;
+      else
+        return an;
+    }
+  }
+  i=(an+en) / 2;
+  if (pLmCmp(set[i].p, p->p) == 1)
+    an=i;
+  if (pLmCmp(set[i].p, p->p) == -1)
+    en=i;
+  if (pLmCmp(set[i].p, p->p) == 0)
+  {
+    if(nGreater(set[i].p->coef, p->p->coef))
+      an = i;
+    else
+      en = i;
+  }
 }
 #endif
 }
