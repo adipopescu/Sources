@@ -78,6 +78,7 @@
 
 #define ADIDEBUG 0
 #define ADIDEBUG_COUNT 0
+#define ADICHRISTIAN 1
 
 #if ADIDEBUG_COUNT
 long zeroredstd = 0;
@@ -2174,8 +2175,22 @@ printf("\nIn Spoly: m1, m2:\n");pWrite(m1);pWrite(m2);
   poly sS = pCopy(sSigMult);
   Lp.sig = p_Sub(pS, sS, currRing);
   Lp.sevSig=p_GetShortExpVector(pHead(Lp.sig),currRing);
-  assume(Lp.sevSig == pGetShortExpVector(pHead(Lp.sig)));
-  if  ( strat->syzCrit(pHead(Lp.sig),~Lp.sevSig,strat) ||
+  #if ADICHRISTIAN
+  if((p_LmCmp(pHead(Lp.sig),pHead(sSigMult),currRing) != 0) &&
+     (p_LmCmp(pHead(Lp.sig),pHead(pSigMult),currRing) != 0))
+  {
+    //In this case the sig doesn't strictly increase so we do not build the pair
+    #if ADIDEBUG
+    printf("\nSig would drop or remain, hence we do not build the pair\n");
+    pWrite(Lp.sig);pWrite(pSigMult);pWrite(sSigMult);
+    printf("\n%i , %i\n",p_LmCmp(pHead(Lp.sig),pHead(pSigMult),currRing),p_LmCmp(pHead(Lp.sig),pHead(sSigMult),currRing));
+    #endif
+    return;
+  }
+  #endif
+  if  ( //strat->syzCrit(pHead(Lp.sig),~Lp.sevSig,strat) ||
+        strat->syzCrit(pSigMult,pSigMultNegSev,strat) ||
+        strat->syzCrit(sSigMult,sSigMultNegSev,strat) ||
         strat->rewCrit1(pHead(Lp.sig),~Lp.sevSig,Lp.lcm,strat,i+1)
       )
   {
@@ -2549,18 +2564,30 @@ printf("\nCheck This:\n");
   #ifdef HAVE_RINGS
   poly pS = pCopy(pSigMult);
   poly sS = pCopy(sSigMult);
-  poly pSS = pCopy(pS);
-  poly sSS = pCopy(sS);
   Lp.sig = p_Add_q(pS, sS, currRing);
   #if ADIDEBUG  
-  if((pLmCmp(Lp.sig, pSS) == -1) && (pLmCmp(Lp.sig, sSS) == -1)) 
+  if((pLmCmp(pHead(Lp.sig), pHead(pSigMult)) == -1) && 
+     (pLmCmp(pHead(Lp.sig), pHead(sSigMult)) == -1)) 
   {
-    printf("\n!!!!!!!!!!!!! Sig cancelled in strong:\n");pWrite(Lp.sig);printf("\npS head=\n");pWrite(pHead(pSS));printf("\nsS head=\n");pWrite(pHead(sSS));printf("\nThis is an example where the signature drops!\n");
+    printf("\n!!!!!!!!!!!!! Sig cancelled in strong:\n");pWrite(Lp.sig);printf("\npS head=\n");pWrite(pHead(pSigMult));printf("\nsS head=\n");pWrite(pHead(sSigMult));printf("\nThis is an example where the signature drops!\n");
     //getchar();
   }
   #endif
   Lp.sevSig=p_GetShortExpVector(pHead(Lp.sig),currRing);
   Lp.strong = TRUE;
+  #if ADICHRISTIAN
+  if((p_LmCmp(pHead(Lp.sig),pHead(sSigMult),currRing) != 0) &&
+     (p_LmCmp(pHead(Lp.sig),pHead(pSigMult),currRing) != 0))
+  {
+    //In this case the sig doesn't strictly increase so we do not build the pair
+    #if ADIDEBUG
+    printf("\nSig would drop or remain, hence we do not build the pair\n");
+    pWrite(Lp.sig);pWrite(pSigMult);pWrite(sSigMult);
+    printf("\n%i , %i\n",p_LmCmp(pHead(Lp.sig),pHead(pSigMult),currRing),p_LmCmp(pHead(Lp.sig),pHead(sSigMult),currRing));
+    #endif
+    return;
+  }
+  #endif
   if  ( strat->syzCrit(pHead(Lp.sig),~Lp.sevSig,strat) //||
         //strat->rewCrit1(pHead(Lp.sig),~Lp.sevSig,Lp.lcm,strat,i+1)
       )
@@ -8968,7 +8995,7 @@ void enterSyz(LObject &p, kStrategy strat, int atT)
   pWrite(strat->syz[atT]);
 #endif
   // recheck pairs in strat->L with new rule and delete correspondingly
-  #if 1
+  #if 0
   int cc = strat->Ll;
   while (cc>-1)
   {
@@ -8979,7 +9006,7 @@ void enterSyz(LObject &p, kStrategy strat, int atT)
       {if(n_DivBy(pGetCoeff(strat->L[cc].sig), pGetCoeff(strat->syz[atT]), currRing))
         {
         #if ADIDEBUG
-        printf("\nenterSyz delete!!!!\n");pWrite(strat->L[cc].sig);pWrite(strat->syz[atT]);
+        printf("\nenterSyz delete!!!!\n");pWrite(strat->L[cc].p);pWrite(strat->L[cc].sig);pWrite(strat->syz[atT]);
         #endif
         deleteInL(strat->L,&strat->Ll,cc,strat);}}
     else
@@ -10318,6 +10345,7 @@ void postReduceByMon(LObject* h, kStrategy strat)
 
 void postReduceByMonSig(LObject* h, kStrategy strat)
 {
+  // I deactivated this for the moment since i have to take care of sig drop
   return;
   if(!nCoeff_is_Ring_Z(currRing->cf))
       return;

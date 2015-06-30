@@ -29,7 +29,8 @@ int create_count = 0;
 #define TEST_OPT_DEBUG_RED
 #endif
 
-#define ADIDEBUG 1
+#define ADIDEBUG 0
+#define ADICHRISTIAN 1
 
 /***************************************************************
  *
@@ -348,6 +349,25 @@ if(rField_is_Ring(currRing))
     //p_Minus_qq_Mult_qq(PR->sig, PW->sig, fin, tailRing);#
     poly sSigMult = pCopy(PW->sig);
     p_Mult_mm(sSigMult, fin, tailRing);
+    #if ADICHRISTIAN
+    poly finalsig = p_Sub(pCopy(PR->sig),pCopy(sSigMult),tailRing);
+    if(finalsig == NULL || nIsZero(finalsig->coef))
+    {
+      return 3;
+    }
+      
+    if((p_LmCmp(pHead(finalsig),pHead(sSigMult),currRing) != 0) &&
+     (p_LmCmp(pHead(finalsig),pHead(PR->sig),currRing) != 0))
+    {
+      //In this case the sig doesn't strictly increase so we do not build the pair
+      #if ADIDEBUG
+      printf("\nSig would drop or remain, hence we do not build the pair\n");
+      pWrite(finalsig);pWrite(PR->sig);pWrite(sSigMult);
+      printf("\n%i , %i\n",p_LmCmp(pHead(finalsig),pHead(PR->sig),currRing),p_LmCmp(pHead  (finalsig),pHead(sSigMult),currRing));
+      #endif
+      return 3;
+    }
+    #endif
     PR->sig = p_Sub(PR->sig, sSigMult, tailRing);
     PR->Tail_Minus_mm_Mult_qq(fin, t2, PW->GetpLength() - 1, spNoether);
     assume(PW->GetpLength() == pLength(PW->p != NULL ? PW->p : PW->t_p));

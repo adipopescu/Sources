@@ -105,7 +105,6 @@ int kFindDivisibleByInT(const kStrategy strat, const LObject* L, const int start
 {
   unsigned long not_sev = ~L->sev;
   int j = start;
-
   const TSet T=strat->T;
   const unsigned long* sevT=strat->sevT;
   if (L->p!=NULL)
@@ -716,7 +715,7 @@ int redSig (LObject* h,kStrategy strat)
     j = kFindDivisibleByInT(strat, h, start);
     #ifdef HAVE_RINGS
     //Take the first posible reducer (T[j] x proper monomial) which does not satisfy syzCrit
-    #if 1
+    #if 0
     loop
     {
         if((j>strat->tl) || (j<0))
@@ -744,16 +743,19 @@ int redSig (LObject* h,kStrategy strat)
     }
     #endif
     #endif
+    #if 1
     if (j < 0)
     {
       // over ZZ: cleanup coefficients by complete reduction with monomials
-      #if 1
       postReduceByMonSig(h, strat);
-      if(h->p == NULL || nIsZero(pGetCoeff(h->p))) 
+      if(nIsZero(pGetCoeff(h->p))) 
       {
         h->Clear();
         return 2;
       }
+      //j = kFindDivisibleByInT(strat, h);
+      if(j < 0)
+      {
       if(strat->tl >= 0)
           h->i_r1 = strat->tl;
       else
@@ -764,9 +766,10 @@ int redSig (LObject* h,kStrategy strat)
         h->Clear();
         return 0;
       }
-      #endif
       return 1;
+      }
     }
+    #endif
     #if ADIDEBUG
     printf("\nFound j = %i\n",j);pWrite(strat->T[j].p);
     #endif
@@ -777,7 +780,6 @@ int redSig (LObject* h,kStrategy strat)
      * pi with length li
      */
     i = j;
-#if 1
     if (TEST_OPT_LENGTH)
     loop
     {
@@ -797,6 +799,7 @@ int redSig (LObject* h,kStrategy strat)
               if(n_DivBy(pGetCoeff(h_p), pGetCoeff(strat->T[i].GetLmTailRing()),  strat->tailRing))
               {
                 #if 1
+                //Take the first posible reducer (T[j] x proper monomial) which does not satisfy syzCrit
                 fin = pCopy(pHead(h->p));
                 pNext(fin) = NULL;
                 p_ExpVectorSub(fin, pHead(strat->T[i].p), strat->tailRing);
@@ -828,7 +831,6 @@ int redSig (LObject* h,kStrategy strat)
       }
     }
     start = ii+1;
-#endif
 
     /*
      * end of search: have to reduce with pi
@@ -856,6 +858,21 @@ int redSig (LObject* h,kStrategy strat)
     Print("--------------------------------\n");
     printf("INDEX OF REDUCER T: %d\n",ii);
 #endif
+    #ifdef HAVE_RINGS
+    if(rField_is_Ring(currRing))
+    {
+      /*
+      if(
+         nIsZero(pGetCoeff(pSub(pCopy(h->sig), p_Copy(strat->T[ii].sig, currRing)))) ||
+         nIsZero(pGetCoeff(pAdd(pCopy(h->sig), p_Copy(strat->T[ii].sig, currRing)))))
+         */
+      if(pSub(pCopy(h->sig), p_Copy(strat->T[ii].sig, currRing)) == NULL ||
+         pAdd(pCopy(h->sig), p_Copy(strat->T[ii].sig, currRing)) == NULL)
+      {
+        return 0;
+      }
+    }
+    #endif
     sigSafe = ksReducePolySig(h, &(strat->T[ii]), strat->S_2_R[ii], NULL, NULL, strat);
     h->sevSig = p_GetShortExpVector(pHead(h->sig),currRing);
     assume(h->sevSig == pGetShortExpVector(pHead(h->sig)));
@@ -2176,7 +2193,7 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
         pWrite(strat->syz[iii]);
     }
     #endif
-    getchar();
+    //getchar();
     #endif
     #if 1
     for(int iii = 0; iii < strat->Ll; iii++)
@@ -2212,7 +2229,7 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
       else strat->noClearS=TRUE;
     }
     */
-    printf("\nAt the moment currIdx = %i\n", strat->currIdx);
+    //printf("\nAt the moment currIdx = %i\n", strat->currIdx);
     // ADIDEBUG: It may happen that i have already t*gen(7) but now i can reduce it and obtain 
     //           a t'*gen(4). In this case I may not want to apply f5c.
     //if (strat->sbaOrder == 1 && pGetComp(pHead(strat->L[strat->Ll].sig)) != strat->currIdx)
@@ -2220,7 +2237,7 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     
     {
       strat->currIdx  = pGetComp(pHead(strat->L[strat->Ll].sig));
-      printf("\nChanged! New currIdx = %i\n", strat->currIdx);
+      //printf("\nChanged! New currIdx = %i\n", strat->currIdx);
       
 //#if 0
 #if F5C
@@ -2446,13 +2463,15 @@ kTest_TS(strat);
     #if ADIDEBUG
 printf("\nWhat happend with this pair?: red_result: %i\n", red_result);pWrite(strat->P.p);pWrite(strat->P.sig);
 #endif
+    #if 0
     if  ((strat->P.p != NULL)&& (strat->syzCrit(pHead(strat->P.sig),~strat->P.sevSig,strat)))
     {
         red_result = 2;
-        #if AIDEBUG
+        #if ADIDEBUG
         printf("\nHere\n");
         #endif
     }
+    #endif
     // reduction to non-zero new poly
     #if 0
     if((strat->sl >= 1)&&((pEqualPolys(pHead(strat->sig[strat->sl]), pHead(strat->P.sig))) || (pEqualPolys(pNeg(pHead(strat->sig[strat->sl])), pHead(strat->P.sig)))))
@@ -3216,16 +3235,19 @@ void f5c (kStrategy strat, int& olddeg, int& minimcnt, int& hilbeledeg,
   #endif
   for(int ii = 0; ii<=strat->Ll; ii++)
   {
+    #if ADIDEBUG
     printf("\nL[%i]\n",ii);
+    #endif
     strat->L[ii].i_r1 = kFindInT(strat->L[ii].p1, strat->T, strat->tl);
     strat->L[ii].i_r2 = kFindInT(strat->L[ii].p2, strat->T, strat->tl);
     //if((i_r1 == -1) || (i_r1 != kFindInT(strat->L[ii].p1, strat->T, strat->tl)))
+    #if ADIDEBUG
     pWrite(strat->L[ii].p);
     pWrite(strat->L[ii].p1);
     pWrite(strat->L[ii].p2);
     pWrite(strat->L[ii].sig);
+    #endif
   }
-  idPrint(strat->Shdl);
   int Ll_old, red_result = 1;
   int pos  = 0;
   hilbeledeg=1;
@@ -3486,6 +3508,7 @@ void f5c (kStrategy strat, int& olddeg, int& minimcnt, int& hilbeledeg,
   printf("\nIn f5c nach die Signatur Anpassung\n");
   #endif
   // One has to repoint the i_r1 and i_r2:
+  #if ADIDEBUG
   printf("\nDas ist S:\n");
   for(int ii = 0; ii<=strat->sl;ii++)
     p_Write(strat->S[ii], strat->tailRing);
@@ -3499,6 +3522,7 @@ void f5c (kStrategy strat, int& olddeg, int& minimcnt, int& hilbeledeg,
     p_Write(strat->L[ii].p1, strat->tailRing);
     p_Write(strat->L[ii].p2, strat->tailRing);
   }
+  #endif
   /*for(int ii = 0; ii<=strat->tl; ii++)
   {printf("\nT[%i]\n",ii);pWrite(strat->T[ii].p);pWrite(strat->T[ii].sig);pWrite(strat->sig[ii]);}*/
   //idPrint(strat->Shdl);
