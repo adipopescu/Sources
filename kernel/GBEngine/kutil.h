@@ -447,6 +447,10 @@ int posInLF5C (const LSet set, const int length,
                LObject* L,const kStrategy strat);
 int posInLSig (const LSet set, const int length,
                LObject* L,const kStrategy strat);
+#ifdef HAVE_RINGS
+int posInLRingSig (const LSet set, const int length,
+               LObject* L,const kStrategy strat);
+#endif
 int posInLRing (const LSet set, const int length,
                LObject* L,const kStrategy strat);
 int posInSyz (const kStrategy strat, const poly sig);
@@ -489,6 +493,7 @@ int redRing (LObject* h,kStrategy strat);
 int redRiloc (LObject* h,kStrategy strat);
 void enterExtendedSpoly(poly h,kStrategy strat);
 void superenterpairs (poly h,int k,int ecart,int pos,kStrategy strat, int atR = -1);
+void superenterpairsSig (poly h,poly hSig, int hFrom, int k,int ecart,int pos,kStrategy strat, int atR = -1);
 poly kCreateZeroPoly(long exp[], long cabsind, poly* t_p, ring leadRing, ring tailRing);
 long ind2(long arg);
 
@@ -505,6 +510,7 @@ void enterpairs (poly h, int k, int ec, int pos,kStrategy strat, int atR = -1);
 void entersets (LObject h);
 void pairs ();
 BOOLEAN enterOneStrongPoly (int i,poly p,int /*ecart*/, int /*isFromQ*/,kStrategy strat, int atR = -1, bool enterTstrong = FALSE);
+BOOLEAN enterOneStrongPolySig (int i,poly p,poly sig, int /*ecart*/, int /*isFromQ*/,kStrategy strat, int atR = -1, bool enterTstrong = FALSE);
 void message (int i,int* reduc,int* olddeg,kStrategy strat,int red_result);
 void messageStat (int hilbcount,kStrategy strat);
 #ifdef KDEBUG

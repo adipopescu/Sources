@@ -2555,11 +2555,6 @@ ideal kSba(ideal F, ideal Q, tHomog h,intvec ** w, int sbaOrder, int arri, intve
   }
   else
 #endif
-#ifdef HAVE_RINGS
-  if (rField_is_Ring(currRing))
-    r=bba(F,Q,NULL,hilb,strat);
-  else
-#endif
   {
     if (rHasLocalOrMixedOrdering(currRing))
     {
@@ -2587,7 +2582,9 @@ ideal kSba(ideal F, ideal Q, tHomog h,intvec ** w, int sbaOrder, int arri, intve
   currRing->pLexOrder = b;
 //Print("%d reductions canceled \n",strat->cel);
   HCord=strat->HCord;
-  delete(strat);
+  
+  //  LOOK AT THIS BEFORE ENDING!!!!!
+  //delete(strat);
   if ((delete_w)&&(w!=NULL)&&(*w!=NULL)) delete *w;
   return r;
 }

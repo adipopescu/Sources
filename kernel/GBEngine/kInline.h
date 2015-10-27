@@ -431,6 +431,11 @@ KINLINE long sTObject::SetDegStuffReturnLDeg()
 KINLINE void  sTObject::pCleardenom()
 {
   assume(p != NULL);
+  //In the ring case with SIGS, i have to do the same operartions on sigs, so return
+  #ifdef HAVE_RINGS
+  if(rField_is_Ring(currRing) && sig != NULL)
+    return;
+  #endif
   if (TEST_OPT_CONTENTSB)
     {
       number n;

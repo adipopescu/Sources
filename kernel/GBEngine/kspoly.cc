@@ -244,6 +244,83 @@ int ksReducePolySig(LObject* PR,
     printf("--------------\n");
 #endif
     int sigSafe = p_LmCmp(PR->sig,sigMult,currRing);
+    //OVER RINGS I CONSIDER THE WHOLE SIG SO I CAN REDUCE EACH TIME
+    #if 0
+    #ifdef HAVE_RINGS
+    if(rField_is_Ring(currRing))
+      {
+        if (sigSafe == 0) 
+        {
+            number h = nSub(pGetCoeff(PR->sig), pGetCoeff(sigMult));
+            sigSafe = -1 + nIsZero(h) + 2*nGreaterZero(h);   /* -1: <, 0:==, 1: > */
+            nDelete(&h);
+        }
+      }
+    #endif
+    #endif
+    #ifdef HAVE_RINGS
+    if(rField_is_Ring(currRing))
+    {
+      PR->is_redundant = FALSE;
+      poly p1 = PR->GetLmTailRing();   // p2 | p1
+      poly p2 = PW->GetLmTailRing();   // i.e. will reduce p1 with p2; lm = LT(p1) / LM(p2)
+      poly t2 = pNext(p2), lm = p1;    // t2 = p2 - LT(p2); really compute P = LC(p2)*p1 - LT(p1)/LM(p2)*p2
+      assume(p1 != NULL && p2 != NULL);// Attention, we have rings and there LC(p2) and LC(p1) are special
+      p_CheckPolyRing(p1, tailRing);
+      p_CheckPolyRing(p2, tailRing);
+
+      pAssume1(p2 != NULL && p1 != NULL &&
+          p_DivisibleBy(p2,  p1, tailRing));
+
+      pAssume1(p_GetComp(p1, tailRing) == p_GetComp(p2, tailRing) ||
+        (p_GetComp(p2, tailRing) == 0 &&
+        p_MaxComp(pNext(p2),tailRing) == 0));
+        
+      poly fin = pCopy(PR->GetLm(currRing));
+      pNext(fin) = NULL;
+      PR->GetP();
+      #if ADIDEBUG
+      printf("\nThis is PR:\n");pWrite(p1);pWrite(PR->sig);
+      printf("\nThis is PW:\n");pWrite(p2);pWrite(PW->sig);
+      #endif
+      /*
+      printf("\nPointers for PW: %p, %p\n", PW->p, PW->sig);
+      for(int ii=0; ii<=strat->sl; ii++)
+      {
+          printf("\nS[%i]\n",ii);pWrite(strat->S[ii]);pWrite(strat->sig[ii]);printf("%p, %p", strat->S[ii], strat->sig[ii]);printf("\nS_2_R: %i -> %i \n",ii ,strat->S_2_R[ii]);
+      }
+      for(int ii=0; ii<=strat->tl; ii++)
+      {
+          printf("\nT[%i]\n",ii);pWrite(strat->T[ii].p);pWrite(strat->T[ii].sig);printf("%p, %p", strat->T[ii].p, strat->T[ii].sig);
+      }
+      pWrite(fin);*/
+      assume(pNext(fin) == NULL);
+      p_ExpVectorSub(fin, p2, tailRing);
+      number bn = pGetCoeff(fin);
+      number an = pGetCoeff(p2);
+      assume(n_DivBy(bn,an,tailRing) == TRUE);
+      pSetCoeff(fin, nDiv(bn,an));
+      #if ADIDEBUG
+      printf("\nfin:\n");pWrite(fin);
+      #endif
+      //ksCheckCoeff(&an, &bn, tailRing->cf);    // Calculate special LC
+      //int ct = ksCheckCoeff(&an, &bn, tailRing->cf);    // Calculate special LC
+      //p_SetCoeff(lm, bn, tailRing);
+      //p_SetCoeff(fin, bn, tailRing);
+      //p_Neg(fin, tailRing);
+      //p_Minus_qq_Mult_qq(PR->sig, PW->sig, fin, tailRing);#
+      poly sSigMult = pCopy(PW->sig);
+      p_Mult_mm(sSigMult, fin, tailRing);
+      PR->sig = p_Sub(PR->sig, sSigMult, tailRing);
+      PR->Tail_Minus_mm_Mult_qq(fin, t2, PW->GetpLength() - 1, spNoether);
+      assume(PW->GetpLength() == pLength(PW->p != NULL ? PW->p : PW->t_p));
+      PR->LmDeleteAndIter();
+      #if ADIDEBUG
+      printf("\nThis is the final in redSig:\n");pWrite(PR->p);pWrite(PR->sig);//getchar();
+      #endif
+      return 1;
+    }
+    #endif
     // now we can delete the copied polynomial data used for checking for
     // sig-safeness of the reduction step
 //#if 1
@@ -295,6 +372,7 @@ int ksReducePolySig(LObject* PR,
     return 0;
   }
 #endif
+  
 
   if (t2==NULL)           // Divisor is just one term, therefore it will
   {                       // just cancel the leading term
