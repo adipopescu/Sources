@@ -1628,7 +1628,6 @@ BOOLEAN enterOneStrongPolySig (int i,poly p,poly sig, int /*ecart*/, int /*isFro
   int posx;
   h.pCleardenom();
   strat->initEcart(&h);
-  h.sev = pGetShortExpVector(h.p);
   h.i_r1 = -1;h.i_r2 = -1;
   if (currRing!=strat->tailRing)
     h.t_p = k_LmInit_currRing_2_tailRing(h.p, strat->tailRing);
@@ -1651,11 +1650,15 @@ BOOLEAN enterOneStrongPolySig (int i,poly p,poly sig, int /*ecart*/, int /*isFro
       posx =0;
     else
       posx = strat->posInLSba(strat->L,strat->Ll,&h,strat);
+    h.sev = pGetShortExpVector(pHead(h.p));
+    h.sevSig = pGetShortExpVector(pHead(h.sig));
     enterL(&strat->L,&strat->Ll,&strat->Lmax,h,posx);
   }
   else
   {
     if(h.IsNull()) return FALSE;
+    h.sev = pGetShortExpVector(pHead(h.p));
+    h.sevSig = pGetShortExpVector(pHead(h.sig));
     enterT(h, strat,-1);
   }
   //#if 1
@@ -2445,7 +2448,6 @@ void enterOnePairSig (int i, poly p, poly pSig, int, int ecart, int isFromQ, kSt
   {
     #if ADIDEBUG
     printf("\nFinal signature of the pair: \n");pWrite(Lp.p);pWrite(Lp.sig);
-    assume(Lp.sevSig == pGetShortExpVector(pHead(Lp.sig)));
     #endif
   }
   else
@@ -2553,7 +2555,8 @@ void enterOnePairSig (int i, poly p, poly pSig, int, int ecart, int isFromQ, kSt
           )
         nDelete(&(Lp.p->coef));
     }
-
+    Lp.sevSig = pGetShortExpVector(pHead(Lp.sig));
+    Lp.sev = pGetShortExpVector(pHead(Lp.p));
     l = strat->posInLSba(strat->B,strat->Bl,&Lp,strat);
     enterL(&strat->B,&strat->Bl,&strat->Bmax,Lp,l);
   }
@@ -8346,6 +8349,11 @@ void enterT_strong(LObject &p, kStrategy strat, int atT)
 */
 void enterSyz(LObject &p, kStrategy strat, int atT)
 {
+  //  Just put syz with lc > 0
+  #ifdef HAVE_RINGS
+  if(rField_is_Ring(currRing) && !n_GreaterZero(pGetCoeff(p.sig),currRing))
+    p.sig = pNeg(p.sig);
+  #endif
   #if ADIDEBUG
   printf("\n----> New syz\n");pWrite(p.sig);
   #endif
@@ -8392,8 +8400,9 @@ void enterSyz(LObject &p, kStrategy strat, int atT)
     if (p_LmShortDivisibleBy( strat->syz[atT], strat->sevSyz[atT],
                               strat->L[cc].sig, ~strat->L[cc].sevSig, currRing)
         #ifdef HAVE_RINGS
-        && (!rField_is_Ring(currRing) || (n_DivBy(pGetCoeff(strat->L[cc].sig), pGetCoeff(strat->syz[atT]), currRing->cf)) && 
-        //I avoid deleteing the same sig, because i need to know that till now i have a 
+        && ((!rField_is_Ring(currRing) || (n_DivBy(pGetCoeff(strat->L[cc].sig), pGetCoeff(strat->syz[atT]), currRing->cf))) && 
+        //I avoid deleteing the same sig, 
+        //because i need to know that till now i have a 
         //sig standard base up till this sig...
         (!pLmEqual(strat->L[cc].sig,strat->syz[atT]) || !nEqual(pGetCoeff(strat->L[cc].sig),pGetCoeff(strat->syz[atT]))))
         #endif
@@ -8403,6 +8412,14 @@ void enterSyz(LObject &p, kStrategy strat, int atT)
       printf("\n----> syz delete :)\n");pWrite(strat->L[cc].p);pWrite(strat->L[cc].sig);
       #endif
       deleteInL(strat->L,&strat->Ll,cc,strat);
+    }
+    else
+    {
+      #if ADIDEBUG
+      printf("\n----> syz not delete :)\n");pWrite(strat->L[cc].sig);pWrite(strat->syz[atT]);
+      printf("\nLmEqual = %i, nEqual = %i\n, ShortDivBy = %i, nDivBy = %i\n",pLmEqual(strat->L[cc].sig,strat->syz[atT]), nEqual(pGetCoeff(strat->L[cc].sig),pGetCoeff(strat->syz[atT])), p_LmShortDivisibleBy( strat->syz[atT], strat->sevSyz[atT],
+                              strat->L[cc].sig, ~strat->L[cc].sevSig, currRing), n_DivBy(pGetCoeff(strat->L[cc].sig), pGetCoeff(strat->syz[atT]), currRing->cf));
+      #endif
     }
     cc--;
   }
