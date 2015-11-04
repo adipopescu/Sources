@@ -1502,6 +1502,46 @@ static inline int p_LmCmp(poly p, poly q, const ring r)
 
 }
 
+static inline int p_LtCmp(poly p, poly q, const ring r)
+{
+  p_LmCheckPolyRing1(p, r);
+  p_LmCheckPolyRing1(q, r);
+
+  const unsigned long* _s1 = ((unsigned long*) p->exp);
+  const unsigned long* _s2 = ((unsigned long*) q->exp);
+  register unsigned long _v1;
+  register unsigned long _v2;
+  const unsigned long _l = r->CmpL_Size;
+
+  register unsigned long _i=0;
+
+  LengthGeneral_OrdGeneral_LoopTop:
+  _v1 = _s1[_i];
+  _v2 = _s2[_i];
+  if (_v1 == _v2)
+  {
+    _i++;
+    if (_i == _l)
+    {
+      if(n_Equal(p->coef,q->coef,r->cf))
+        return 0;
+      if(n_Greater(p->coef,q->coef,r->cf))
+        return 1;
+      return -1;
+    }
+    goto LengthGeneral_OrdGeneral_LoopTop;
+  }
+  const long* _ordsgn = (long*) r->ordsgn;
+  if (_v1 > _v2)
+  {
+    if (_ordsgn[_i] == 1) return 1;
+    return -1;
+  }
+  if (_ordsgn[_i] == 1) return -1;
+  return 1;
+
+}
+
 /// returns TRUE if p1 is a skalar multiple of p2
 /// assume p1 != NULL and p2 != NULL
 BOOLEAN p_ComparePolys(poly p1,poly p2, const ring r);
