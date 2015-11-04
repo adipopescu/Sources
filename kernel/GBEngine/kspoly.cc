@@ -245,7 +245,8 @@ int ksReducePolySig(LObject* PR,
 #endif
     int sigSafe = p_LmCmp(PR->sig,sigMult,currRing);
     //OVER RINGS I CONSIDER THE WHOLE SIG SO I CAN REDUCE EACH TIME
-    #if 0
+    //I have to di this because some proofs it is used that the sig will not drop!!!
+    #if 1
     #ifdef HAVE_RINGS
     if(rField_is_Ring(currRing))
       {
@@ -261,6 +262,13 @@ int ksReducePolySig(LObject* PR,
     #ifdef HAVE_RINGS
     if(rField_is_Ring(currRing))
     {
+      #if 1
+      if(sigSafe != 1)
+      {
+        PR->is_redundant = TRUE;
+        return 3;
+      }
+      #endif
       PR->is_redundant = FALSE;
       poly p1 = PR->GetLmTailRing();   // p2 | p1
       poly p2 = PW->GetLmTailRing();   // i.e. will reduce p1 with p2; lm = LT(p1) / LM(p2)

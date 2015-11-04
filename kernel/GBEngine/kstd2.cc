@@ -676,6 +676,8 @@ KINLINE int ksReducePolyTailSig(LObject* PR, TObject* PW, LObject* Red)
 */
 int redSig (LObject* h,kStrategy strat)
 {
+  //Löscht das
+  poly origsig;
   if (strat->tl<0) return 1;
   //if (h->GetLmTailRing()==NULL) return 0; // HS: SHOULD NOT BE NEEDED!
   //printf("FDEGS: %ld -- %ld\n",h->FDeg, h->pFDeg());
@@ -787,7 +789,15 @@ int redSig (LObject* h,kStrategy strat)
     Print("--------------------------------\n");
     printf("INDEX OF REDUCER T: %d\n",ii);
 #endif
+    //Dannach löschen!!!!!!
+            origsig = pCopy(h->sig);
     sigSafe = ksReducePolySig(h, &(strat->T[ii]), strat->S_2_R[ii], NULL, NULL, strat);
+            if(h->sig !=NULL && pLtCmp(origsig,h->sig) == -1)
+            {
+              printf("\nSIG REDUCE DROP\n");
+              pWrite(h->sig);pWrite(origsig);pWrite(strat->sig[i]);
+              getchar();
+            }
     #if ADIDEBUG
     printf("\nAfter small reduction\n");
     pWrite(h->p);pWrite(h->sig);

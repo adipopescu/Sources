@@ -11,7 +11,7 @@
 
 #define MYTEST 0
 
-#define ADIDEBUG 1
+#define ADIDEBUG 0
 
 #include <kernel/mod2.h>
 
@@ -1652,6 +1652,14 @@ BOOLEAN enterOneStrongPolySig (int i,poly p,poly sig, int /*ecart*/, int /*isFro
       posx = strat->posInLSba(strat->L,strat->Ll,&h,strat);
     h.sev = pGetShortExpVector(pHead(h.p));
     h.sevSig = pGetShortExpVector(pHead(h.sig));
+    if((p_LtCmp(pHead(h.sig),pHead(sig),currRing) == -1) &&
+     (p_LtCmp(pHead(h.sig),pHead(strat->sig[i]),currRing) == -1))
+    {
+      //#if ADIDEBUG
+      printf("\nSIG STRONG DROP!!!\n");pWrite(h.sig);pWrite(sig);pWrite(strat->sig[i]);
+      getchar();
+      //#endif
+    }
     enterL(&strat->L,&strat->Ll,&strat->Lmax,h,posx);
   }
   else
@@ -2449,6 +2457,14 @@ void enterOnePairSig (int i, poly p, poly pSig, int, int ecart, int isFromQ, kSt
     #if ADIDEBUG
     printf("\nFinal signature of the pair: \n");pWrite(Lp.p);pWrite(Lp.sig);
     #endif
+    if((p_LtCmp(pHead(Lp.sig),pHead(pSig),currRing) == -1) &&
+     (p_LtCmp(pHead(Lp.sig),pHead(strat->sig[i]),currRing) == -1))
+    {
+      //#if ADIDEBUG
+      printf("\nSIG SPAIR DROP!!!\n");pWrite(Lp.sig);pWrite(pSig);pWrite(strat->sig[i]);
+      getchar();
+      //#endif
+    }
   }
   else
   #endif
