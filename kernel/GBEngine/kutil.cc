@@ -1182,7 +1182,7 @@ void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int 
 {
   #if 1
   #ifdef HAVE_RINGS
-  if(rField_is_Ring(currRing))
+  if(rField_is_Ring(currRing) && !rHasLocalOrMixedOrdering(currRing))
   {
     number d,s,t;
     d = n_ExtGcd(pGetCoeff(p), pGetCoeff(strat->S[i]), &s, &t, currRing->cf);
