@@ -1180,6 +1180,25 @@ static inline BOOLEAN sugarDivisibleBy(int ecart1, int ecart2)
 */
 void enterOnePairRing (int i,poly p,int ecart, int isFromQ,kStrategy strat, int atR = -1)
 {
+  #if 1
+  #ifdef HAVE_RINGS
+  if(rField_is_Ring(currRing))
+  {
+    number d,s,t;
+    d = n_ExtGcd(pGetCoeff(p), pGetCoeff(strat->S[i]), &s, &t, currRing->cf);
+    if (!nIsZero(s) && !nIsZero(t))
+    {
+      nDelete(&d);
+      nDelete(&s);
+      nDelete(&t);
+      return;
+    }
+    nDelete(&d);
+    nDelete(&s);
+    nDelete(&t);
+  }
+  #endif
+  #endif
   assume(atR >= 0);
   assume(i<=strat->sl);
   assume(p!=NULL);
