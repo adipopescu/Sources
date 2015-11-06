@@ -4011,37 +4011,12 @@ void enterpairs (poly h,int k,int ecart,int pos,kStrategy strat, int atR)
 #ifdef HAVE_RINGS
   assume (!rField_is_Ring(currRing));
 #endif
-  //#if ADIDEBUG
-  #if 0
-        Print("\n    Vor initenterpairs: The new pair list L -- after superenterpairs in loop\n");
-        for(int iii=0;iii<=strat->Ll;iii++)
-        {
-          printf("\n    L[%d]:\n",iii);
-          PrintS("         ");p_Write(strat->L[iii].p,strat->tailRing);
-          PrintS("         ");p_Write(strat->L[iii].p1,strat->tailRing);
-          PrintS("         ");p_Write(strat->L[iii].p2,strat->tailRing);
-        }
-        #endif
-
   initenterpairs(h,k,ecart,0,strat, atR);
-
-      //#if ADIDEBUG
-      #if 0
-        Print("\n    Nach initenterpairs: The new pair list L -- after superenterpairs in loop \n");
-        for(int iii=0;iii<=strat->Ll;iii++)
-        {
-          printf("\n    L[%d]:\n",iii);
-          PrintS("         ");p_Write(strat->L[iii].p,strat->tailRing);
-          PrintS("         ");p_Write(strat->L[iii].p1,strat->tailRing);
-          PrintS("         ");p_Write(strat->L[iii].p2,strat->tailRing);
-        }
-        #endif
 
   if ( (!strat->fromT)
   && ((strat->syzComp==0)
     ||(pGetComp(h)<=strat->syzComp)))
   {
-    //Print("start clearS k=%d, pos=%d, sl=%d\n",k,pos,strat->sl);
     unsigned long h_sev = pGetShortExpVector(h);
     loop
     {
@@ -4049,9 +4024,7 @@ void enterpairs (poly h,int k,int ecart,int pos,kStrategy strat, int atR)
       clearS(h,h_sev, &j,&k,strat);
       j++;
     }
-    //Print("end clearS sl=%d\n",strat->sl);
   }
- // PrintS("end enterpairs\n");
 }
 
 /*2
@@ -7914,7 +7887,6 @@ void enterT(LObject &p, kStrategy strat, int atT)
 void enterT_strong(LObject &p, kStrategy strat, int atT)
 {
   int i;
-
   pp_Test(p.p, currRing, p.tailRing);
   assume(strat->tailRing == p.tailRing);
   // redMoraNF complains about this -- but, we don't really
@@ -7991,14 +7963,14 @@ void enterT_strong(LObject &p, kStrategy strat, int atT)
   strat->sevT[atT] = (p.sev == 0 ? pGetShortExpVector(p.p) : p.sev);
   #if 1
   #ifdef HAVE_RINGS
-  if(rField_is_Ring(currRing) && rHasLocalOrMixedOrdering(currRing) && !n_IsUnit(p.p->coef, currRing->cf))
+  if(rField_is_Ring(currRing)  && !n_IsUnit(p.p->coef, currRing->cf))
   {
     #if ADIDEBUG
     printf("\nDas ist p:\n");pWrite(p.p);
     #endif
     for(i=strat->tl;i>=0;i--)
     {
-      if(strat->T[i].ecart <= p.ecart && pLmDivisibleBy(strat->T[i].p,p.p))
+      if(strat->T[i].ecart <= p.ecart && rHasLocalOrMixedOrdering(currRing) && pLmDivisibleBy(strat->T[i].p,p.p))
       {
         #if ADIDEBUG
         printf("\nFound one: %i\n",i);pWrite(strat->T[i].p);

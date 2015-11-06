@@ -434,6 +434,56 @@ int redRing (LObject* h,kStrategy strat)
       j = kFindDivisibleByInT(strat, h);
       if(j < 0)
       {
+        #if 1
+        #ifdef HAVE_RINGS
+        //Jetzt versuche ich weiter reduzieren mit gcd polys
+        //p = 2xy + ... , T = -3x + ... -> gcdpoly(p,T)
+        if(rField_is_Ring(currRing))
+        {
+          int i;
+          for(i=0;i<=strat->tl;i++)
+          {
+            // Baue den Strong poly
+            if(pLmDivisibleBy(strat->T[i].p,h->p))
+            {
+              //printf("\nTried\n");
+              number d, s, t;
+              poly m1, m2, gcd;
+              d = n_ExtGcd(pGetCoeff(h->p), pGetCoeff(strat->T[i].p), &s, &t, currRing->cf);
+              if (!nIsZero(s) && !nIsZero(t))
+              {
+                //printf("\nWe reduce it with the new strategy!!!\n");
+                //pWrite(h->p);pWrite(strat->T[i].p);
+                k_GetStrongLeadTerms(h->p, strat->T[i].p, currRing, m1, m2, gcd, strat->tailRing);
+                pSetCoeff0(m1, s);
+                pSetCoeff0(m2, t);
+                pSetCoeff0(gcd, d);
+                p_Test(m1,strat->tailRing);
+                p_Test(m2,strat->tailRing);
+                //printf("\nm1,m2\n");pWrite(m1);pWrite(m2);
+                pNext(gcd) = p_Add_q(pp_Mult_mm(pNext(h->p), m1, strat->tailRing), pp_Mult_mm(pNext(strat->T[i].p), m2, strat->tailRing), strat->tailRing);
+                p_LmDelete(m1, strat->tailRing);
+                p_LmDelete(m2, strat->tailRing);
+                //nDelete(&s);
+                //nDelete(&t);
+                h->p = gcd;
+                h->SetShortExpVector();
+                h->SetpFDeg();
+                h->pLength = pLength(h->p);
+                //pWrite(h->p);
+                pTest(h->p);
+              }
+              else
+              {
+                nDelete(&d);
+                nDelete(&s);
+                nDelete(&t);
+              }
+            }
+          }
+        }
+        #endif
+        #endif
         if(strat->tl >= 0)
             h->i_r1 = strat->tl;
         else
@@ -1465,6 +1515,7 @@ void kDebugPrint(kStrategy strat);
 
 ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
 {
+  int adi=0, adi2 = 0;
   int   red_result = 1;
   int   olddeg,reduc;
   int hilbeledeg=1,hilbcount=0,minimcnt=0;
@@ -1637,6 +1688,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
       #if ADIDEBUG
       printf("\nBefore \n");pWrite(strat->P.p);
       #endif
+      adi++;
       red_result = strat->red(&strat->P,strat);
       #if ADIDEBUG
       printf("\nAfter \n");pWrite(strat->P.p);
@@ -1775,9 +1827,13 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
         pLmFree(strat->P.lcm);
 #endif
     }
-    else if (strat->P.p1 == NULL && strat->minim > 0)
+    else 
     {
-      p_Delete(&strat->P.p2, currRing, strat->tailRing);
+      adi2++;
+      if (strat->P.p1 == NULL && strat->minim > 0)
+      {
+        p_Delete(&strat->P.p2, currRing, strat->tailRing);
+      }
     }
 
 #ifdef KDEBUG
@@ -1866,7 +1922,8 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
 #endif /* MYTEST */
 #endif /* KDEBUG */
   idTest(strat->Shdl);
-
+  printf("\nredresult in bba = %i\n",adi);
+  printf("\nredresult != 1 in bba = %i\n",adi2);
   return (strat->Shdl);
 }
 ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
