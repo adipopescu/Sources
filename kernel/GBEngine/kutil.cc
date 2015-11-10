@@ -2205,6 +2205,25 @@ void enterOnePairSig (int i, poly p, poly pSig, int from, int ecart, int isFromQ
 void enterOnePairSig (int i, poly p, poly pSig, int, int ecart, int isFromQ, kStrategy strat, int atR = -1)
 #endif
 {
+  #if 1
+  #ifdef HAVE_RINGS
+  if(rField_is_Ring(currRing))
+  {
+    number d,s,t;
+    d = n_ExtGcd(pGetCoeff(p), pGetCoeff(strat->S[i]), &s, &t, currRing->cf);
+    if (!nIsZero(s) && !nIsZero(t))
+    {
+      nDelete(&d);
+      nDelete(&s);
+      nDelete(&t);
+      return;
+    }
+    nDelete(&d);
+    nDelete(&s);
+    nDelete(&t);
+  }
+  #endif
+  #endif
   assume(i<=strat->sl);
   #if ADIDEBUG
   printf("\nTrying to add sig-spair S[%i] und p\n",i);pWrite(strat->S[i]);pWrite(p);

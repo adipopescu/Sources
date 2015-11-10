@@ -19,7 +19,7 @@
 # define MYTEST 0
 #endif /* ifndef SING_NDEBUG */
 
-#define ADIDEBUG 1
+#define ADIDEBUG 0
 #define ADIDEBUG_COUNT 0
 
 #if MYTEST
