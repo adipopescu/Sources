@@ -1922,8 +1922,10 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
 #endif /* MYTEST */
 #endif /* KDEBUG */
   idTest(strat->Shdl);
+  #if 0
   printf("\nredresult in bba = %i\n",adi);
   printf("\nredresult != 1 in bba = %i\n",adi2);
+  #endif
   return (strat->Shdl);
 }
 ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
