@@ -1466,6 +1466,7 @@ void kDebugPrint(kStrategy strat);
 
 ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
 {
+  int zerored = 0, maxgrad = 0, maxmenge = 0,laengebasis = 0,anzahlbasis;
   int   red_result = 1;
   int   olddeg,reduc;
   int hilbeledeg=1,hilbcount=0,minimcnt=0;
@@ -1523,6 +1524,8 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
   /* compute------------------------------------------------------- */
   while (strat->Ll >= 0)
   {
+    if(strat->Ll > maxmenge)
+      maxmenge = strat->Ll;
     #if ADIDEBUG
     printf("\n      ------------------------NEW LOOP\n");
     printf("\nShdl = \n");
@@ -1585,6 +1588,8 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     }
     /* picks the last element from the lazyset L */
     strat->P = strat->L[strat->Ll];
+    if(strat->P.FDeg > maxgrad)
+      maxgrad = strat->P.FDeg;
     strat->Ll--;
 
     if (pNext(strat->P.p) == strat->tail)
@@ -1782,9 +1787,13 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
         pLmFree(strat->P.lcm);
 #endif
     }
-    else if (strat->P.p1 == NULL && strat->minim > 0)
-    {
-      p_Delete(&strat->P.p2, currRing, strat->tailRing);
+    else 
+    { 
+      zerored++;
+      if (strat->P.p1 == NULL && strat->minim > 0)
+      {
+        p_Delete(&strat->P.p2, currRing, strat->tailRing);
+      }
     }
 
 #ifdef KDEBUG
@@ -1873,7 +1882,12 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
 #endif /* MYTEST */
 #endif /* KDEBUG */
   idTest(strat->Shdl);
-
+  for(int i=0;i<=strat->sl;i++)
+  {
+    laengebasis += pLength(strat->S[i]);
+  }
+  anzahlbasis = strat->sl+1;
+  printf("\nZero reductions: %i\nMaximal grad: %i\nMaximal L Menge: %i\nLänge Basis: %i\nBasis: %i Elementen\n\n",zerored, maxgrad, maxmenge, laengebasis, anzahlbasis);
   return (strat->Shdl);
 }
 ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)

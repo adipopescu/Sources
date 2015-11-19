@@ -1568,6 +1568,7 @@ void kDebugPrint(kStrategy strat);
 
 ideal mora (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
 {
+int zerored = 0, maxgrad = 0, maxmenge = 0,laengebasis = 0,anzahlbasis;
 #ifdef HAVE_RINGS
 #if ADIDEBUG
 int loop_count;
@@ -1631,6 +1632,8 @@ loop_count = 1;
 
   while (strat->Ll >= 0)
   {
+  if(strat->Ll > maxmenge)
+      maxmenge = strat->Ll;
     #if ADIDEBUG
     printf("\n      ------------------------NEW LOOP\n");
     printf("\nShdl = \n");
@@ -1686,6 +1689,8 @@ loop_count = 1;
     }
     strat->P = strat->L[strat->Ll];/*- picks the last element from the lazyset L -*/
     if (strat->Ll==0) strat->interpt=TRUE;
+    if(strat->P.FDeg > maxgrad)
+      maxgrad = strat->P.FDeg;
     strat->Ll--;
     //printf("\nThis is P:\n");p_Write(strat->P.p,strat->tailRing);p_Write(strat->P.p1,strat->tailRing);p_Write(strat->P.p2,strat->tailRing);
     // create the real Spoly
@@ -1841,6 +1846,8 @@ loop_count = 1;
       memset(&strat->P,0,sizeof(strat->P));
 #endif
     }
+    else
+     zerored++;
     if (strat->kHEdgeFound)
     {
       if ((TEST_OPT_FINDET)
@@ -1907,6 +1914,12 @@ loop_count = 1;
   if (Q!=NULL) updateResult(strat->Shdl,Q,strat);
   SI_RESTORE_OPT1(save1);
   idTest(strat->Shdl);
+  for(int i=0;i<=strat->sl;i++)
+  {
+    laengebasis += pLength(strat->S[i]);
+  }
+  anzahlbasis = strat->sl+1;
+  printf("\nZero reductions: %i\nMaximal grad: %i\nMaximal L Menge: %i\nLänge Basis: %i\nBasis: %i Elementen\n\n",zerored, maxgrad, maxmenge, laengebasis, anzahlbasis);
   return (strat->Shdl);
 }
 
