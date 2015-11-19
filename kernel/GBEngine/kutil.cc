@@ -2205,7 +2205,7 @@ void enterOnePairSig (int i, poly p, poly pSig, int from, int ecart, int isFromQ
 void enterOnePairSig (int i, poly p, poly pSig, int, int ecart, int isFromQ, kStrategy strat, int atR = -1)
 #endif
 {
-  #if 1
+  #if 0
   #ifdef HAVE_RINGS
   if(rField_is_Ring(currRing))
   {
