@@ -8468,8 +8468,9 @@ void enterSyz(LObject &p, kStrategy strat, int atT)
   }
   //i = strat->syzl;
   i = atT;
-  strat->syz[atT] = p.sig;
-  strat->sevSyz[atT] = p.sevSig;
+  //Put just the head
+  strat->syz[atT] = pHead(p.sig);
+  strat->sevSyz[atT] = pGetShortExpVector(pHead(p.sig));
   strat->syzl++;
 #if F5DEBUG
   Print("element in strat->syz: %d--%d  ",atT+1,strat->syzmax);
