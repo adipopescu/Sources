@@ -677,7 +677,7 @@ KINLINE int ksReducePolyTailSig(LObject* PR, TObject* PW, LObject* Red)
 int redSig (LObject* h,kStrategy strat)
 {
   //Löscht das
-  poly origsig;
+  poly origsig = pCopy(pHead(h->sig));;
   if (strat->tl<0) return 1;
   //if (h->GetLmTailRing()==NULL) return 0; // HS: SHOULD NOT BE NEEDED!
   //printf("FDEGS: %ld -- %ld\n",h->FDeg, h->pFDeg());
@@ -719,6 +719,24 @@ int redSig (LObject* h,kStrategy strat)
       #if ADIDEBUG
       printf("\nNone was found.\n");
       #endif
+      if(h->sig !=NULL && !nIsZero(h->sig->coef) && pLtCmp(origsig,h->sig) == 1)
+      {
+        //#if 1
+        #if ADIDEBUG
+        printf("\nSIG REDUCE DROP\n");
+        printf("\nsig after reduce\n");pWrite(h->sig);
+        printf("\nsig before reduce\n");pWrite(origsig);
+        printf("\nreduced with\n");pWrite(strat->sig[i]);
+        getchar();
+        #endif
+        if(h->p != NULL && !nIsZero(h->p->coef))
+        {
+          h->sev = p_GetShortExpVector(h->p, currRing);
+          h->sevSig = p_GetShortExpVector(h->sig, currRing);
+          strat->sigdrop = TRUE;
+          strat->enterS(*h,1,strat,strat->tl);
+        }
+      }
       return 1;
     }
     #if ADIDEBUG
@@ -790,14 +808,7 @@ int redSig (LObject* h,kStrategy strat)
     printf("INDEX OF REDUCER T: %d\n",ii);
 #endif
     //Dannach löschen!!!!!!
-            origsig = pCopy(h->sig);
     sigSafe = ksReducePolySig(h, &(strat->T[ii]), strat->S_2_R[ii], NULL, NULL, strat);
-            if(h->sig !=NULL && pLtCmp(origsig,h->sig) == -1)
-            {
-              printf("\nSIG REDUCE DROP\n");
-              pWrite(h->sig);pWrite(origsig);pWrite(strat->sig[i]);
-              getchar();
-            }
     #if ADIDEBUG
     printf("\nAfter small reduction\n");
     pWrite(h->p);pWrite(h->sig);
@@ -1958,9 +1969,19 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
   }
   // sort ideal F
   ideal F       = idInit(IDELEMS(F1),F1->rank);
+  #ifdef HAVE_RINGS
+  if(rField_is_Ring(currRing) && strat->sigdrop)
+  {
+    for (int i=0; i<IDELEMS(F1);++i)
+    F->m[i] = F1->m[i];
+  }
+  else
+  #endif
+  {
   intvec *sort  = idSort(F1);
   for (int i=0; i<sort->length();++i)
     F->m[i] = F1->m[(*sort)[i]-1];
+  }
 #if SBA_INTERRED_START
   F = kInterRed(F,NULL);
 #endif
@@ -1973,6 +1994,7 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
   int   srmax,lrmax, red_result = 1;
   int   olddeg,reduc;
   int hilbeledeg=1,hilbcount=0,minimcnt=0;
+  strat->sigdrop = FALSE;
   LObject L;
   BOOLEAN withT     = TRUE;
   strat->max_lower_index = 0;
@@ -2028,7 +2050,7 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
   //kDebugPrint(strat);
 #endif
   /* compute------------------------------------------------------- */
-  while (strat->Ll >= 0)
+  while (strat->Ll >= 0 && !strat->sigdrop)
   {
     #if ADIDEBUG
     printf("\n      ------------------------NEW LOOP\n");
@@ -2037,7 +2059,24 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     idPrint(strat->Shdl);
     #else
     for(int ii = 0; ii<=strat->sl;ii++)
-        p_Write(strat->S[ii],strat->tailRing);
+    {
+      printf("\nS[%i]:  ",ii);p_Write(strat->S[ii],strat->tailRing);
+      printf("sig:    ");pWrite(strat->sig[ii]);
+    }
+    #endif
+    #if 0
+    for(int iii = 0; iii< strat->syzl; iii++)
+    {
+        printf("\nsyz[%i]:\n",iii);
+        p_Write(strat->syz[iii], currRing);
+    }
+    #endif
+    #if 0
+    for(int iii = 0; iii<= strat->tl; iii++)
+    {
+        printf("\nT[%i]:\n",iii);
+        p_Write(strat->T[iii].p, currRing);
+    }
     #endif
     printf("\n   list   L\n");
     int iii;
@@ -2221,6 +2260,8 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
 #else
         red_result = strat->red(&strat->P,strat);
 #endif
+      if(strat->sigdrop)
+        goto finish;
       #if ADIDEBUG
       printf("\n----------------end of redSig-----------------------------\n");
       printf("\nAfter reduction:\n");
@@ -2365,6 +2406,9 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
       else
 #endif
         enterpairsSig(strat->P.p,strat->P.sig,strat->sl+1,strat->sl,strat->P.ecart,pos,strat, strat->tl);
+        
+      if(strat->sigdrop)
+        goto finish;
       // posInS only depends on the leading term
       #if ADIDEBUG
       printf("\nThis pair will go in S:\n");
@@ -2562,12 +2606,28 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
 #endif /* KDEBUG */
     kTest_TS(strat);
   }
+  finish:
 #ifdef KDEBUG
 #if MYTEST
   PrintS("bba finish GB: currRing: "); rWrite(currRing);
 #endif /* MYTEST */
   if (TEST_OPT_DEBUG) messageSets(strat);
 #endif /* KDEBUG */
+
+
+//Add all the initial elements to the new S
+#ifdef HAVE_RINGS
+  if(rField_is_Ring(currRing))
+  {
+    for(int i=strat->Ll;i>=0;i--)
+    {
+      if(strat->L[i].p1 == NULL && strat->L[i].p2 == NULL)
+      {
+        strat->enterS(strat->L[i],1,strat,strat->tl);
+      }
+    }
+  }
+#endif
 
   if (TEST_OPT_SB_1)
   {
@@ -2590,7 +2650,6 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
         }
     }
   }
-
   /* complete reduction of the standard basis--------- */
   if (TEST_OPT_REDSB)
   {
@@ -2637,6 +2696,7 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
 #if SBA_PRINT_SIZE_G
   size_g_non_red  = IDELEMS(strat->Shdl);
 #endif
+
   if ((strat->sbaOrder == 1 || strat->sbaOrder == 3) && sRing!=currRingOld)
   {
     rChangeCurrRing (currRingOld);
@@ -2644,10 +2704,10 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     strat->Shdl = idrMoveR_NoSort (strat->Shdl, sRing, currRing);
     rDelete (sRing);
   }
-  id_DelDiv(strat->Shdl, currRing);
+  if(!strat->sigdrop)
+    id_DelDiv(strat->Shdl, currRing);
   idSkipZeroes(strat->Shdl);
   idTest(strat->Shdl);
-
 #if SBA_PRINT_SIZE_G
   size_g   = IDELEMS(strat->Shdl);
 #endif

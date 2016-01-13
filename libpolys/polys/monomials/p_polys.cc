@@ -1463,6 +1463,7 @@ poly p_NSet(number n, const ring r)
 * assumes that LM(a) = LM(b)*m, for some monomial m,
 * returns the multiplicant m,
 * leaves a and b unmodified
+* in the ring case also sets the coefficient
 */
 poly p_Divide(poly a, poly b, const ring r)
 {
@@ -1473,6 +1474,12 @@ poly p_Divide(poly a, poly b, const ring r)
   for(i=(int)r->N; i; i--)
     p_SetExp(result,i, p_GetExp(a,i,r)- p_GetExp(b,i,r),r);
   p_SetComp(result, p_GetComp(a,r) - p_GetComp(b,r),r);
+  #ifdef HAVE_RINGS
+  if(rField_is_Ring(r))
+  {
+    p_SetCoeff(result, n_Div(p_GetCoeff(a,r),p_GetCoeff(b,r),r),r);
+  }
+  #endif
   p_Setm(result,r);
   return result;
 }

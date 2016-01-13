@@ -22,6 +22,8 @@
 #include <kernel/polys.h>
 #endif
 
+#define ADIDEBUG 0
+
 #ifdef KDEBUG
 int red_count = 0;
 int create_count = 0;
@@ -224,7 +226,7 @@ int ksReducePolySig(LObject* PR,
   //printf("COMPARE IDX: %ld -- %ld\n",idx,strat->currIdx);
   if (!PW->is_sigsafe)
   {
-    poly sigMult = pCopy(PW->sig);   // copy signature of reducer
+    poly sigMult = pCopy(pHead(PW->sig));   // copy head signature of reducer
 //#if 1
 #ifdef DEBUGF5
     printf("IN KSREDUCEPOLYSIG: \n");
@@ -234,6 +236,13 @@ int ksReducePolySig(LObject* PR,
     printf("--------------\n");
 #endif
     p_ExpVectorAddSub(sigMult,PR->GetLmCurrRing(),PW->GetLmCurrRing(),currRing);
+    //I have also to set the leading coeficient for sigMult (in the case of rings)
+    #ifdef HAVE_RINGS
+    if(rField_is_Ring(currRing))
+    {
+      pSetCoeff(sigMult,nMult(nDiv(pGetCoeff(PR->p),pGetCoeff(PW->p)), pGetCoeff(sigMult)));
+    }
+    #endif
 //#if 1
 #ifdef DEBUGF5
     printf("------------------- IN KSREDUCEPOLYSIG: --------------------\n");
@@ -243,6 +252,7 @@ int ksReducePolySig(LObject* PR,
     pWrite(PR->sig);
     printf("--------------\n");
 #endif
+//printf("\nThese are the droids you are looking for\n");pWrite(PR->sig);pWrite(sigMult);
     int sigSafe = p_LmCmp(PR->sig,sigMult,currRing);
     //OVER RINGS I CONSIDER THE WHOLE SIG SO I CAN REDUCE EACH TIME
     //I have to di this because some proofs it is used that the sig will not drop!!!
@@ -252,17 +262,35 @@ int ksReducePolySig(LObject* PR,
       {
         if (sigSafe == 0) 
         {
-            number h = nSub(pGetCoeff(PR->sig), pGetCoeff(sigMult));
-            sigSafe = -1 + nIsZero(h) + 2*nGreaterZero(h);   /* -1: <, 0:==, 1: > */
-            nDelete(&h);
+            //number h = nSub(pGetCoeff(PR->sig), pGetCoeff(sigMult));
+            //sigSafe = -1 + nIsZero(h) + 2*nGreaterZero(h);   /* -1: <, 0:==, 1: > */
+            //nDelete(&h);
+            sigSafe = p_LtCmp(PR->sig,sigMult, currRing);
         }
+        //First check if it is the same module element
+        //Have to add this, else it will add the same element instead of reducing it to 0
+        //(since it cannot reduce if via the sig drop)
+        #if 0
+        printf("\nPR->sig\n");pWrite(PR->sig);
+        printf("\nPW->sig\n");pWrite(PW->sig);
+        printf("\nDivide: \n");pWrite(pDivide(PR->sig,PW->sig));
+        printf("\nPW->sig 1\n");pWrite(PW->sig);
+        printf("\nDivide * PW = \n");pWrite(pMult(pDivide(PR->sig,PW->sig),pCopy(PW->sig)));
+        printf("\nPW->sig 2\n");pWrite(PW->sig);
+        if(pEqualPolys(PR->sig, pMult(pDivide(PR->sig,PW->sig),pCopy(PW->sig))))
+        {
+          printf("\nVielfacher Sig -> es wird zur 0 reduzieren\n");
+          printf("\nPW->sig 3\n");pWrite(PW->sig);
+          sigSafe = 1;       
+        }
+        #endif
       }
     #endif
     #endif
     #ifdef HAVE_RINGS
     if(rField_is_Ring(currRing))
     {
-      #if 1
+      #if 0
       if(sigSafe != 1)
       {
         PR->is_redundant = TRUE;
@@ -316,7 +344,7 @@ int ksReducePolySig(LObject* PR,
       //p_SetCoeff(lm, bn, tailRing);
       //p_SetCoeff(fin, bn, tailRing);
       //p_Neg(fin, tailRing);
-      //p_Minus_qq_Mult_qq(PR->sig, PW->sig, fin, tailRing);#
+      //p_Minus_qq_Mult_qq(PR->sig, PW->sig, fin, tailRing);
       poly sSigMult = pCopy(PW->sig);
       p_Mult_mm(sSigMult, fin, tailRing);
       PR->sig = p_Sub(PR->sig, sSigMult, tailRing);

@@ -2568,7 +2568,24 @@ ideal kSba(ideal F, ideal Q, tHomog h,intvec ** w, int sbaOrder, int arri, intve
       if (w!=NULL)
         r=sba(F,Q,*w,hilb,strat);
       else
+      {
+        strat->sigdrop = FALSE;
+        int nrruns = 1;
+        strat->syzcrit = 0;
         r=sba(F,Q,NULL,hilb,strat);
+        #ifdef HAVE_RINGS
+        if(rField_is_Ring(currRing))
+        {
+          while(strat->sigdrop)
+          {
+            r = sba(r,Q,NULL,hilb,strat);
+            nrruns++;
+          }
+        printf("\nNr sba runs = %i\n",nrruns);
+        printf("\nNr syz crit = %i\n",strat->syzcrit);
+        }
+        #endif 
+      }
     }
   }
 #ifdef KDEBUG

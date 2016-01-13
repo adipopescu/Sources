@@ -1523,11 +1523,22 @@ static inline int p_LtCmp(poly p, poly q, const ring r)
     _i++;
     if (_i == _l)
     {
-      if(n_Equal(p->coef,q->coef,r->cf))
-        return 0;
-      if(n_Greater(p->coef,q->coef,r->cf))
-        return 1;
-      return -1;
+      number pc,qc;
+      int res;
+      pc = n_Copy(p->coef,r->cf);
+      qc = n_Copy(q->coef,r->cf);
+      if(!n_GreaterZero(pc,r->cf))
+        pc = n_InpNeg(pc,r->cf);
+      if(!n_GreaterZero(qc,r->cf))
+        qc = n_InpNeg(qc,r->cf);
+      if(n_Equal(pc,qc,r->cf))
+        res = 0;
+      if(n_Greater(pc,qc,r->cf))
+        res = 1;
+      n_Delete(&pc,r->cf);
+      n_Delete(&qc,r->cf);
+      res = -1;
+      return res;
     }
     goto LengthGeneral_OrdGeneral_LoopTop;
   }

@@ -368,6 +368,10 @@ public:
 #ifdef HAVE_PLURAL
   BOOLEAN z2homog; // Z_2 - homogeneous input allows product criterion in commutative and SCA cases!
 #endif
+#ifdef HAVE_RINGS
+  BOOLEAN sigdrop;
+  int syzcrit;
+#endif
   BOOLEAN kHEdgeFound;
   BOOLEAN honey,sugarCrit;
   BOOLEAN Gebauer,noTailReduction;
