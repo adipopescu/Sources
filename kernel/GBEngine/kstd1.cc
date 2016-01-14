@@ -2580,6 +2580,7 @@ ideal kSba(ideal F, ideal Q, tHomog h,intvec ** w, int sbaOrder, int arri, intve
           {
             r = sba(r,Q,NULL,hilb,strat);
             nrruns++;
+	    printf("\nSBA Run nr %i (%i elements)",nrruns,IDELEMS(r));
           }
         printf("\nNr sba runs = %i\n",nrruns);
         printf("\nNr syz crit = %i\n",strat->syzcrit);
