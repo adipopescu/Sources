@@ -1655,12 +1655,12 @@ BOOLEAN enterOneStrongPolySig (int i,poly p,poly sig, int /*ecart*/, int /*isFro
     if((pLtCmp(pHead(h.sig),pHead(sig)) == -1) &&
      (pLtCmp(pHead(h.sig),pHead(strat->sig[i])) == -1))
     {
-      //#if 1
-      #if ADIDEBUG
+      #if 1
+      //#if ADIDEBUG
       printf("\nSIG STRONG DROP!!!\n");
-      printf("\nNew Sig\n");pWrite(h.sig);
-      printf("\nPair1 Sig\n");pWrite(sig);
-      printf("\nPair2 Sig\n");pWrite(strat->sig[i]);
+      printf("\nNew Sig\n");pWrite(pHead(h.sig));
+      printf("\nPair1 Sig\n");pWrite(pHead(sig));
+      printf("\nPair2 Sig\n");pWrite(pHead(strat->sig[i]));
       getchar();
       #endif
       if(h.p != NULL)
@@ -2361,29 +2361,7 @@ void enterOnePairSig (int i, poly p, poly pSig, int, int ecart, int isFromQ, kSt
   
   #endif
   
-  //Test Sig Drop
-  
-  #ifdef HAVE_RINGS
-  #if ADIDEBUG
-  printf("\nTest sig drop,pLtCmp(pSig,Lp.sig) = %i,pLtCmp(sig[i],Lp.sig) = %i \n",pLtCmp(pHead(pSig),pHead(Lp.sig)), pLtCmp(pHead(strat->sig[i]),pHead(Lp.sig)));
-  #endif
-  if(pLtCmp(pHead(pSig),pHead(Lp.sig)) == 1 && pLtCmp(pHead(strat->sig[i]),pHead(Lp.sig)) == 1)
-  {
-    #if 1
-    //#if ADIDEBUG
-    printf("\nSIG DROP in enteronepairSig\n");
-    printf("\npSig\n");pWrite(pSig);
-    printf("\nsSig\n");pWrite(strat->sig[i]);
-    printf("\nnewSig\n");pWrite(Lp.sig);
-    getchar();
-    #endif
-    if(Lp.p != NULL)
-    {
-      strat->sigdrop = TRUE;
-      strat->enterS(Lp,1,strat,strat->tl);
-    }
-  }
-  #endif
+
   // testing by syzCrit = F5 Criterion
   // testing by rewCrit1 = Rewritten Criterion
   // NOTE: Arri's Rewritten Criterion is tested below, we need Lp.p for it!
@@ -2510,17 +2488,19 @@ void enterOnePairSig (int i, poly p, poly pSig, int, int ecart, int isFromQ, kSt
     #if ADIDEBUG
     printf("\nFinal signature of the pair: \n");pWrite(Lp.p);pWrite(Lp.sig);
     #endif
+    
+    //Test Sig Drop
+    
     if(pLtCmp(pHead(pSig),pHead(Lp.sig)) == 1 && pLtCmp(pHead(strat->sig[i]),pHead(Lp.sig)) == 1)
     {
       #if 1
       //#if ADIDEBUG
       printf("\nSIG DROP in enteronepairSig\n");
-      printf("\npSig\n");pWrite(pSig);
-      printf("\nsSig\n");pWrite(strat->sig[i]);
-      printf("\nnewSig\n");pWrite(Lp.sig);
-      #endif
-      printf("\nThis shouldn't happend!!!!! Check this out!!!!\n");
+      printf("\npSig\n");pWrite(pHead(pSig));
+      printf("\nsSig\n");pWrite(pHead(strat->sig[i]));
+      printf("\nnewSig\n");pWrite(pHead(Lp.sig));
       getchar();
+      #endif
       if(Lp.p != NULL)
       {
         strat->sigdrop = TRUE;

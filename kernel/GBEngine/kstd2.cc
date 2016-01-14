@@ -721,12 +721,12 @@ int redSig (LObject* h,kStrategy strat)
       #endif
       if(h->sig !=NULL && !nIsZero(h->sig->coef) && pLtCmp(origsig,h->sig) == 1)
       {
-        //#if 1
-        #if ADIDEBUG
+        #if 1
+        //#if ADIDEBUG
         printf("\nSIG REDUCE DROP\n");
-        printf("\nsig after reduce\n");pWrite(h->sig);
-        printf("\nsig before reduce\n");pWrite(origsig);
-        printf("\nreduced with\n");pWrite(strat->sig[i]);
+        printf("\nsig after reduce\n");pWrite(pHead(h->sig));
+        printf("\nsig before reduce\n");pWrite(pHead(origsig));
+        //printf("\nreduced with\n");pWrite(pHead(strat->sig[i]));
         getchar();
         #endif
         if(h->p != NULL && !nIsZero(h->p->coef))
@@ -2061,7 +2061,7 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     for(int ii = 0; ii<=strat->sl;ii++)
     {
       printf("\nS[%i]:  ",ii);p_Write(strat->S[ii],strat->tailRing);
-      printf("sig:    ");pWrite(strat->sig[ii]);
+      printf("sig:   ");pWrite(strat->sig[ii]);
     }
     #endif
     #if 0

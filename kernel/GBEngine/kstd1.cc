@@ -2573,6 +2573,7 @@ ideal kSba(ideal F, ideal Q, tHomog h,intvec ** w, int sbaOrder, int arri, intve
         int nrruns = 1;
         strat->syzcrit = 0;
         r=sba(F,Q,NULL,hilb,strat);
+        printf("\nSBA Run nr %i (%i elements)",nrruns,IDELEMS(r));
         #ifdef HAVE_RINGS
         if(rField_is_Ring(currRing))
         {
@@ -2580,7 +2581,7 @@ ideal kSba(ideal F, ideal Q, tHomog h,intvec ** w, int sbaOrder, int arri, intve
           {
             r = sba(r,Q,NULL,hilb,strat);
             nrruns++;
-	    printf("\nSBA Run nr %i (%i elements)",nrruns,IDELEMS(r));
+	          printf("\nSBA Run nr %i (%i elements)",nrruns,IDELEMS(r));
           }
         printf("\nNr sba runs = %i\n",nrruns);
         printf("\nNr syz crit = %i\n",strat->syzcrit);

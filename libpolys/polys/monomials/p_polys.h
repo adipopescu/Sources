@@ -1535,9 +1535,10 @@ static inline int p_LtCmp(poly p, poly q, const ring r)
         res = 0;
       if(n_Greater(pc,qc,r->cf))
         res = 1;
+      if(n_Greater(qc,pc,r->cf))
+        res = -1;
       n_Delete(&pc,r->cf);
       n_Delete(&qc,r->cf);
-      res = -1;
       return res;
     }
     goto LengthGeneral_OrdGeneral_LoopTop;
