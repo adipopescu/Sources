@@ -1655,8 +1655,8 @@ BOOLEAN enterOneStrongPolySig (int i,poly p,poly sig, int /*ecart*/, int /*isFro
     if((pLtCmp(pHead(h.sig),pHead(sig)) == -1) &&
      (pLtCmp(pHead(h.sig),pHead(strat->sig[i])) == -1))
     {
-      #if 1
-      //#if ADIDEBUG
+      //#if 1
+      #if ADIDEBUG
       printf("\nSIG STRONG DROP!!!\n");
       printf("\nNew Sig\n");pWrite(pHead(h.sig));
       printf("\nPair1 Sig\n");pWrite(pHead(sig));
@@ -1666,7 +1666,7 @@ BOOLEAN enterOneStrongPolySig (int i,poly p,poly sig, int /*ecart*/, int /*isFro
       if(h.p != NULL)
       {
         strat->sigdrop = TRUE;
-        strat->enterS(h,1,strat,strat->tl);
+        strat->enterS(h,strat->sl,strat,strat->tl);
       }
     }
     enterL(&strat->L,&strat->Ll,&strat->Lmax,h,posx);
@@ -2493,8 +2493,8 @@ void enterOnePairSig (int i, poly p, poly pSig, int, int ecart, int isFromQ, kSt
     
     if(pLtCmp(pHead(pSig),pHead(Lp.sig)) == 1 && pLtCmp(pHead(strat->sig[i]),pHead(Lp.sig)) == 1)
     {
-      #if 1
-      //#if ADIDEBUG
+      //#if 1
+      #if ADIDEBUG
       printf("\nSIG DROP in enteronepairSig\n");
       printf("\npSig\n");pWrite(pHead(pSig));
       printf("\nsSig\n");pWrite(pHead(strat->sig[i]));
@@ -2504,7 +2504,7 @@ void enterOnePairSig (int i, poly p, poly pSig, int, int ecart, int isFromQ, kSt
       if(Lp.p != NULL)
       {
         strat->sigdrop = TRUE;
-        strat->enterS(Lp,1,strat,strat->tl);
+        strat->enterS(Lp,strat->sl,strat,strat->tl);
       }
     }
   }

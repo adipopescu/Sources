@@ -721,8 +721,8 @@ int redSig (LObject* h,kStrategy strat)
       #endif
       if(h->sig !=NULL && !nIsZero(h->sig->coef) && pLtCmp(origsig,h->sig) == 1)
       {
-        #if 1
-        //#if ADIDEBUG
+        //#if 1
+        #if ADIDEBUG
         printf("\nSIG REDUCE DROP\n");
         printf("\nsig after reduce\n");pWrite(pHead(h->sig));
         printf("\nsig before reduce\n");pWrite(pHead(origsig));
@@ -734,7 +734,7 @@ int redSig (LObject* h,kStrategy strat)
           h->sev = p_GetShortExpVector(h->p, currRing);
           h->sevSig = p_GetShortExpVector(h->sig, currRing);
           strat->sigdrop = TRUE;
-          strat->enterS(*h,1,strat,strat->tl);
+          strat->enterS(*h,strat->sl,strat,strat->tl);
         }
       }
       return 1;
@@ -1970,10 +1970,21 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
   // sort ideal F
   ideal F       = idInit(IDELEMS(F1),F1->rank);
   #ifdef HAVE_RINGS
-  if(rField_is_Ring(currRing) && strat->sigdrop)
+  if(rField_is_Ring(currRing)) //&& strat->sigdrop)
   {
+    //Sort the input
+    #if 1
     for (int i=0; i<IDELEMS(F1);++i)
     F->m[i] = F1->m[i];
+    #else
+    //First set all coefficients to be positive
+    for (int i=0; i<IDELEMS(F1);++i)
+      if(!nGreaterZero(F1->m[i]->coef))
+        F1->m[i] = pNeg(F1->m[i]);
+    intvec *sort  = idSort(F1);
+    for (int i=0; i<sort->length();++i)
+      F->m[i] = F1->m[(*sort)[i]-1];
+    #endif
   }
   else
   #endif
@@ -2101,11 +2112,7 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     #if 1
     for(iii = 0; iii< strat->Ll; iii++)
     {
-        if(pLmCmp(strat->L[iii].sig,strat->L[iii+1].sig) || nGreater(strat->L[iii].sig->coef,strat->L[iii+1].sig->coef) || nEqual(strat->L[iii].sig->coef,strat->L[iii+1].sig->coef))
-        {
-          //ok
-        }
-        else
+        if(pLtCmp(pHead(strat->L[iii].sig),pHead(strat->L[iii+1].sig)) == -1)
         {
           printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
           printf("L[%i]:",iii);
@@ -2123,7 +2130,7 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
         }
     }
     #endif
-    getchar();
+    //getchar();
     #endif
     if (strat->Ll > lrmax) lrmax =strat->Ll;/*stat.*/
     #ifdef KDEBUG
@@ -2650,6 +2657,51 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
         }
     }
   }
+  //Reverse Blockwise Sorting of output needed for the Sig Drop Problem
+  #ifdef HAVE_RINGS
+  poly dummy;
+  int i,j,k;
+  #if 0
+  for(int ii = 0; ii<=strat->sl;ii++)
+    {
+      printf("\nS[%i]:  ",ii);pWrite(strat->S[ii]);
+      printf("sig:   ");pWrite(strat->sig[ii]);
+    }
+  #endif
+  if(strat->sigdrop)
+  {
+    for(i=1;i<=strat->sl;)
+    {
+      k = pGetComp(strat->sig[i]);
+      //printf("\nk = %i\n",k);
+      for(j = i; j<=strat->sl && pGetComp(pHead(strat->sig[j])) == k;++j)
+      {
+        //printf("\n%i is ok",j);
+      }
+      j--;
+      //printf("\ni = %i, j = %i\n",i,j);
+      //getchar();
+      for(k=0;k<(j-i)/2;k++)
+      {
+        dummy = pCopy(strat->S[i+k]);
+        strat->S[i+k] = strat->S[j-k];
+        strat->S[j-k] = dummy;
+        dummy = pCopy(strat->sig[i+k]);
+        strat->sig[i+k] = strat->sig[j-k];
+        strat->sig[j-k] = dummy;
+      }
+      i = j+1;
+    }
+  }
+  #if 0
+  for(int ii = 0; ii<=strat->sl;ii++)
+    {
+      printf("\nS[%i]:  ",ii);pWrite(strat->S[ii]);
+      printf("sig:   ");pWrite(strat->sig[ii]);
+    }
+  getchar();
+  #endif
+  #endif
   /* complete reduction of the standard basis--------- */
   if (TEST_OPT_REDSB)
   {
