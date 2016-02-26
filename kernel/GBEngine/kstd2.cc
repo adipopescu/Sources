@@ -19,7 +19,7 @@
 # define MYTEST 0
 #endif /* ifndef SING_NDEBUG */
 
-#define ADIDEBUG 0
+#define ADIDEBUG 1
 #define ADIDEBUG_COUNT 0
 
 #if MYTEST
@@ -404,7 +404,7 @@ poly kFindZeroPoly(poly input_p, ring leadRing, ring tailRing)
 
 #ifdef HAVE_RINGS
 /*2
-*  reduction procedure for the ring Z/2^m
+*  reduction procedure for the rings Z and Z/mZ
 */
 int redRing (LObject* h,kStrategy strat)
 {
@@ -1613,7 +1613,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
         p_Write(strat->B[iii].p2, strat->tailRing);
     }
     #endif
-    getchar();
+    //getchar();
     #endif
     #ifdef KDEBUG
       if (TEST_OPT_DEBUG) messageSets(strat);
@@ -2006,6 +2006,7 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
   int   olddeg,reduc;
   int hilbeledeg=1,hilbcount=0,minimcnt=0;
   strat->sigdrop = FALSE;
+  printf("\nsigdrop = %i\n",strat->sigdrop);
   LObject L;
   BOOLEAN withT     = TRUE;
   strat->max_lower_index = 0;
@@ -2756,6 +2757,7 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     strat->Shdl = idrMoveR_NoSort (strat->Shdl, sRing, currRing);
     rDelete (sRing);
   }
+  printf("\nsigdrop = %i\n",strat->sigdrop);
   if(!strat->sigdrop)
     id_DelDiv(strat->Shdl, currRing);
   idSkipZeroes(strat->Shdl);

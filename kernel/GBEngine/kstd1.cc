@@ -1677,7 +1677,6 @@ loop_count = 1;
     }
     printf("\n   list   L has %i\n", strat->Ll);
     int iii;
-    #if ADIDEBUG
     for(iii = 0; iii<= strat->Ll; iii++)
     {
         printf("L[%i]:",iii);
@@ -1692,7 +1691,6 @@ loop_count = 1;
         pWrite(strat->L[iii].lcm);
         #endif
     }
-    #endif
     getchar();
     #endif
     #ifdef KDEBUG
@@ -2532,7 +2530,7 @@ ideal kSba(ideal F, ideal Q, tHomog h,intvec ** w, int sbaOrder, int arri, intve
   strat->homog=h;
 #ifdef KDEBUG
   idTest(F);
-  idTest(Q);
+  //idTest(Q);
 
 #if MYTEST
   if (TEST_OPT_DEBUG)
@@ -2569,11 +2567,12 @@ ideal kSba(ideal F, ideal Q, tHomog h,intvec ** w, int sbaOrder, int arri, intve
         r=sba(F,Q,*w,hilb,strat);
       else
       {
-        strat->sigdrop = FALSE;
         int nrruns = 1;
         strat->syzcrit = 0;
+        //rWrite(strat->P.tailRing);
         r=sba(F,Q,NULL,hilb,strat);
-        printf("\nSBA Run nr %i (%i elements)",nrruns,IDELEMS(r));
+        //rWrite(strat->P.tailRing);
+        printf("\nSBA Run nr %i (%i elements)\n",nrruns,IDELEMS(r));
         #ifdef HAVE_RINGS
         if(rField_is_Ring(currRing))
         {
@@ -2584,7 +2583,7 @@ ideal kSba(ideal F, ideal Q, tHomog h,intvec ** w, int sbaOrder, int arri, intve
 	          printf("\nSBA Run nr %i (%i elements)",nrruns,IDELEMS(r));
           }
         printf("\nNr sba runs = %i",nrruns);
-        printf("\nNr syz crit = %i",strat->syzcrit);
+        printf("\nNr syz crit = %i\n",strat->syzcrit);
         }
         #endif 
       }

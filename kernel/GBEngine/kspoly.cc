@@ -22,7 +22,7 @@
 #include <kernel/polys.h>
 #endif
 
-#define ADIDEBUG 0
+#define ADIDEBUG 1
 
 #ifdef KDEBUG
 int red_count = 0;
@@ -226,7 +226,7 @@ int ksReducePolySig(LObject* PR,
   //printf("COMPARE IDX: %ld -- %ld\n",idx,strat->currIdx);
   if (!PW->is_sigsafe)
   {
-    poly sigMult = pCopy(pHead(PW->sig));   // copy head signature of reducer
+    poly sigMult = pHead(PW->sig);   // copy head signature of reducer
 //#if 1
 #ifdef DEBUGF5
     printf("IN KSREDUCEPOLYSIG: \n");
@@ -253,40 +253,13 @@ int ksReducePolySig(LObject* PR,
     printf("--------------\n");
 #endif
 //printf("\nThese are the droids you are looking for\n");pWrite(PR->sig);pWrite(sigMult);
-    int sigSafe = p_LmCmp(PR->sig,sigMult,currRing);
-    //OVER RINGS I CONSIDER THE WHOLE SIG SO I CAN REDUCE EACH TIME
-    //I have to di this because some proofs it is used that the sig will not drop!!!
-    #if 1
+    int sigSafe;
     #ifdef HAVE_RINGS
     if(rField_is_Ring(currRing))
-      {
-        if (sigSafe == 0) 
-        {
-            //number h = nSub(pGetCoeff(PR->sig), pGetCoeff(sigMult));
-            //sigSafe = -1 + nIsZero(h) + 2*nGreaterZero(h);   /* -1: <, 0:==, 1: > */
-            //nDelete(&h);
-            sigSafe = p_LtCmp(PR->sig,sigMult, currRing);
-        }
-        //First check if it is the same module element
-        //Have to add this, else it will add the same element instead of reducing it to 0
-        //(since it cannot reduce if via the sig drop)
-        #if 0
-        printf("\nPR->sig\n");pWrite(PR->sig);
-        printf("\nPW->sig\n");pWrite(PW->sig);
-        printf("\nDivide: \n");pWrite(pDivide(PR->sig,PW->sig));
-        printf("\nPW->sig 1\n");pWrite(PW->sig);
-        printf("\nDivide * PW = \n");pWrite(pMult(pDivide(PR->sig,PW->sig),pCopy(PW->sig)));
-        printf("\nPW->sig 2\n");pWrite(PW->sig);
-        if(pEqualPolys(PR->sig, pMult(pDivide(PR->sig,PW->sig),pCopy(PW->sig))))
-        {
-          printf("\nVielfacher Sig -> es wird zur 0 reduzieren\n");
-          printf("\nPW->sig 3\n");pWrite(PW->sig);
-          sigSafe = 1;       
-        }
-        #endif
-      }
+      sigSafe = pLtCmp(PR->sig,sigMult);
+    else
     #endif
-    #endif
+      sigSafe = p_LmCmp(PR->sig,sigMult,currRing);
     #ifdef HAVE_RINGS
     if(rField_is_Ring(currRing))
     {
@@ -312,8 +285,8 @@ int ksReducePolySig(LObject* PR,
         (p_GetComp(p2, tailRing) == 0 &&
         p_MaxComp(pNext(p2),tailRing) == 0));
         
-      poly fin = pCopy(PR->GetLm(currRing));
-      pNext(fin) = NULL;
+      poly fin = pHead(PR->GetLm(currRing));
+      //pNext(fin) = NULL;
       PR->GetP();
       #if ADIDEBUG
       printf("\nThis is PR:\n");pWrite(p1);pWrite(PR->sig);
@@ -332,8 +305,8 @@ int ksReducePolySig(LObject* PR,
       pWrite(fin);*/
       assume(pNext(fin) == NULL);
       p_ExpVectorSub(fin, p2, tailRing);
-      number bn = pGetCoeff(fin);
-      number an = pGetCoeff(p2);
+      number bn = nCopy(pGetCoeff(fin));
+      number an = nCopy(pGetCoeff(p2));
       assume(n_DivBy(bn,an,tailRing) == TRUE);
       pSetCoeff(fin, nDiv(bn,an));
       #if ADIDEBUG
@@ -345,16 +318,93 @@ int ksReducePolySig(LObject* PR,
       //p_SetCoeff(fin, bn, tailRing);
       //p_Neg(fin, tailRing);
       //p_Minus_qq_Mult_qq(PR->sig, PW->sig, fin, tailRing);
-      poly sSigMult = pCopy(PW->sig);
-      p_Mult_mm(sSigMult, fin, tailRing);
-      PR->sig = p_Sub(PR->sig, sSigMult, tailRing);
+      //poly sSigMult = pCopy(PW->sig);
+      //p_Mult_mm(sSigMult, fin, tailRing);
+      //PR->sig = p_Sub(PR->sig, sSigMult, tailRing);
       PR->Tail_Minus_mm_Mult_qq(fin, t2, PW->GetpLength() - 1, spNoether);
+      pWrite(PR->p);
       assume(PW->GetpLength() == pLength(PW->p != NULL ? PW->p : PW->t_p));
       PR->LmDeleteAndIter();
+      assume(PR->GetpLength() == pLength(PR->p));
+      if(!PR->IsNull())
+        PR->sev = p_GetShortExpVector(pHead(PR->p),currRing);
+      if(p_LmCmp(PR->sig,sigMult,currRing) == 0)
+      {
+        //Maybe a syz?
+        if(PR->IsNull())
+        {
+          //No syz
+          if(sigSafe == 0)
+          {
+            pDelete(&fin);
+            pDelete(&sigMult);
+            PR->sig = NULL;
+            return 0;
+          }
+          //Syz
+          if(sigSafe == 1)
+          {
+            pDelete(&fin);
+            pDelete(&sigMult);
+            return 1;
+          }
+          if(sigSafe == -1)
+          {
+            pDelete(&fin);
+            PR->sig = pNeg(sigMult);
+            PR->sevSig = p_GetShortExpVector(PR->sig,currRing);
+            return 1;
+          }
+        }
+        //same sig
+        if(sigSafe == 0)
+        {
+          pDelete(&sigMult);
+          strat->sigdrop = TRUE;
+          //In this case we have sigdrop - try to reduce it as far as possible
+          sigSafe = redRing(PR,strat);
+          //PR->sevSig = p_GetShortExpVector(PR->sig,currRing);
+          //It reduced to non 0
+          if(sigSafe != 0)
+          {
+            strat->enterS(*PR,0,strat,strat->tl);
+            #if ADIDEBUG
+            printf("\nSignature lost due to equality-> sigdrop\n");
+            //getchar();
+            #endif
+            return 1;
+          }
+          else
+          {
+            strat->sigdrop = FALSE;
+            //Else it will be considered as a syz
+            PR->sig = NULL;
+            #if ADIDEBUG
+            printf("\nredRing reduced to 0. Cancel the sigdrop\n");
+            //getchar();
+            #endif
+            return 0;
+          }
+        }
+        PR->sig = p_Sub(PR->sig, sigMult, currRing);
+        PR->sevSig = p_GetShortExpVector(PR->sig,currRing);
+      }
+      else
+      {
+        if(sigSafe==1)
+        {
+            pDelete (&sigMult);
+        }
+        if(sigSafe==-1)
+        {
+            PR->sig    = pNeg(sigMult);
+            PR->sevSig = p_GetShortExpVector(PR->sig,currRing);
+        }
+      }
       #if ADIDEBUG
       printf("\nThis is the final in redSig:\n");pWrite(PR->p);pWrite(PR->sig);//getchar();
       #endif
-      return 1;
+      return sigSafe;
     }
     #endif
     // now we can delete the copied polynomial data used for checking for
