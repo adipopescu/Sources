@@ -1687,8 +1687,8 @@ BOOLEAN enterOneStrongPolySig (int i,poly p,poly sig, int /*ecart*/, int /*isFro
       posx =0;
     else
       posx = strat->posInLSba(strat->L,strat->Ll,&h,strat);
-    h.sev = pGetShortExpVector(pHead(h.p));
-    h.sevSig = pGetShortExpVector(pHead(h.sig));
+    h.sev = pGetShortExpVector(h.p);
+    h.sevSig = pGetShortExpVector(h.sig);
     if((pLtCmp(h.sig,sig) == -1) &&
      (pLtCmp(h.sig,strat->sig[i]) == -1))
     {
@@ -1698,12 +1698,13 @@ BOOLEAN enterOneStrongPolySig (int i,poly p,poly sig, int /*ecart*/, int /*isFro
       printf("\nNew Sig\n");pWrite(h.sig);
       printf("\nPair1 Sig\n");pWrite(sig);
       printf("\nPair2 Sig\n");pWrite(strat->sig[i]);
-      getchar();
+      //getchar();
       #endif
       if(h.p != NULL)
       {
         strat->sigdrop = TRUE;
         strat->enterS(h,strat->sl,strat,strat->tl);
+        return FALSE;
       }
     }
     enterL(&strat->L,&strat->Ll,&strat->Lmax,h,posx);
@@ -1711,8 +1712,8 @@ BOOLEAN enterOneStrongPolySig (int i,poly p,poly sig, int /*ecart*/, int /*isFro
   else
   {
     if(h.IsNull()) return FALSE;
-    h.sev = pGetShortExpVector(pHead(h.p));
-    h.sevSig = pGetShortExpVector(pHead(h.sig));
+    h.sev = pGetShortExpVector(h.p);
+    h.sevSig = pGetShortExpVector(h.sig);
     enterT(h, strat,-1);
   }
   //#if 1
@@ -2273,22 +2274,22 @@ void enterOnePairSig (int i, poly p, poly pSig, int, int ecart, int isFromQ, kSt
   #endif
   assume(i<=strat->sl);
   #if ADIDEBUG
-  printf("\nTrying to add sig-spair S[%i] und p\n",i);pWrite(strat->S[i]);pWrite(pHead(strat->sig[i]));pWrite(p);pWrite(pHead(pSig));
+  printf("\nTrying to add sig-spair S[%i] und p\n",i);pWrite(strat->S[i]);pWrite(strat->sig[i]);pWrite(p);pWrite(pSig);
   #endif
   int      l;
   number s,t;
-  poly m1 = NULL,m2 = NULL; // we need the multipliers for the s-polynomial to compute
+  poly m1,m2; // we need the multipliers for the s-polynomial to compute
               // the corresponding signatures for criteria checks
   LObject  Lp;
   #ifdef HAVE_RINGS
   if(rField_is_Ring(currRing))
   {
-    s = nCopy(pGetCoeff(strat->S[i]));
-    t = nCopy(pGetCoeff(p));
+    s = pGetCoeff(strat->S[i]);
+    t = pGetCoeff(p);
   }
   #endif
-  poly pSigMult = pHead(pSig);
-  poly sSigMult = pHead(strat->sig[i]);
+  poly pSigMult = pCopy(pSig);
+  poly sSigMult = pCopy(strat->sig[i]);
   unsigned long pSigMultNegSev,sSigMultNegSev;
   Lp.i_r = -1;
 
@@ -2341,12 +2342,13 @@ void enterOnePairSig (int i, poly p, poly pSig, int, int ecart, int isFromQ, kSt
   #if ADIDEBUG
   printf("\nIn Spoly: m1, m2:\n");pWrite(m1);pWrite(m2);
   #endif
+  pWrite(m1);pWrite(m2);
   // get multiplied signatures for testing
-  pSigMult = currRing->p_Procs->pp_Mult_mm(pSigMult,m1,currRing);
+  pSigMult = p_Mult_mm(pSigMult,m1,currRing);
+  pWrite(m1);pWrite(m2);
   pSigMultNegSev = ~p_GetShortExpVector(pSigMult,currRing);
-  sSigMult = currRing->p_Procs->pp_Mult_mm(sSigMult,m2,currRing);
+  sSigMult = p_Mult_mm(sSigMult,m2,currRing);
   sSigMultNegSev = ~p_GetShortExpVector(sSigMult,currRing);
-
 //#if 1
 #ifdef DEBUGF5
   Print("----------------\n");
@@ -2384,19 +2386,12 @@ void enterOnePairSig (int i, poly p, poly pSig, int, int ecart, int isFromQ, kSt
     #endif
       pLmFree(Lp.lcm);
     Lp.lcm=NULL;
-    pDelete (&m1);
-    pDelete (&m2);
+    pDelete(&m1);m1 = NULL;
+    pDelete(&m2);m2 = NULL;
     return;
   }
   #endif
   //Set the sig
-  #if 0
-  
-  poly pS = pCopy(pSigMult);
-  poly sS = pCopy(sSigMult);
-  Lp.sig = p_Sub(pS, sS, currRing);
-  Lp.sevSig=p_GetShortExpVector(pHead(Lp.sig),currRing);
-  #else
   
   //Same monomial?
   if(p_LmCmp(pSigMult,sSigMult,currRing) == 0)
@@ -2418,7 +2413,9 @@ void enterOnePairSig (int i, poly p, poly pSig, int, int ecart, int isFromQ, kSt
       strat->sigdrop = TRUE;
       return;
     }
-    Lp.sig = p_Sub(pHead(pSigMult), pHead(sSigMult), currRing);
+    poly pS = pCopy(pSigMult);
+    poly sS = pCopy(sSigMult);
+    Lp.sig = p_Sub(pS, sS, currRing);
     Lp.sevSig = p_GetShortExpVector(Lp.sig,currRing);
   }
   else
@@ -2430,11 +2427,10 @@ void enterOnePairSig (int i, poly p, poly pSig, int, int ecart, int isFromQ, kSt
     }
     if(sigCmp==-1)
     {
-        Lp.sig    = pNeg(pHead(sSigMult));
+        Lp.sig    = pNeg(sSigMult);
         Lp.sevSig = p_GetShortExpVector(Lp.sig,currRing);
     }
   }
-  #endif
 
   // testing by syzCrit = F5 Criterion
   // testing by rewCrit1 = Rewritten Criterion
@@ -2447,8 +2443,8 @@ void enterOnePairSig (int i, poly p, poly pSig, int, int ecart, int isFromQ, kSt
     #if ADIDEBUG
     printf("!!!!   CRITERIA DELETE:    !!!!\n");
     #endif
-    pDelete(&pSigMult);
-    pDelete(&sSigMult);
+    pDelete(&pSigMult);pSigMult = NULL;
+    pDelete(&sSigMult);sSigMult = NULL;
     #ifdef HAVE_RINGS
     if (rField_is_Ring(currRing))
       pLmDelete(Lp.lcm);
@@ -2456,8 +2452,8 @@ void enterOnePairSig (int i, poly p, poly pSig, int, int ecart, int isFromQ, kSt
     #endif
       pLmFree(Lp.lcm);
     Lp.lcm=NULL;
-    pDelete (&m1);
-    pDelete (&m2);
+    pDelete(&m1);m1=NULL;
+    pDelete(&m2);m2=NULL;
     return;
   }
   /*
@@ -2478,12 +2474,26 @@ void enterOnePairSig (int i, poly p, poly pSig, int, int ecart, int isFromQ, kSt
     #ifdef HAVE_RINGS
     if(rField_is_Ring(currRing))
     {
-      poly p1 = pCopy(p);
-      p1 = pp_Mult_qq(p1,m1,currRing);
-      poly p2 = pCopy(strat->S[i]);
-      p2 = pp_Mult_qq(p2,m2,currRing);
-      Lp.p = pSub(p1,p2);
-      if(!nGreaterZero(Lp.sig->coef))
+      printf("\nProbleme\n");
+      printf("m1 = ");pWrite(m1);
+      printf("m1 = ");pWrite(m1);
+      printf("m1 = ");pWrite(m1);
+      printf("p = ");pWrite(p);
+      printf("p = ");pWrite(p);
+      printf("p = ");pWrite(p);
+      poly p1 = pp_Mult_mm(p,m1,currRing);
+      printf("p1 = ");pWrite(p1);
+      printf("p1 = ");pWrite(p1);
+      printf("p1 = ");pWrite(p1);
+      pWrite(strat->S[i]);pWrite(strat->S[i]);
+      pWrite(m2);pWrite(m2);
+      poly p2 = pp_Mult_mm(strat->S[i],m2,currRing);
+      printf("p1 = ");pWrite(p1);
+      pWrite(p2);
+      Lp.p = p_Sub(p1,p2,currRing);
+      pWrite(Lp.p);
+      printf("\nDONE\n");
+      if(!nGreaterZero(pGetCoeff(Lp.sig)))
       {
         Lp.p = pNeg(Lp.p);
         Lp.sig = pNeg(Lp.sig);
@@ -2566,20 +2576,21 @@ void enterOnePairSig (int i, poly p, poly pSig, int, int ecart, int isFromQ, kSt
     
     //Test Sig Drop
     
-    if(pLtCmp(pSig,Lp.sig) == 1 && pLtCmp(strat->sig[i],Lp.sig) == 1)
+    if((pLtCmp(pSig,Lp.sig) == 1) && (pLtCmp(strat->sig[i],Lp.sig) == 1))
     {
       //#if 1
       #if ADIDEBUG
       printf("\nSIG DROP in enteronepairSig\n");
-      printf("\npSig\n");pWrite(pHead(pSig));
-      printf("\nsSig\n");pWrite(pHead(strat->sig[i]));
-      printf("\nnewSig\n");pWrite(pHead(Lp.sig));
-      getchar();
+      printf("\npSig\n");pWrite(pSig);
+      printf("\nsSig\n");pWrite(strat->sig[i]);
+      printf("\nnewSig\n");pWrite(Lp.sig);
+      //getchar();
       #endif
       if(Lp.p != NULL)
       {
         strat->sigdrop = TRUE;
         strat->enterS(Lp,strat->sl,strat,strat->tl);
+        return;
       }
     }
   }
@@ -2687,8 +2698,8 @@ void enterOnePairSig (int i, poly p, poly pSig, int, int ecart, int isFromQ, kSt
           )
         nDelete(&(Lp.p->coef));
     }
-    Lp.sevSig = pGetShortExpVector(pHead(Lp.sig));
-    Lp.sev = pGetShortExpVector(pHead(Lp.p));
+    Lp.sevSig = pGetShortExpVector(Lp.sig);
+    Lp.sev = pGetShortExpVector(Lp.p);
     l = strat->posInLSba(strat->B,strat->Bl,&Lp,strat);
     enterL(&strat->B,&strat->Bl,&strat->Bmax,Lp,l);
   }
@@ -6154,7 +6165,7 @@ BOOLEAN syzCriterion(poly sig, unsigned long not_sevSig, kStrategy strat)
 //#if 1
 #ifdef DEBUGF5
     Print("checking with: %d / %d --  \n",k,strat->syzl);
-    pWrite(pHead(strat->syz[k]));
+    pWrite(strat->syz[k]);
 #endif
     if (p_LmShortDivisibleBy(strat->syz[k], strat->sevSyz[k], sig, not_sevSig, currRing))
     {
@@ -6206,7 +6217,7 @@ BOOLEAN syzCriterionInc(poly sig, unsigned long not_sevSig, kStrategy strat)
 #ifdef F5DEBUG
       Print("COMP %d/%d - MIN %d - MAX %d - SYZL %ld\n",comp,strat->currIdx,min,max,strat->syzl);
       Print("checking with: %d --  ",k);
-      pWrite(pHead(strat->syz[k]));
+      pWrite(strat->syz[k]);
 #endif
       if (p_LmShortDivisibleBy(strat->syz[k], strat->sevSyz[k], sig, not_sevSig, currRing))
         return TRUE;
@@ -6236,7 +6247,7 @@ BOOLEAN faugereRewCriterion(poly sig, unsigned long not_sevSig, poly /*lm*/, kSt
 #ifdef DEBUGF5
     Print("checking with:  ");
     pWrite(strat->sig[k]);
-    pWrite(pHead(strat->S[k]));
+    pWrite(strat->S[k]);
 #endif
     if (p_LmShortDivisibleBy(strat->sig[k], strat->sevSig[k], sig, not_sevSig, currRing))
     {
@@ -8523,8 +8534,8 @@ void enterSyz(LObject &p, kStrategy strat, int atT)
   //i = strat->syzl;
   i = atT;
   //Put just the head
-  strat->syz[atT] = pHead(p.sig);
-  strat->sevSyz[atT] = pGetShortExpVector(pHead(p.sig));
+  strat->syz[atT] = pCopy(p.sig);
+  strat->sevSyz[atT] = pGetShortExpVector(p.sig);
   strat->syzl++;
 #if F5DEBUG
   Print("element in strat->syz: %d--%d  ",atT+1,strat->syzmax);

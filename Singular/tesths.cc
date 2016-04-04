@@ -58,9 +58,9 @@ int mmInit( void )
     /* in mmstd.c, for some architectures freeSize() unconditionally uses the *system* free() */
     /* sage ticket 5344: http://trac.sagemath.org/sage_trac/ticket/5344 */
     /* do not rely on the default in Singular as libsingular may be different */
-    mp_set_memory_functions(omMallocFunc,omReallocSizeFunc,omFreeSizeFunc);
+    //mp_set_memory_functions(omMallocFunc,omReallocSizeFunc,omFreeSizeFunc);
 #else
-    mp_set_memory_functions(malloc,reallocSize,freeSize);
+    //mp_set_memory_functions(malloc,reallocSize,freeSize);
 #endif
   return 1;
 }

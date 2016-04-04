@@ -988,7 +988,7 @@ static inline poly p_Minus_mm_Mult_qq(poly p, const poly m, const poly q, int &l
   return res;
 }
 
-// return p - m*Copy(q), destroys p; const: p,m
+// return p - m*Copy(q), destroys p; const: q,m
 static inline poly p_Minus_mm_Mult_qq(poly p, const poly m, const poly q, const ring r)
 {
   int shorter;

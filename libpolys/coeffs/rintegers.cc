@@ -5,6 +5,9 @@
 * ABSTRACT: numbers (integers)
 */
 
+#undef OM_NDEBUG
+#define LDEBUG
+
 #include <misc/auxiliary.h>
 #include <omalloc/omalloc.h>
 
@@ -266,11 +269,11 @@ number nrzDiv (number a,number b, const coeffs R)
   mpz_ptr r = (mpz_ptr) omAllocBin(gmp_nrz_bin);
   mpz_init(r);
   mpz_tdiv_qr(erg, r, (mpz_ptr) a, (mpz_ptr) b);
-  //if (!nrzIsZero((number) r, R))
-  //{
-  //  WerrorS("Division by non divisible element.");
-  //  WerrorS("Result is without remainder.");
-  //}
+  if (!nrzIsZero((number) r, R))
+  {
+    WerrorS("Division by non divisible element.");
+    WerrorS("Result is without remainder.");
+  }
   mpz_clear(r);
   omFreeBin(r, gmp_nrz_bin);
   return (number) erg;
@@ -377,8 +380,11 @@ void nrzInitExp(int, coeffs)
 }
 
 #ifdef LDEBUG
-BOOLEAN nrzDBTest (number, const char *, const int, const coeffs)
+BOOLEAN nrzDBTest (number n, const char *, const int, const coeffs)
 {
+#ifndef OM_NDEBUG
+  omCheckAddr((ADDRESS)n);
+#endif
   return TRUE;//TODO
 }
 #endif

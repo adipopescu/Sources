@@ -226,7 +226,7 @@ int ksReducePolySig(LObject* PR,
   //printf("COMPARE IDX: %ld -- %ld\n",idx,strat->currIdx);
   if (!PW->is_sigsafe)
   {
-    poly sigMult = pHead(PW->sig);   // copy head signature of reducer
+    poly sigMult = pCopy(PW->sig);   // copy signature of reducer
 //#if 1
 #ifdef DEBUGF5
     printf("IN KSREDUCEPOLYSIG: \n");
@@ -270,6 +270,7 @@ int ksReducePolySig(LObject* PR,
         return 3;
       }
       #endif
+      #if 0
       PR->is_redundant = FALSE;
       poly p1 = PR->GetLmTailRing();   // p2 | p1
       poly p2 = PW->GetLmTailRing();   // i.e. will reduce p1 with p2; lm = LT(p1) / LM(p2)
@@ -284,13 +285,13 @@ int ksReducePolySig(LObject* PR,
       pAssume1(p_GetComp(p1, tailRing) == p_GetComp(p2, tailRing) ||
         (p_GetComp(p2, tailRing) == 0 &&
         p_MaxComp(pNext(p2),tailRing) == 0));
-        
-      poly fin = pHead(PR->GetLm(currRing));
-      //pNext(fin) = NULL;
-      PR->GetP();
+      #endif  
+      poly fin = pCopy(PR->p);
+      pNext(fin) = NULL;
+      //PR->GetP();
       #if ADIDEBUG
-      printf("\nThis is PR:\n");pWrite(p1);pWrite(PR->sig);
-      printf("\nThis is PW:\n");pWrite(p2);pWrite(PW->sig);
+      printf("\nThis is PR:\n");pWrite(PR->p);pWrite(PR->sig);
+      printf("\nThis is PW:\n");pWrite(PW->p);pWrite(PW->sig);
       #endif
       /*
       printf("\nPointers for PW: %p, %p\n", PW->p, PW->sig);
@@ -304,11 +305,11 @@ int ksReducePolySig(LObject* PR,
       }
       pWrite(fin);*/
       assume(pNext(fin) == NULL);
-      p_ExpVectorSub(fin, p2, tailRing);
+      pExpVectorSub(fin, PW->p);
       number bn = nCopy(pGetCoeff(fin));
-      number an = nCopy(pGetCoeff(p2));
-      assume(n_DivBy(bn,an,tailRing) == TRUE);
-      pSetCoeff(fin, nDiv(bn,an));
+      number an = pGetCoeff(PW->p);
+      assume(n_DivBy(bn,an,currRing) == TRUE);
+      pSetCoeff(fin, nDiv(bn,an)); an=NULL; nDelete(&bn);
       #if ADIDEBUG
       printf("\nfin:\n");pWrite(fin);
       #endif
@@ -321,13 +322,20 @@ int ksReducePolySig(LObject* PR,
       //poly sSigMult = pCopy(PW->sig);
       //p_Mult_mm(sSigMult, fin, tailRing);
       //PR->sig = p_Sub(PR->sig, sSigMult, tailRing);
+      #if 0
       PR->Tail_Minus_mm_Mult_qq(fin, t2, PW->GetpLength() - 1, spNoether);
       pWrite(PR->p);
       assume(PW->GetpLength() == pLength(PW->p != NULL ? PW->p : PW->t_p));
       PR->LmDeleteAndIter();
-      assume(PR->GetpLength() == pLength(PR->p));
+      #endif
+      PR->p = pMinus_mm_Mult_qq(PR->p,fin,PW->p);
+      PR->pLength = pLength(PR->p);
+      #if ADIDEBUG
+      printf("\nThis is after the small reduction: \n");pWrite(PR->p);
+      #endif
       if(!PR->IsNull())
-        PR->sev = p_GetShortExpVector(pHead(PR->p),currRing);
+        PR->sev = p_GetShortExpVector(PR->p,currRing);
+      // Same leading monomial
       if(p_LmCmp(PR->sig,sigMult,currRing) == 0)
       {
         //Maybe a syz?
@@ -342,19 +350,11 @@ int ksReducePolySig(LObject* PR,
             return 0;
           }
           //Syz
-          if(sigSafe == 1)
-          {
-            pDelete(&fin);
-            pDelete(&sigMult);
-            return 1;
-          }
-          if(sigSafe == -1)
-          {
-            pDelete(&fin);
-            PR->sig = pNeg(sigMult);
-            PR->sevSig = p_GetShortExpVector(PR->sig,currRing);
-            return 1;
-          }
+          PR->sig = pMinus_mm_Mult_qq(PR->sig, fin, PW->sig);
+          pDelete(&fin);
+          pDelete(&sigMult);
+          PR->sevSig = p_GetShortExpVector(PR->sig,currRing);
+          return 1;
         }
         //same sig
         if(sigSafe == 0)
@@ -378,9 +378,10 @@ int ksReducePolySig(LObject* PR,
           {
             strat->sigdrop = FALSE;
             //Else it will be considered as a syz
+            pDelete(&PR->sig);
             PR->sig = NULL;
             #if ADIDEBUG
-            printf("\nredRing reduced to 0. Cancel the sigdrop\n");
+            printf("\nredRing will reduce the element to 0. Cancel the sigdrop\n");
             //getchar();
             #endif
             return 0;

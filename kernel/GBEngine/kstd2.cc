@@ -19,7 +19,7 @@
 # define MYTEST 0
 #endif /* ifndef SING_NDEBUG */
 
-#define ADIDEBUG 1
+#define ADIDEBUG 0
 #define ADIDEBUG_COUNT 0
 
 #if MYTEST
@@ -677,7 +677,7 @@ KINLINE int ksReducePolyTailSig(LObject* PR, TObject* PW, LObject* Red)
 int redSig (LObject* h,kStrategy strat)
 {
   //Löscht das
-  poly origsig = pCopy(pHead(h->sig));;
+  poly origsig = pCopy(h->sig);
   if (strat->tl<0) return 1;
   //if (h->GetLmTailRing()==NULL) return 0; // HS: SHOULD NOT BE NEEDED!
   //printf("FDEGS: %ld -- %ld\n",h->FDeg, h->pFDeg());
@@ -724,10 +724,10 @@ int redSig (LObject* h,kStrategy strat)
         //#if 1
         #if ADIDEBUG
         printf("\nSIG REDUCE DROP\n");
-        printf("\nsig after reduce\n");pWrite(pHead(h->sig));
-        printf("\nsig before reduce\n");pWrite(pHead(origsig));
+        printf("\nsig after reduce\n");pWrite(h->sig);
+        printf("\nsig before reduce\n");pWrite(origsig);
         //printf("\nreduced with\n");pWrite(pHead(strat->sig[i]));
-        getchar();
+        //getchar();
         #endif
         if(h->p != NULL && !nIsZero(h->p->coef))
         {
@@ -2758,6 +2758,8 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     rDelete (sRing);
   }
   printf("\nsigdrop = %i\n",strat->sigdrop);
+  for(int iii=0;iii<=strat->sl;iii++)
+    pWrite(strat->S[iii]);
   if(!strat->sigdrop)
     id_DelDiv(strat->Shdl, currRing);
   idSkipZeroes(strat->Shdl);

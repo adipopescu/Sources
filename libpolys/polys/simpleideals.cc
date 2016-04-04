@@ -345,26 +345,30 @@ void id_DelLmEquals(ideal id, const ring r)
 void id_DelDiv(ideal id, const ring r)
 {
   id_Test(id, r);
-
   int i, j;
   int k = IDELEMS(id)-1;
   for (i=k; i>=0; i--)
   {
     if (id->m[i] != NULL)
     {
+      printf("\ni = %i\n",i);
       for (j=k; j>i; j--)
       {
         if (id->m[j]!=NULL)
         {
 #ifdef HAVE_RINGS
+          for(int ii=0; id->m[ii]!= NULL;ii++)
+            p_Write(id->m[ii],r,r);
           if (rField_is_Ring(r))
           {
             if (p_DivisibleByRingCase(id->m[i], id->m[j],r))
             {
+              printf("\nGelöscht!!!!: \n");p_Write(id->m[j],r,r);
               p_Delete(&id->m[j],r);
             }
             else if (p_DivisibleByRingCase(id->m[j], id->m[i],r))
             {
+              printf("\nGelöscht active!!!!: \n");p_Write(id->m[i],r,r);
               p_Delete(&id->m[i],r);
               break;
             }
