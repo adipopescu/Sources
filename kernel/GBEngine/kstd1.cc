@@ -2329,19 +2329,39 @@ ideal kStd(ideal F, ideal Q, tHomog h,intvec ** w, intvec *hilb,int syzComp,
         }
         strat->homog=h;
         omTestMemory(1);
-        if(rHasLocalOrMixedOrdering(currRing))
-            r=mora(FCopy,Q,NULL,hilb,strat);
-        else
-            r=bba(FCopy,Q,NULL,hilb,strat);
+        if(w != NULL)
+        {
+          if(rHasLocalOrMixedOrdering(currRing))
+              r=mora(FCopy,Q,*w,hilb,strat);
+          else
+              r=bba(FCopy,Q,*w,hilb,strat);
+         }
+         else
+         {
+            if(rHasLocalOrMixedOrdering(currRing))
+              r=mora(FCopy,Q,NULL,hilb,strat);
+            else
+              r=bba(FCopy,Q,NULL,hilb,strat);
+         }
          idDelete(&FCopy);
     }
     else
     #endif
     {
-        if(rHasLocalOrMixedOrdering(currRing))
-            r=mora(F,Q,NULL,hilb,strat);
+        if(w != NULL)
+        {
+          if(rHasLocalOrMixedOrdering(currRing))
+              r=mora(F,Q,*w,hilb,strat);
+          else
+              r=bba(F,Q,*w,hilb,strat);
+        }
         else
-            r=bba(F,Q,NULL,hilb,strat);
+        {
+          if(rHasLocalOrMixedOrdering(currRing))
+              r=mora(F,Q,NULL,hilb,strat);
+          else
+              r=bba(F,Q,NULL,hilb,strat);
+        }
     }
   }
   else

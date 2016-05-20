@@ -5152,23 +5152,6 @@ int posInL13Ring (const LSet set, const int length,
         return an;
       if (set[an].GetpFDeg() == p->GetpFDeg())
       {
-        number lcset,lcp;
-        lcset = pGetCoeff(set[an].p);
-        lcp = pGetCoeff(p->p);
-        if(!nGreaterZero(lcset))
-        {
-          set[an].p=p_Neg(set[an].p,currRing);
-          if (set[an].t_p!=NULL)
-            pSetCoeff0(set[an].t_p,pGetCoeff(set[an].p));
-          lcset=pGetCoeff(set[an].p);
-        }
-        if(!nGreaterZero(lcp))
-        {
-          p->p=p_Neg(p->p,currRing);
-          if (p->t_p!=NULL)
-            pSetCoeff0(p->t_p,pGetCoeff(p->p));
-          lcp=pGetCoeff(p->p);
-        }
         if(pLtCmp(set[an].p,p->p) == 1)
         {
           return en;
