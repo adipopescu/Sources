@@ -2279,55 +2279,57 @@ ideal kStd(ideal F, ideal Q, tHomog h,intvec ** w, intvec *hilb,int syzComp,
   if (rField_is_Ring(currRing))
   {
     #if 1
-    if(nCoeff_is_Ring_Z(currRing->cf))
+    //This strategy is not for module case
+    if(nCoeff_is_Ring_Z(currRing->cf) && strat->ak <= 0)
     {
         ideal FCopy = idCopy(F);
         poly pFmon = preIntegerCheck(FCopy, Q);
-        if(pFmon != NULL)
+        if(pFmon == NULL)
+        {
+          #if ADIDEBUG
+          printf("\nPreintegerCheck didn't find any new information.\n");
+          #endif
+        }
+        else
         {
           idInsertPoly(FCopy, pFmon);
           idSkipZeroes(FCopy);
           #if ADIDEBUG
           printf("\nPreintegerCheck found this constant:\n");pWrite(pFmon);
           #endif
-        }
-        else
-        {
-          #if ADIDEBUG
-          printf("\nPreintegerCheck didn't find any new information.\n");
-          #endif
-        }
-        strat->kModW=kModW=NULL;
-        if (h==testHomog)
-        {
-            if (strat->ak == 0)
-            {
-              h = (tHomog)idHomIdeal(FCopy,Q);
-              w=NULL;
-            }
-            else if (!TEST_OPT_DEGBOUND)
-            {
-                h = (tHomog)idHomModule(FCopy,Q,w);
-            }
-        }
-        currRing->pLexOrder=b;
-        if (h==isHomog)
-        {
-            if (strat->ak > 0 && (w!=NULL) && (*w!=NULL))
-            {
-              strat->kModW = kModW = *w;
-              if (vw == NULL)
+          // We have to reinitialise everything
+          strat->kModW=kModW=NULL;
+          if (h==testHomog)
+          {
+              if (strat->ak == 0)
               {
-                strat->pOrigFDeg = currRing->pFDeg;
-                strat->pOrigLDeg = currRing->pLDeg;
-                pSetDegProcs(currRing,kModDeg);
-                toReset = TRUE;
+                h = (tHomog)idHomIdeal(FCopy,Q);
+                w=NULL;
               }
-            }
-            currRing->pLexOrder = TRUE;
-            if (hilb==NULL) strat->LazyPass*=2;
+              else if (!TEST_OPT_DEGBOUND)
+              {
+                  h = (tHomog)idHomModule(FCopy,Q,w);
+              }
+          }
+          currRing->pLexOrder=b;
+          if (h==isHomog)
+          {
+              if (strat->ak > 0 && (w!=NULL) && (*w!=NULL))
+              {
+                strat->kModW = kModW = *w;
+                if (vw == NULL)
+                {
+                  strat->pOrigFDeg = currRing->pFDeg;
+                  strat->pOrigLDeg = currRing->pLDeg;
+                  pSetDegProcs(currRing,kModDeg);
+                  toReset = TRUE;
+                }
+              }
+              currRing->pLexOrder = TRUE;
+              if (hilb==NULL) strat->LazyPass*=2;
+          }
+          strat->homog=h;
         }
-        strat->homog=h;
         omTestMemory(1);
         if(w != NULL)
         {
